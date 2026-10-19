@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="10" alignment="CENTER" stylesheets="@style.css" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.proyecto_final.controller.PeliculaController">
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <Label text="Gestion de Peliculas" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #014074;"/>
+
+    <HBox spacing="10" alignment="CENTER">
+        <TextField fx:id="txtTitulo" promptText="Titulo"/>
+        <TextField fx:id="txtGenero" promptText="Genero"/>
+        <TextField fx:id="txtDuracion" promptText="Duracion (min)"/>
+        <TextField fx:id="txtClasificacion" promptText="Clasificacion"/>
+        <Button text="Guardar" onAction="#guardar" styleClass="button-action-edit"/>
+    </HBox>
+
+    <TableView fx:id="tablaPeliculas" prefHeight="350">
+        <columns>
+            <TableColumn fx:id="colId" text="ID" prefWidth="50"/>
+            <TableColumn fx:id="colTitulo" text="Titulo" prefWidth="180"/>
+            <TableColumn fx:id="colGenero" text="Genero" prefWidth="120"/>
+            <TableColumn fx:id="colDuracion" text="Duracion" prefWidth="90"/>
+            <TableColumn fx:id="colClasificacion" text="Clasificacion" prefWidth="100"/>
+        </columns>
+    </TableView>
+</VBox>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+
+<VBox alignment="CENTER" spacing="15.0" style="-fx-background-color: #F7F7F7;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.proyecto_final.controller.VentaController">
+    <padding>
+        <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+    </padding>
+    <children>
+        <Label style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #014074;" text="Módulo de Venta de Entradas" />
+
+        <VBox maxWidth="400.0" spacing="10.0">
+            <Label text="Seleccionar Película:" style="-fx-font-weight: bold;"/>
+            <ComboBox fx:id="cbPeliculas" prefWidth="400.0" promptText="Elija una película..." />
+
+            <Label text="Cantidad de Entradas:" style="-fx-font-weight: bold;"/>
+            <TextField fx:id="txtCantidad" promptText="Ej. 2" />
+
+            <Label text="Precio Unitario (S/.):" style="-fx-font-weight: bold;"/>
+            <TextField fx:id="txtPrecio" promptText="15.00" />
+
+            <HBox spacing="10.0" alignment="CENTER_RIGHT" style="-fx-padding: 10 0 0 0;">
+                <Button fx:id="btnComprar" styleClass="button-login" text="Registrar Venta" />
+            </HBox>
+        </VBox>
+    </children>
+</VBox>
