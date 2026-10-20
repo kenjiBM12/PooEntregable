@@ -1,0 +1,74 @@
+PROYECTO DE CINE - CORRECCION CON EL PATRON DEL HOTEL
+
+COMO ABRIRLO
+1. Extrae el ZIP en una carpeta nueva.
+2. Abre el pom.xml de esta carpeta con IntelliJ como proyecto Maven.
+3. Utiliza JDK 21 y recarga las dependencias Maven.
+4. Ejecuta com.example.proyecto_final.test.TestConexion.
+5. Ejecuta TestPelicula, TestSala, TestFuncion y TestVenta.
+6. Para abrir las ventanas, ejecuta HelloApplication.
+
+No se modificaron tu proyecto original ni tu base de datos original.
+No necesitas desactivar la compilacion ni ignorar errores de controladores.
+
+BASE DE DATOS
+ConexionDB conserva la ruta C:/poo/sqilte1U2/db/cine.db.
+La carpeta y las tablas deben existir, como en el proyecto del hotel.
+La columna real de pelicula se llama duracion; todos los DAO usan ese nombre.
+La conexion no crea las tablas ni inserta datos de ejemplo.
+La conexion usa directamente esa ruta, sin propiedades de VM.
+
+ESTRUCTURA
+Se conservaron los paquetes modelo, interfaces, implementacion, utils,
+test y controller. No se agregaron servicios ni otras capas.
+Los modelos conservan propiedades JavaFX y relaciones mediante objetos.
+Las interfaces conservan insert, update, searchById, delete y listAll.
+Los tests siguen siendo clases con main, como los del hotel.
+
+Cada pantalla de datos ahora tiene:
+    EntidadController -> entidad-view.fxml (tabla, Nuevo, Editar, Eliminar)
+    EntidadFormController -> entidad-form.fxml (Guardar y Cancelar)
+El controlador de tabla abre el formulario modal, consulta isSaved(),
+recupera el objeto y llama al DAO, igual que en el hotel.
+Los formularios no ejecutan insert ni update.
+El menu incluye Salas y Funciones.
+
+CAMBIOS PRINCIPALES
+- Agregada dependencia org.xerial:sqlite-jdbc:3.42.0.0 al pom.xml.
+- Corregido duracion_min a duracion en los DAO.
+- Controladores y formularios adaptados a los modelos e interfaces actuales.
+- Sala ya tiene su propia vista y controlador.
+- Testpelicula se normalizo a TestPelicula (archivo y clase).
+- UtilAlerts permite crear la alerta y llamar showAndWait como en el hotel.
+
+PRUEBAS REALIZADAS
+- Compilacion Maven offline con JDK 21: BUILD SUCCESS (30 archivos Java).
+- TestConexion: conexion correcta, tambien ejecutado como modulo Java.
+- TestPelicula: recupera las peliculas existentes y su duracion.
+- TestSala, TestFuncion y TestVenta: ejecutan sin errores.
+- CRUD de pelicula, sala, funcion y venta: insertar, buscar, actualizar,
+  listar y eliminar comprobados con registros temporales.
+- Fecha automatica de venta y relaciones recuperadas correctamente.
+- Actualizar o eliminar una pelicula inexistente devuelve false.
+- Carga con FXMLLoader de 11 FXML: correcta.
+Todas las pruebas con escritura se hicieron en una copia de Cine.db.
+La carga FXML no sustituye una revision visual o una prueba manual de
+cada interaccion de las ventanas.
+
+COMO REGISTRAR DATOS DESDE LOS TESTS
+Los main de los tests listan sin insertar automaticamente.
+Descomenta insertar() una sola vez en TestPelicula o TestSala.
+Luego vuelve a comentarlo para evitar duplicar registros.
+Usa los IDs reales mostrados por los listados en TestFuncion.insertar(...)
+y TestVenta.insertar(...). No supongas que todos los IDs empiezan por 1.
+Un listado vacio no significa por si solo que la conexion haya fallado:
+revisa tambien los mensajes anteriores de la consola.
+
+ALCANCE PENDIENTE
+La pantalla de reportes conserva la maqueta original y aun no calcula ventas.
+No se han implementado reservas de asientos ni control de capacidad
+acumulada, ni deteccion de horarios que se cruzan.
+Activar PRAGMA foreign_keys no crea relaciones: las tablas de tu base actual
+no declaran claves foraneas. El proyecto no modifica ese esquema existente.
+La venta conserva la fecha automatica de SQLite al registrar y actualizar.
+El ZIP no incluye datos personales ni la base de datos del equipo.

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.proyecto_final.controller.VentaFormController"
+      spacing="12" prefWidth="480" style="-fx-padding: 25;" stylesheets="@style.css">
+    <Label fx:id="lblTitulo" text="Nuevo registro" style="-fx-font-size: 22;"/>
+    <Label text="Función y precio por entrada"/><ComboBox fx:id="cbFuncion" maxWidth="Infinity"/>
+    <Label text="Cliente"/><TextField fx:id="txtCliente"/>
+    <Label text="Cantidad de entradas"/><TextField fx:id="txtCantidad"/>
+    <Label text="El total se calcula con el precio de la función."/>
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Cancelar" onAction="#handleCancel"/>
+        <Button text="Guardar" onAction="#handleSave"/>
+    </HBox>
+</VBox>

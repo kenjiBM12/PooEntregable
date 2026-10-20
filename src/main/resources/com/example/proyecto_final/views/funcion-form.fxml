@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.proyecto_final.controller.FuncionFormController"
+      spacing="12" prefWidth="480" style="-fx-padding: 25;" stylesheets="@style.css">
+    <Label fx:id="lblTitulo" text="Nuevo registro" style="-fx-font-size: 22;"/>
+    <Label text="Película"/><ComboBox fx:id="cbPelicula" maxWidth="Infinity"/>
+    <Label text="Sala"/><ComboBox fx:id="cbSala" maxWidth="Infinity"/>
+    <Label text="Horario (ejemplo: 2026-11-07 18:30)"/><TextField fx:id="txtHorario"/>
+    <Label text="Precio"/><TextField fx:id="txtPrecio"/>
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Cancelar" onAction="#handleCancel"/>
+        <Button text="Guardar" onAction="#handleSave"/>
+    </HBox>
+</VBox>

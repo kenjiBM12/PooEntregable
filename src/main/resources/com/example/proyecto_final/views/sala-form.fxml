@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.proyecto_final.controller.SalaFormController"
+      spacing="12" prefWidth="480" style="-fx-padding: 25;" stylesheets="@style.css">
+    <Label fx:id="lblTitulo" text="Nuevo registro" style="-fx-font-size: 22;"/>
+    <Label text="Nombre"/><TextField fx:id="txtNombre"/>
+    <Label text="Tipo (2D, 3D o VIP)"/><TextField fx:id="txtTipo"/>
+    <Label text="Capacidad"/><TextField fx:id="txtCapacidad"/>
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Cancelar" onAction="#handleCancel"/>
+        <Button text="Guardar" onAction="#handleSave"/>
+    </HBox>
+</VBox>

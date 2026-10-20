@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.proyecto_final.controller.SalaController"
+      spacing="15" style="-fx-padding: 20;" stylesheets="@style.css">
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Gestión de Salas" style="-fx-font-size: 22;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Nuevo" onAction="#handleNew"/>
+        <Button text="Editar" onAction="#handleEdit"/>
+        <Button text="Eliminar" onAction="#handleDelete"/>
+    </HBox>
+    <TableView fx:id="tabla" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colNumero" text="N.º" prefWidth="50"/>
+            <TableColumn fx:id="colId" text="ID" prefWidth="130"/>
+            <TableColumn fx:id="colNombre" text="Nombre" prefWidth="130"/>
+            <TableColumn fx:id="colTipo" text="Tipo" prefWidth="130"/>
+            <TableColumn fx:id="colCapacidad" text="Capacidad" prefWidth="130"/>
+        </columns>
+    </TableView>
+</VBox>
