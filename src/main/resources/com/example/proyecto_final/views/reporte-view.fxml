@@ -1,34 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<!--
+    FXML describe la estructura visual; el controlador Java contiene el comportamiento.
+    Reporte: muestra las ventas de la fecha seleccionada y sus totales reales.
+    fx:controller indica qué clase atiende esta vista.
+    fx:id debe coincidir con el campo anotado @FXML de esa clase.
+    onAction="#metodo" conecta un botón con el método correspondiente.
+    stylesheets="@style.css" carga el estilo desde la carpeta de este FXML.
+    VBox organiza verticalmente y HBox horizontalmente.
+    TableView contiene las filas; TableColumn describe cada columna.
+    Los datos de las celdas se enlazan en initialize(), no se escriben en este archivo.
+-->
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.layout.HBox?>
-
-<VBox alignment="TOP_CENTER" spacing="15.0" style="-fx-background-color: #F7F7F7;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
-    <padding>
-        <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
-    </padding>
-    <children>
-        <Label style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #014074;" text="Reporte de Ventas del Día" />
-
-        <!-- Panel de resumen rápido -->
-        <HBox spacing="20.0" alignment="CENTER" style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 5;">
-            <Label text="Total Vendido Hoy: S/. 450.00" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #27ae60;" />
-            <Label text="Entradas Vendidas: 30" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #014074;" />
-        </HBox>
-
-        <!-- Tabla de transacciones -->
-        <TableView fx:id="tablaReportes" prefHeight="350.0" prefWidth="700.0">
-            <columns>
-                <TableColumn fx:id="colIdVenta" prefWidth="60.0" text="ID" />
-                <TableColumn fx:id="colPelicula" prefWidth="220.0" text="Película" />
-                <TableColumn fx:id="colCantidad" prefWidth="100.0" text="Cantidad" />
-                <TableColumn fx:id="colTotal" prefWidth="120.0" text="Total (S/.)" />
-                <TableColumn fx:id="colHora" prefWidth="150.0" text="Hora" />
-            </columns>
-        </TableView>
-    </children>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.proyecto_final.controller.ReporteController"
+      spacing="18" stylesheets="@style.css" style="-fx-background-color: #F7F7F7;">
+    <padding><Insets top="25" right="25" bottom="25" left="25"/></padding>
+    <Label text="Reporte de ventas del día"
+           style="-fx-font-size: 24; -fx-font-weight: bold; -fx-text-fill: #014074;"/>
+    <HBox spacing="12" alignment="CENTER_LEFT">
+        <Label text="Fecha de venta:"/>
+        <DatePicker fx:id="dpFecha" editable="false"/>
+        <Button text="Actualizar" onAction="#handleActualizar"/>
+    </HBox>
+    <FlowPane hgap="25" vgap="12"
+              style="-fx-background-color: white; -fx-padding: 18; -fx-background-radius: 8;">
+        <Label fx:id="lblTotal" text="Total vendido: S/ 0.00"
+               style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #18834b;"/>
+        <Label fx:id="lblEntradas" text="Entradas vendidas: 0"
+               style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #014074;"/>
+        <Label fx:id="lblOperaciones" text="Ventas registradas: 0"
+               style="-fx-font-size: 16; -fx-text-fill: #014074;"/>
+    </FlowPane>
+    <TableView fx:id="tablaReportes" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colIdVenta" text="ID" prefWidth="55"/>
+            <TableColumn fx:id="colPelicula" text="Película" prefWidth="190"/>
+            <TableColumn fx:id="colCliente" text="Cliente" prefWidth="150"/>
+            <TableColumn fx:id="colCantidad" text="Entradas" prefWidth="80"/>
+            <TableColumn fx:id="colTotal" text="Total (S/)" prefWidth="100"/>
+            <TableColumn fx:id="colHora" text="Hora (Perú)" prefWidth="100"/>
+        </columns>
+    </TableView>
+    <Label fx:id="lblEstado" wrapText="true" style="-fx-text-fill: #666666;"/>
 </VBox>

@@ -1,74 +1,55 @@
-PROYECTO DE CINE - CORRECCION CON EL PATRON DEL HOTEL
+VERSION COMENTADA PARA ESTUDIAR
+Empieza por GUIA_PARA_ENTENDER_EL_PROYECTO.md.
+Todos los archivos Java y FXML incluyen comentarios.
+La logica del programa se conserva y la compilacion fue comprobada.
 
-COMO ABRIRLO
+PROYECTO CINE - MISMA ESTRUCTURA DEL HOTEL, CON REPORTE REAL
+
 1. Extrae el ZIP en una carpeta nueva.
-2. Abre el pom.xml de esta carpeta con IntelliJ como proyecto Maven.
-3. Utiliza JDK 21 y recarga las dependencias Maven.
-4. Ejecuta com.example.proyecto_final.test.TestConexion.
-5. Ejecuta TestPelicula, TestSala, TestFuncion y TestVenta.
-6. Para abrir las ventanas, ejecuta HelloApplication.
+2. Abre la carpeta Proyecto_final con IntelliJ y utiliza JDK 21.
+3. Si abres el pom.xml como Maven, recarga sus dependencias.
+4. Ejecuta TestConexion; luego puedes ejecutar los tests de cada entidad.
+5. Ejecuta HelloApplication para abrir la aplicación.
 
-No se modificaron tu proyecto original ni tu base de datos original.
-No necesitas desactivar la compilacion ni ignorar errores de controladores.
+También puedes abrir PROBAR_CONEXION.cmd o ABRIR_CINE.cmd.
+Incluye JavaFX y SQLite en lib para ejecutar sin depender de la importación Maven.
+Los scripts usan C:/Program Files/Java/jdk-21, que es tu instalación actual.
+La lista de SDK de IntelliJ pertenece al IDE: si no reconoce el SDK llamado 21,
+selecciona tu JDK 21 en Project Structure > Project SDK.
 
 BASE DE DATOS
-ConexionDB conserva la ruta C:/poo/sqilte1U2/db/cine.db.
-La carpeta y las tablas deben existir, como en el proyecto del hotel.
-La columna real de pelicula se llama duracion; todos los DAO usan ese nombre.
-La conexion no crea las tablas ni inserta datos de ejemplo.
-La conexion usa directamente esa ruta, sin propiedades de VM.
+El proyecto usa directamente:
+C:/poo/sqilte1U2/db/cine.db
+No necesitas moverla ni reemplazarla. No se modificó esa base.
+El ZIP no incluye otra base con datos de ejemplo.
 
-ESTRUCTURA
-Se conservaron los paquetes modelo, interfaces, implementacion, utils,
-test y controller. No se agregaron servicios ni otras capas.
-Los modelos conservan propiedades JavaFX y relaciones mediante objetos.
-Las interfaces conservan insert, update, searchById, delete y listAll.
-Los tests siguen siendo clases con main, como los del hotel.
+REPORTE DEL DÍA
+Abre Reportes del Día en el menú.
+La fecha predeterminada es hoy en Perú. Puedes elegir otra fecha.
+El reporte muestra película, cliente, entradas, total y hora de cada venta.
+Calcula el dinero vendido, las entradas vendidas y la cantidad de ventas.
+Pulsa Actualizar después de registrar, editar o eliminar ventas.
+Las fechas se filtran por el día peruano y las horas se muestran en Perú.
 
-Cada pantalla de datos ahora tiene:
-    EntidadController -> entidad-view.fxml (tabla, Nuevo, Editar, Eliminar)
-    EntidadFormController -> entidad-form.fxml (Guardar y Cancelar)
-El controlador de tabla abre el formulario modal, consulta isSaved(),
-recupera el objeto y llama al DAO, igual que en el hotel.
-Los formularios no ejecutan insert ni update.
-El menu incluye Salas y Funciones.
+En la base revisada, las dos ventas existentes son del 19/10/2026:
+2 ventas, 7 entradas y S/ 56.00.
+Si consultas una fecha sin ventas, debe mostrar cero y una tabla vacía.
 
-CAMBIOS PRINCIPALES
-- Agregada dependencia org.xerial:sqlite-jdbc:3.42.0.0 al pom.xml.
-- Corregido duracion_min a duracion en los DAO.
-- Controladores y formularios adaptados a los modelos e interfaces actuales.
-- Sala ya tiene su propia vista y controlador.
-- Testpelicula se normalizo a TestPelicula (archivo y clase).
-- UtilAlerts permite crear la alerta y llamar showAndWait como en el hotel.
+TESTS
+TestConexion: comprueba la conexión.
+TestPelicula, TestSala, TestFuncion y TestVenta: menús con insertar, listar,
+buscar por ID, actualizar y eliminar.
+Los datos que ingreses desde estos menús se guardan en tu base real.
+Antes de registrar funciones, crea películas y salas; antes de vender, crea funciones.
+Para eliminar registros relacionados, empieza por ventas y sigue con funciones.
 
-PRUEBAS REALIZADAS
-- Compilacion Maven offline con JDK 21: BUILD SUCCESS (30 archivos Java).
-- TestConexion: conexion correcta, tambien ejecutado como modulo Java.
-- TestPelicula: recupera las peliculas existentes y su duracion.
-- TestSala, TestFuncion y TestVenta: ejecutan sin errores.
-- CRUD de pelicula, sala, funcion y venta: insertar, buscar, actualizar,
-  listar y eliminar comprobados con registros temporales.
-- Fecha automatica de venta y relaciones recuperadas correctamente.
-- Actualizar o eliminar una pelicula inexistente devuelve false.
-- Carga con FXMLLoader de 11 FXML: correcta.
-Todas las pruebas con escritura se hicieron en una copia de Cine.db.
-La carga FXML no sustituye una revision visual o una prueba manual de
-cada interaccion de las ventanas.
+TestReporte: muestra el reporte de hoy en consola.
+Para otra fecha, coloca 2026-10-19 en Program arguments de TestReporte en IntelliJ.
+No es necesario crear clientes para que el reporte funcione; se utiliza el nombre
+que ya guarda cada venta.
 
-COMO REGISTRAR DATOS DESDE LOS TESTS
-Los main de los tests listan sin insertar automaticamente.
-Descomenta insertar() una sola vez en TestPelicula o TestSala.
-Luego vuelve a comentarlo para evitar duplicar registros.
-Usa los IDs reales mostrados por los listados en TestFuncion.insertar(...)
-y TestVenta.insertar(...). No supongas que todos los IDs empiezan por 1.
-Un listado vacio no significa por si solo que la conexion haya fallado:
-revisa tambien los mensajes anteriores de la consola.
-
-ALCANCE PENDIENTE
-La pantalla de reportes conserva la maqueta original y aun no calcula ventas.
-No se han implementado reservas de asientos ni control de capacidad
-acumulada, ni deteccion de horarios que se cruzan.
-Activar PRAGMA foreign_keys no crea relaciones: las tablas de tu base actual
-no declaran claves foraneas. El proyecto no modifica ese esquema existente.
-La venta conserva la fecha automatica de SQLite al registrar y actualizar.
-El ZIP no incluye datos personales ni la base de datos del equipo.
+CAMBIOS Y VALIDACIÓN
+Consulta COMPARACION_CON_HOTEL.md para ver qué estaba mal, qué se corrigió,
+qué diferencias son intencionales y las pruebas realizadas.
+Se conservaron los paquetes y el patrón de tabla + formulario modal del hotel.
+El control de asientos disponibles y los cruces de horarios siguen pendientes.

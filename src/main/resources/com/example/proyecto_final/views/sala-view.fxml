@@ -1,4 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+    FXML describe la estructura visual; el controlador Java contiene el comportamiento.
+    Vista de tabla: lista registros y permite abrir formularios de Nuevo o Editar.
+    fx:controller indica qué clase atiende esta vista.
+    fx:id debe coincidir con el campo anotado @FXML de esa clase.
+    onAction="#metodo" conecta un botón con el método correspondiente.
+    stylesheets="@style.css" carga el estilo desde la carpeta de este FXML.
+    VBox organiza verticalmente y HBox horizontalmente.
+    TableView contiene las filas; TableColumn describe cada columna.
+    Los datos de las celdas se enlazan en initialize(), no se escriben en este archivo.
+-->
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"

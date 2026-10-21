@@ -14,6 +14,7 @@
         <junit.version>5.12.1</junit.version>
     </properties>
 
+    <!-- Dependencias: bibliotecas que Maven descarga para compilar y ejecutar. -->
     <dependencies>
         <dependency>
             <groupId>org.xerial</groupId>
@@ -78,6 +79,7 @@
         </dependency>
     </dependencies>
 
+    <!-- Plugins: herramientas de compilación y ejecución; no son clases de tu modelo. -->
     <build>
         <plugins>
             <plugin>

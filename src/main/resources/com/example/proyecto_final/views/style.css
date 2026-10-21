@@ -1,3 +1,10 @@
+/*
+ * CSS DE JAVAFX: cambia colores, tamaños, bordes y espaciados de las vistas.
+ * .clase se aplica mediante styleClass="clase" en FXML.
+ * :hover describe el aspecto al pasar el puntero; :focused al recibir el foco.
+ * Las propiedades de JavaFX empiezan por -fx-; no son exactamente las de una web.
+ * Este archivo no consulta SQLite ni decide cómo guardar datos.
+ */
 
 /* Fondo general */
 .root {

@@ -1,6 +1,8 @@
 // TestFuncion.java
+// package organiza las clases; no es la ruta del archivo SQLite.
 package com.example.proyecto_final.test;
 
+// import permite utilizar clases de otros paquetes sin escribir su nombre completo.
 import com.example.proyecto_final.implementacion.FuncionDaoImpl;
 import com.example.proyecto_final.implementacion.PeliculaDaoImpl;
 import com.example.proyecto_final.implementacion.SalaDaoImpl;
@@ -13,14 +15,23 @@ import com.example.proyecto_final.modelo.Sala;
 
 import java.util.Scanner;
 
+/**
+ * PRUEBA MANUAL DE CONSOLA: permite ejecutar operaciones sin la interfaz gráfica.
+ * Utiliza los mismos modelos, interfaces y DAO que las ventanas.
+ * Estas operaciones trabajan con la base real configurada en ConexionDB.
+ */
 public class TestFuncion {
 
     static IFuncionDao dao = new FuncionDaoImpl();
     static IPeliculaDao peliculaDao = new PeliculaDaoImpl();
     static ISalaDao salaDao = new SalaDaoImpl();
 
+    // Scanner lee lo que se escribe en la consola durante estas pruebas manuales.
     static Scanner teclado = new Scanner(System.in);
 
+    /**
+     * Prueba INSERT: crea el modelo, obtiene los datos y llama a dao.insert().
+     */
     public static void insertar() {
         Funcion f = new Funcion();
 
@@ -33,6 +44,9 @@ public class TestFuncion {
                 : "Error al registrar");
     }
 
+    /**
+     * Prueba SELECT/listAll y muestra cada registro recuperado por consola.
+     */
     public static void listar() {
         var lista = dao.listAll();
 
@@ -46,6 +60,9 @@ public class TestFuncion {
         }
     }
 
+    /**
+     * Pide un ID y prueba searchById; informa si el registro no aparece.
+     */
     public static void buscar() {
         Funcion f = dao.searchById(leerId());
 
@@ -56,6 +73,9 @@ public class TestFuncion {
         }
     }
 
+    /**
+     * Busca por ID, pide nuevos datos y prueba dao.update().
+     */
     public static void actualizar() {
         Funcion f = dao.searchById(leerId());
 
@@ -76,6 +96,9 @@ public class TestFuncion {
                 : "Error al actualizar");
     }
 
+    /**
+     * Busca por ID, pide escribir SI y prueba dao.delete().
+     */
     public static void eliminar() {
         Funcion f = dao.searchById(leerId());
 
@@ -94,8 +117,13 @@ public class TestFuncion {
         }
     }
 
+    /**
+     * Lee y convierte los datos introducidos por consola.
+     * No guarda por sí mismo: prepara el objeto para insert o update.
+     */
     private static boolean llenarDatos(Funcion f) {
         System.out.print("ID de película: ");
+        // Convierte texto a int; texto vacío o letras provocan NumberFormatException.
         int idPelicula = Integer.parseInt(teclado.nextLine().trim());
 
         System.out.print("ID de sala: ");
@@ -113,6 +141,7 @@ public class TestFuncion {
         String horario = teclado.nextLine().trim();
 
         System.out.print("Precio: ");
+        // Convierte texto a double; usa punto decimal, por ejemplo 15.50.
         double precio = Double.parseDouble(teclado.nextLine().trim());
 
         if (horario.isEmpty()
@@ -129,11 +158,17 @@ public class TestFuncion {
         return true;
     }
 
+    /**
+     * Lee una línea de texto de la consola y la convierte a un número entero.
+     */
     private static int leerId() {
         System.out.print("ID de función: ");
         return Integer.parseInt(teclado.nextLine().trim());
     }
 
+    /**
+     * Imprime los datos del objeto recibido; no consulta ni cambia la base.
+     */
     private static void mostrar(Funcion f) {
         System.out.println("-------------------------");
         System.out.println("ID: " + f.getIdfuncion());
@@ -143,6 +178,10 @@ public class TestFuncion {
         System.out.println("Precio: " + f.getPrecio());
     }
 
+    /**
+     * Punto de entrada que ejecuta Java al iniciar esta clase.
+     * En los tests permite trabajar por consola; en HelloApplication inicia JavaFX.
+     */
     public static void main(String[] args) {
         while (true) {
             System.out.println("""
@@ -160,6 +199,7 @@ public class TestFuncion {
             String opcion = teclado.nextLine().trim();
 
             try {
+                // El menú decide qué método de prueba ejecutar según la opción escrita.
                 switch (opcion) {
                     case "1" -> insertar();
                     case "2" -> listar();
