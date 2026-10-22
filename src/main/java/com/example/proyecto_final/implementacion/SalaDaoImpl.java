@@ -12,10 +12,6 @@ public class SalaDaoImpl implements ISalaDao {
     @Override
     public boolean insert(Sala s) {
         boolean flag = false;
-        if (s == null || s.getNombre() == null || s.getNombre().isBlank() || s.getTipo() == null || s.getTipo().isBlank() || s.getCapacidad() <= 0) {
-            System.out.println("Datos de sala incorrectos");
-            return flag;
-        }
         String query = "INSERT INTO sala (nombre, tipo, capacidad) VALUES (?, ?, ?)";
 
         try (Connection cn = ConexionDB.getConexion();
@@ -23,8 +19,8 @@ public class SalaDaoImpl implements ISalaDao {
             st.setString(1, s.getNombre());
             st.setString(2, s.getTipo());
             st.setInt(3, s.getCapacidad());
-
-            flag = st.executeUpdate() == 1;
+            st.executeUpdate();
+            flag = true;
         } catch (SQLException e) {
             System.out.println("Error en insert de sala: " + e.getMessage());
         }
@@ -34,11 +30,8 @@ public class SalaDaoImpl implements ISalaDao {
     @Override
     public boolean update(Sala s) {
         boolean flag = false;
-        if (s == null || s.getNombre() == null || s.getNombre().isBlank() || s.getTipo() == null || s.getTipo().isBlank() || s.getCapacidad() <= 0) {
-            System.out.println("Datos de sala incorrectos");
-            return flag;
-        }
-        String query = "UPDATE sala SET nombre=?, tipo=?, capacidad=? WHERE id=?";
+        String query = "UPDATE sala SET nombre=?, " +
+                " tipo=?, capacidad=? WHERE id=?";
 
         try (Connection cn = ConexionDB.getConexion();
              PreparedStatement st = cn.prepareStatement(query)) {
@@ -47,7 +40,7 @@ public class SalaDaoImpl implements ISalaDao {
             st.setInt(3, s.getCapacidad());
             st.setInt(4, s.getIdsala());
 
-            flag = st.executeUpdate() == 1;
+            flag = true;
         } catch (SQLException e) {
             System.out.println("Error en update de sala: " + e.getMessage());
         }
@@ -56,25 +49,24 @@ public class SalaDaoImpl implements ISalaDao {
 
     @Override
     public Sala searchById(int id) {
-        Sala registro = null;
+        Sala sa = null;
         String query = "SELECT id AS idsala, nombre, tipo, capacidad FROM sala WHERE id=?";
         try (Connection cn = ConexionDB.getConexion();
              PreparedStatement st = cn.prepareStatement(query)) {
             st.setInt(1, id);
             try (ResultSet rs = st.executeQuery()) {
                 if (rs.next()) {
-                    registro = new Sala();
-                    registro.setIdsala(rs.getInt("idsala"));
-                    registro.setNombre(rs.getString("nombre"));
-                    registro.setTipo(rs.getString("tipo"));
-                    registro.setCapacidad(rs.getInt("capacidad"));
+                    sa = new Sala();
+                    sa.setIdsala(rs.getInt("idsala"));
+                    sa.setNombre(rs.getString("nombre"));
+                    sa.setTipo(rs.getString("tipo"));
+                    sa.setCapacidad(rs.getInt("capacidad"));
                 }
             }
         } catch (SQLException e) {
             System.out.println("Error al buscar sala: " + e.getMessage());
-            registro = null;
         }
-        return registro;
+        return sa;
     }
 
     @Override
@@ -94,7 +86,8 @@ public class SalaDaoImpl implements ISalaDao {
     @Override
     public List<Sala> listAll() {
         List<Sala> lista = new ArrayList<>();
-        String query = "SELECT id AS idsala, nombre, tipo, capacidad FROM sala";
+        String query = "SELECT id AS idsala, " +
+                " nombre, tipo, capacidad FROM sala";
         try (Connection cn = ConexionDB.getConexion();
              PreparedStatement st = cn.prepareStatement(query);
              ResultSet rs = st.executeQuery()) {
