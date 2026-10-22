@@ -1,29 +1,17 @@
-/*
- * CSS DE JAVAFX: cambia colores, tamaños, bordes y espaciados de las vistas.
- * .clase se aplica mediante styleClass="clase" en FXML.
- * :hover describe el aspecto al pasar el puntero; :focused al recibir el foco.
- * Las propiedades de JavaFX empiezan por -fx-; no son exactamente las de una web.
- * Este archivo no consulta SQLite ni decide cómo guardar datos.
- */
-
-/* Fondo general */
 .root {
     -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
-/* Panel Azul Izquierdo */
 .left-pane {
     -fx-background-color: #014074;
     -fx-alignment: center;
 }
 
-/* Panel Gris Derecho */
 .right-pane {
     -fx-background-color: #F7F7F7;
     -fx-alignment: center-left;
 }
 
-/* Estilo de los campos de texto */
 .text-field {
     -fx-background-color: white;
     -fx-border-color: #DCDCDC;
@@ -37,7 +25,6 @@
     -fx-border-width: 2;
 }
 
-/* BOTÓN AMARILLO PRO */
 .button-login {
     -fx-background-color: #EFA30E;
     -fx-text-fill: white;
@@ -53,13 +40,11 @@
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 5);
 }
 
-/* Sidebar */
 .sidebar {
     -fx-background-color: #014074;
     -fx-padding: 20 0 0 0;
 }
 
-/* Botones de Navegación */
 .nav-button {
     -fx-background-color: transparent;
     -fx-text-fill: white;
@@ -72,34 +57,31 @@
 }
 
 .nav-button:hover {
-    -fx-background-color: rgba(239, 163, 14, 0.1); /* Amarillo con transparencia */
-    -fx-border-color: transparent transparent transparent #EFA30E; /* Borde amarillo lateral */
+    -fx-background-color: rgba(239, 163, 14, 0.1);
+    -fx-border-color: transparent transparent transparent #EFA30E;
 }
 
-/* Cabecera */
 .header {
     -fx-background-color: white;
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 2);
 }
 
-/* Contenedor de contenido */
 .content-area {
     -fx-background-color: #F7F7F7;
 }
-/* Alinear el texto de las cabeceras a la izquierda */
+
 .table-view .column-header .label {
     -fx-alignment: CENTER_LEFT;
-    -fx-padding: 0 0 0 10; /* Un pequeño margen a la izquierda para que no pegue al borde */
+    -fx-padding: 0 0 0 10;
 }
 
-/* Opcional: Si quieres que las cabeceras tengan el color azul de tu marca */
 .table-view .column-header {
-    -fx-background-color: #f4f4f4; /* Color de fondo de la cabecera */
+    -fx-background-color: #f4f4f4;
     -fx-border-color: #e0e0e0;
 }
 
 .table-view .column-header .label {
-    -fx-text-fill: #014074; /* Tu color azul para el texto de la cabecera */
+    -fx-text-fill: #014074;
     -fx-font-weight: bold;
 }
 

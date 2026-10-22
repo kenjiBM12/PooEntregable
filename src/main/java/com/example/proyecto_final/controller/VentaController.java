@@ -1,7 +1,5 @@
-// package organiza las clases; no es la ruta del archivo SQLite.
 package com.example.proyecto_final.controller;
 
-// import permite utilizar clases de otros paquetes sin escribir su nombre completo.
 import com.example.proyecto_final.HelloApplication;
 import com.example.proyecto_final.implementacion.VentaDaoImpl;
 import com.example.proyecto_final.interfaces.IVentaDao;
@@ -19,54 +17,42 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.util.Optional;
 
-/**
- * CONTROLADOR DE TABLA: configura columnas y carga los registros del DAO.
- * Nuevo/Editar abren un formulario modal; Eliminar pide confirmación.
- * Sigue el patrón de ClienteController del hotel.
- */
 public class VentaController {
     private final UtilAlerts utilAlerts = new UtilAlerts();
-    // Se programa contra la interfaz; DaoImpl es la implementación concreta que ejecuta el SQL.
+
     private final IVentaDao dao = new VentaDaoImpl();
     private ObservableList<Venta> lista;
 
-    // La tabla del FXML se inyecta aquí: su fx:id debe coincidir con este nombre.
     @FXML private TableView<Venta> tabla;
-    // Columna tipada: el primer tipo es el modelo de la fila; el segundo es el dato mostrado.
+
     @FXML private TableColumn<Venta, Number> colNumero;
-    // Columna tipada: el primer tipo es el modelo de la fila; el segundo es el dato mostrado.
+
     @FXML private TableColumn<Venta, Integer> colId;
-    // Columna tipada: el primer tipo es el modelo de la fila; el segundo es el dato mostrado.
+
     @FXML private TableColumn<Venta, String> colCliente;
-    // Columna tipada: el primer tipo es el modelo de la fila; el segundo es el dato mostrado.
+
     @FXML private TableColumn<Venta, String> colPelicula;
-    // Columna tipada: el primer tipo es el modelo de la fila; el segundo es el dato mostrado.
+
     @FXML private TableColumn<Venta, Integer> colCantidad;
-    // Columna tipada: el primer tipo es el modelo de la fila; el segundo es el dato mostrado.
+
     @FXML private TableColumn<Venta, Double> colTotal;
-    // Columna tipada: el primer tipo es el modelo de la fila; el segundo es el dato mostrado.
+
     @FXML private TableColumn<Venta, String> colFecha;
 
     @FXML
-    /**
-     * Se ejecuta automáticamente después de cargar e inyectar el FXML.
-     * Configura las columnas o controles y carga los primeros datos.
-     */
+
     public void initialize() {
         colNumero.setCellFactory(column -> new TableCell<>() {
             @Override
-            /**
-             * JavaFX reutiliza celdas y llama aquí al cambiar su contenido.
-             * Se limpia el texto en filas vacías para no mostrar datos de otra fila.
-             */
+
             protected void updateItem(Number item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(empty ? null : String.valueOf(getIndex() + 1));
             }
         });
-        // La expresión lambda toma una fila y devuelve la propiedad que esa columna debe mostrar.
+
         colId.setCellValueFactory(cellData ->
-                // asObject() adapta la propiedad numérica a Integer/Double para el tipo de TableColumn.
+
                 cellData.getValue().idventaProperty().asObject());
         colCliente.setCellValueFactory(cellData ->
                 cellData.getValue().clienteProperty());
@@ -81,31 +67,22 @@ public class VentaController {
         cargarDatos();
     }
 
-    /**
-     * Consulta el DAO y actualiza los elementos visibles de la tabla o reporte.
-     * Se llama al iniciar y al terminar las operaciones que cambian los datos.
-     */
     private void cargarDatos() {
-        // ObservableList permite que TableView observe la colección obtenida del DAO.
+
         lista = FXCollections.observableArrayList(dao.listAll());
         tabla.setItems(lista);
     }
 
     @FXML
-    /**
-     * Atiende el botón Nuevo: null indica que aún no hay un registro para editar.
-     */
+
     private void handleNew() {
         showForm(null);
     }
 
     @FXML
-    /**
-     * Obtiene la fila seleccionada, busca el registro completo y abre el formulario.
-     * Si no hay selección o no se recupera el registro, muestra un mensaje.
-     */
+
     private void handleEdit() {
-        // Obtiene el objeto de la fila seleccionada; si no hay selección devuelve null.
+
         Venta seleccionado = tabla.getSelectionModel().getSelectedItem();
         if (seleccionado == null) {
             utilAlerts.mostrarAlerts("Selección requerida",
@@ -121,9 +98,7 @@ public class VentaController {
     }
 
     @FXML
-    /**
-     * Atiende Eliminar: exige selección y confirmación antes de llamar al DAO.
-     */
+
     private void handleDelete() {
         Venta seleccionado = tabla.getSelectionModel().getSelectedItem();
         if (seleccionado == null) {
@@ -133,7 +108,7 @@ public class VentaController {
         }
         Alert confirm = utilAlerts.mostrarAlerts("Confirmar eliminación",
                 "¿Eliminar el registro " + seleccionado.getIdventa() + "?", "CONFIRMATION");
-        // Optional representa que puede existir una respuesta o que el diálogo se cerró sin ella.
+
         Optional<ButtonType> respuesta = confirm.showAndWait();
         if (respuesta.isPresent() && respuesta.get() == ButtonType.OK) {
             if (dao.delete(seleccionado)) {
@@ -145,11 +120,6 @@ public class VentaController {
         }
     }
 
-    /**
-     * Carga el FXML del formulario y le pasa el objeto a su controlador.
-     * showAndWait espera a que se cierre la ventana modal.
-     * Si isSaved es true, inserta o actualiza y vuelve a cargar la tabla.
-     */
     private void showForm(Venta registro) {
         try {
             FXMLLoader loader = new FXMLLoader(HelloApplication.class.getResource(
@@ -163,10 +133,9 @@ public class VentaController {
             stage.initOwner(tabla.getScene().getWindow());
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setScene(new Scene(root));
-            // La ventana modal debe cerrarse antes de continuar con la decisión de guardar.
+
             stage.showAndWait();
 
-            // Solo se escribe en la base cuando el formulario confirmó Guardar.
             if (controller.isSaved()) {
                 Venta procesado = controller.getVenta();
                 boolean resultado = registro == null ? dao.insert(procesado) : dao.update(procesado);

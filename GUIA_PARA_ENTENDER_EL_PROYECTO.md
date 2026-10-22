@@ -1,348 +1,132 @@
-# Cómo entender tu proyecto de cine
+# Guía del proyecto con LocalDate
 
-Esta copia contiene el mismo programa corregido, con comentarios explicativos.
-Los comentarios de Java (`//` y `/** ... */`), FXML (`<!-- ... -->`) y CSS
-(`/* ... */`) son explicaciones: no se ejecutan ni cambian los resultados.
+## Orden para estudiar
 
-## 1. Qué representa cada paquete
+Lee primero Pelicula, IPeliculaDao, ConexionDB, PeliculaDaoImpl y TestPelicula.
+Después estudia PeliculaController, pelicula-view.fxml, PeliculaFormController
+y pelicula-form.fxml. Repite el recorrido con Sala, Funcion y Venta.
 
-| Paquete | Responsabilidad | Ejemplo |
-|---|---|---|
-| `modelo` | Representa los datos como objetos Java. | Una `Pelicula` con título y duración. |
-| `interfaces` | Declara las operaciones que debe ofrecer un DAO. | `IPeliculaDao.insert(p)`. |
-| `implementacion` | Ejecuta SQL y convierte filas en objetos. | `PeliculaDaoImpl`. |
-| `utils` | Contiene utilidades compartidas. | Conexión y alertas. |
-| `controller` | Atiende las vistas JavaFX y sus acciones. | Botones Nuevo, Editar, Guardar. |
-| `test` | Permite probar el programa desde consola. | `TestPelicula`. |
+## Capas
 
-Los FXML y las imágenes están en `src/main/resources`. No son paquetes de
-clases Java: son recursos que `FXMLLoader` localiza al ejecutar.
-
-`pom.xml` configura Maven y sus dependencias. `module-info.java` declara
-los módulos que Java puede usar y los paquetes que JavaFX puede inspeccionar.
-
-## 2. Por dónde leer el código
-
-Estudia una entidad completa antes de saltar a otra:
-
-1. `modelo/Pelicula.java`.
-2. `interfaces/IPeliculaDao.java`.
-3. `utils/ConexionDB.java`.
-4. `implementacion/PeliculaDaoImpl.java`.
-5. `test/TestPelicula.java`.
-6. `controller/PeliculaController.java` y `views/pelicula-view.fxml`.
-7. `controller/PeliculaFormController.java` y `views/pelicula-form.fxml`.
-
-Después repite con Sala, Funcion y Venta. Finalmente estudia el reporte.
-
-## 3. Los modelos: objetos en memoria
-
-| Modelo | Datos y relaciones |
+| Parte | Qué hace |
 |---|---|
-| `Pelicula` | ID, título, duración en minutos, género y clasificación. |
-| `Sala` | ID, nombre, tipo y capacidad. |
-| `Funcion` | ID, película, sala, horario y precio por entrada. |
-| `Venta` | ID, función, nombre del cliente, cantidad, total, fecha y hora. |
+| modelo | Guarda datos en objetos Java. |
+| interfaces | Declara qué operaciones ofrece el DAO. |
+| implementacion | Ejecuta SQL y convierte filas en modelos. |
+| utils | Reutiliza conexión y alertas. |
+| controller | Atiende controles y acciones de las vistas. |
+| test | Prueba las operaciones desde consola. |
+| resources/views | Define las ventanas mediante FXML y sus estilos CSS. |
 
-Este código solo crea y modifica un objeto en memoria:
+## Los dos campos de fecha
 
-```java
-Pelicula p = new Pelicula();
-p.setTitulo("Avatar");
-p.setDuracion(162);
-```
-
-Hasta que se llama a `dao.insert(p)`, esos datos no están guardados en SQLite.
-
-### Propiedades JavaFX
+Funcion.horario y Venta.fechaVenta son ambos LocalDate.
+Por eso pueden contener 2026-10-22, pero no una hora como 18:30.
 
 ```java
-private final IntegerProperty duracion = new SimpleIntegerProperty();
+funcion.setHorario(LocalDate.parse("2026-10-22"));
+venta.setFechaVenta(LocalDate.now());
 ```
 
-- `private`: el atributo se usa directamente dentro de la clase.
-- `final`: la referencia a esa propiedad no puede reemplazarse por otra.
-  Su valor sí puede cambiar mediante `set()`.
-- `IntegerProperty`: propiedad observable que guarda un entero.
-- `new SimpleIntegerProperty()`: crea el objeto que almacena ese valor.
-
-| Tipo | Valor que representa |
-|---|---|
-| `StringProperty` | Texto, por ejemplo un título. |
-| `IntegerProperty` | Entero, por ejemplo capacidad o duración. |
-| `DoubleProperty` | Decimal, por ejemplo un precio. |
-| `ObjectProperty<Pelicula>` | Un objeto Pelicula relacionado. |
-| `ObjectProperty<LocalDate>` | Fecha sin hora. |
-| `ObjectProperty<LocalTime>` | Hora sin fecha. |
-
-Por cada atributo hay tres métodos:
+La propiedad JavaFX de cada uno es ObjectProperty<LocalDate>.
+El getter obtiene la fecha; el setter la asigna; el método Property permite
+mostrarla en una columna de la tabla. Es el patrón de Reserva del hotel.
 
 ```java
-p.getDuracion();         // Lee el int actual.
-p.setDuracion(100);      // Cambia el valor.
-p.duracionProperty();    // Devuelve la propiedad que una tabla puede observar.
+// Escribir en SQLite:
+st.setString(3, funcion.getHorario().toString());
+
+// Recuperar desde el resultado SQL:
+funcion.setHorario(LocalDate.parse(rs.getString("fecha_funcion")));
 ```
 
-Un constructor prepara un objeto al crearlo. El constructor vacío permite
-asignar los datos después; el constructor con parámetros los recibe al inicio.
-`this` se refiere al objeto actual. `void` indica que un método no devuelve
-un resultado. `return` devuelve un resultado o termina el método.
+toString convierte la fecha a texto yyyy-MM-dd. parse realiza la conversión
+inversa. trim solo elimina espacios al principio y al final de un texto.
 
-Las asociaciones se navegan de objeto en objeto:
+En los formularios, DatePicker.getValue devuelve LocalDate directamente:
 
 ```java
-venta.getFuncion().getPelicula().getTitulo();
+registro.setHorario(dpHorario.getValue());
+registro.setFechaVenta(dpFechaVenta.getValue());
 ```
 
-Lee: de la venta obtengo su función; de esa función obtengo su película;
-de esa película obtengo el título. Si una relación no fue asignada y es
-`null`, no se puede continuar esa cadena.
-
-## 4. Interfaces e implementaciones
-
-Una interfaz declara qué operaciones existen, sin escribir sus consultas SQL:
-
-```java
-boolean insert(Pelicula p);
-Pelicula searchById(int id);
-List<Pelicula> listAll();
-```
-
-`implements IPeliculaDao` significa que `PeliculaDaoImpl` se compromete a
-implementar ese contrato. `@Override` indica que el método implementa o
-redefine uno declarado por una interfaz o una clase padre.
-
-```java
-IPeliculaDao dao = new PeliculaDaoImpl();
-```
-
-El tipo de la variable es la interfaz; el objeto concreto ejecuta el SQL.
-DAO significa *Data Access Object*: objeto de acceso a datos.
-
-| Método | Operación |
-|---|---|
-| `insert` | Registrar una fila nueva. |
-| `update` | Modificar una fila que ya tiene ID. |
-| `searchById` | Recuperar una fila por su identificador. |
-| `delete` | Eliminar la fila indicada si sus relaciones lo permiten. |
-| `listAll` | Recuperar una lista de objetos. |
-| `listByDate` | Recuperar las ventas del día elegido para el reporte. |
-
-`List<Pelicula>` significa lista cuyos elementos son Pelicula. `ArrayList`
-es una implementación concreta de esa lista. `null` significa que no hay
-un objeto en esa referencia; no es igual a una lista vacía.
-
-En los DAO actuales, algunas búsquedas también devuelven null si hubo un
-error SQL, y algunos listados devuelven una lista vacía después de imprimir
-el error. Por eso revisa la consola antes de interpretar el resultado como
-"no existe" o "no hay registros". La consulta del reporte comunica el error
-al controlador para no confundirlo con un total real de cero.
-
-## 5. Cómo se ejecuta SQL con JDBC
-
-JDBC es la API de Java para comunicarse con bases de datos. SQLite es el
-motor que guarda los datos en el archivo `C:/poo/sqilte1U2/db/cine.db`.
-
-```java
-String query = "INSERT INTO pelicula (...) VALUES (?, ?, ?, ?)";
-```
-
-Los `?` son lugares reservados para los valores. No llevan el nombre del
-atributo; se completan según su posición, empezando en 1:
-
-```java
-st.setString(1, p.getTitulo());
-st.setInt(3, p.getDuracion());
-```
-
-`Connection` es la conexión abierta. `PreparedStatement` prepara la sentencia
-y recibe sus parámetros. `ResultSet` contiene las filas de un SELECT.
-
-- `executeUpdate()` se usa para INSERT, UPDATE y DELETE y devuelve cuántas
-  filas se afectaron. Compararlo con `1` confirma que se afectó una fila.
-- `executeQuery()` se usa para SELECT y devuelve un ResultSet.
-- `rs.next()` avanza de fila; devuelve false cuando no quedan más.
-- `rs.getString("titulo")` lee una columna como texto.
-- `rs.getInt("duracion")` lee una columna como entero.
-- `leerPelicula(rs)` agrupa el trabajo de crear el objeto desde la fila actual.
-
-Un JOIN reúne información relacionada: una venta con su función, película
-y sala. Un alias como `v.id AS venta_id` da un nombre claro a una columna
-cuando varias tablas tienen una columna llamada `id`.
-
-El nombre del campo Java no tiene que ser idéntico al de la columna SQL:
-el DAO hace la correspondencia. Por ejemplo, `idpelicula` en el modelo se
-lee desde la columna `id` de la tabla pelicula.
-
-### Cierre y errores
-
-```java
-try (Connection cn = ConexionDB.getConexion();
-     PreparedStatement st = cn.prepareStatement(query)) {
-    // Operación.
-} catch (SQLException e) {
-    // Se informa el error.
-}
-```
-
-El `try` con recursos cierra los recursos declarados al terminar, incluso si
-hay error. Como la conexión queda cerrada por el DAO, `getConexion()` comprueba
-`isClosed()` y abre otra la próxima vez. Es el patrón utilizado en el hotel.
-
-`catch` atiende una excepción. `throw` genera o propaga una excepción;
-`throws SQLException` indica en la firma que un método puede propagarla.
-
-`setAutoCommit(true)` confirma cada sentencia automáticamente. No significa
-que todas las operaciones de toda la aplicación formen una sola transacción.
-
-## 6. Vista y controlador de tabla
-
-FXML describe los controles. El controlador atiende sus acciones:
-
-```xml
-<Button text="Nuevo" onAction="#handleNew"/>
-<TableView fx:id="tabla"/>
-```
-
-`@FXML private TableView<Pelicula> tabla;` recibe el control cuyo fx:id es
-`tabla`. El nombre debe coincidir. `fx:controller` señala la clase Java que
-atiende ese FXML. `FXMLLoader` crea los controles, los inyecta y después
-ejecuta `initialize()`.
-
-```java
-colTitulo.setCellValueFactory(
-        cellData -> cellData.getValue().tituloProperty());
-```
-
-`cellData -> ...` es una expresión lambda: recibe la información de una fila,
-obtiene su objeto Pelicula y devuelve la propiedad que debe mostrar esa columna.
-
-`IntegerProperty.asObject()` y `DoubleProperty.asObject()` adaptan esas
-propiedades para columnas que esperan `Integer` o `Double`.
-
-`setCellValueFactory` decide qué dato mostrar. `setCellFactory` personaliza
-cómo se dibuja una celda, por ejemplo la numeración o el formato de un total.
-
-`ObservableList` es una colección que la tabla puede observar. `setItems(lista)`
-le entrega a TableView sus filas. `getSelectionModel().getSelectedItem()`
-recupera el objeto seleccionado o null si no hay selección.
-
-## 7. El formulario separado, como en el hotel
-
-El recorrido de Nuevo es:
+## Del formulario a la base, como en el hotel
 
 ```text
-Botón Nuevo
-  → handleNew()
-  → showForm(null)
-  → FXMLLoader carga pelicula-form.fxml
-  → setPelicula(null)
-  → el usuario completa los campos
-  → handleSave() valida y prepara Pelicula
-  → saved = true y cerrar()
-  → el controlador de tabla consulta isSaved()
-  → dao.insert(controller.getPelicula())
-  → cargarDatos() actualiza la tabla
+Nuevo → showForm(null) → formulario → validate → handleSave
+      → saved=true → cerrar → controlador de tabla
+      → dao.insert(objeto) → cargarDatos
 ```
 
-Para Editar, `setPelicula()` recibe el objeto encontrado por ID y llena los
-campos. Al regresar, el controlador de tabla utiliza `update()`.
+Editar sigue el mismo recorrido con un objeto que ya tiene ID y termina
+en update. Cancelar no marca saved y no ejecuta insert/update.
+El formulario prepara el objeto; no guarda por su cuenta en SQLite.
 
-`Stage` representa la ventana y `Scene` su contenido. Una ventana modal
-bloquea la interacción con otras ventanas de la aplicación mientras se usa.
-`showAndWait()` espera a su cierre antes de continuar ese flujo de código.
+## Propiedades y tablas
 
-`isSaved()` no significa que SQLite ya guardó: significa que el formulario
-aceptó los datos. El controlador de tabla realiza la operación SQL después.
+StringProperty representa texto; IntegerProperty un entero; DoubleProperty
+un decimal; ObjectProperty guarda un objeto, incluida una fecha LocalDate.
+final impide reemplazar la referencia de la propiedad, pero permite cambiar
+su valor con set. Los getters leen, los setters asignan y Property devuelve
+la propiedad observable.
 
-Si el usuario cancela, `saved` sigue false y no se llama a insert/update.
-Para eliminar, `Optional<ButtonType>` permite comprobar si hubo una respuesta
-y si se pulsó OK antes de ejecutar delete.
-
-## 8. Texto, enteros y decimales
-
-Un TextField siempre entrega String. Aunque se escriba `80`, hay que convertirlo:
+FXMLLoader crea los controles del FXML e inyecta los campos @FXML. El fx:id
+del FXML debe coincidir con el nombre del campo Java. Después se ejecuta
+initialize, que configura las columnas y carga datos.
 
 ```java
-int capacidad = Integer.parseInt(txtCapacidad.getText().trim());
-double precio = Double.parseDouble(txtPrecio.getText().trim());
+colHorario.setCellValueFactory(
+        cellData -> cellData.getValue().horarioProperty());
 ```
 
-`trim()` elimina espacios del principio y del final. `isEmpty()` comprueba
-si no hay caracteres; `isBlank()` también acepta como vacío un texto hecho
-solo de espacios. `parseInt()` no acepta `3.5`; para ese valor se utiliza
-`parseDouble()`. Estos formularios esperan punto decimal, por ejemplo `15.50`.
+La lambda recibe información de una fila y devuelve la propiedad a mostrar.
+ObservableList permite a la tabla observar su colección. asObject adapta
+las propiedades numéricas a Integer o Double cuando la columna lo necesita.
 
-Si el texto no se puede convertir, se genera `NumberFormatException`.
-Después de convertir, hay que validar el valor:
+## DAO y JDBC
 
-```java
-if (capacidad <= 0) {
-    // El cero y los negativos no son capacidades válidas.
-}
-```
+Connection abre la comunicación con SQLite. PreparedStatement prepara SQL
+con parámetros ?, que se completan desde la posición 1. ResultSet contiene
+las filas devueltas; next avanza a la siguiente fila.
 
-`Double.isFinite(precio)` rechaza valores especiales como infinito o NaN.
-`||` significa O: la condición falla si cualquiera de sus partes es inválida.
-`&&` significa Y: ambas partes deben ser verdaderas. `==` compara valores
-primitivos; para el contenido de un String se usa `equals()`.
+executeUpdate ejecuta INSERT, UPDATE y DELETE y devuelve filas afectadas.
+executeQuery ejecuta SELECT y devuelve ResultSet.
+El try con recursos cierra la conexión y las sentencias al finalizar.
 
-## 9. El reporte del día
+Los modelos usan nombres como idpelicula; la base enviada usa id. El DAO
+hace la correspondencia con alias: SELECT id AS idpelicula.
+No se renombraron columnas ni se ejecutaron migraciones automáticamente.
 
-No es una tabla nueva de la base: es una consulta de las ventas existentes.
+En cada búsqueda y listado se crean los modelos con new y se asignan sus
+campos mediante setters. En Funcion se crean también Pelicula y Sala; en
+Venta se crea su Funcion. No se usa un método leerEntidad separado.
 
-```text
-reporte-view.fxml
-  → ReporteController.initialize()
-  → fecha de hoy en America/Lima
-  → ventaDao.listByDate(fecha)
-  → consulta en VentaDaoImpl
-  → List<Venta>
-  → tabla y resúmenes
-```
+## Enteros y decimales
 
-SQLite genera `CURRENT_TIMESTAMP` en UTC. El reporte convierte el inicio
-del día peruano y el inicio del siguiente día a UTC antes de consultar.
-Por ejemplo, el 19/10/2026 en Perú va desde 19/10 a las 05:00 UTC hasta
-20/10 a las 05:00 UTC, sin incluir ese último instante.
+TextField.getText devuelve String. Para duración y capacidad se usa
+Integer.parseInt; para el precio se usa Double.parseDouble.
+Los campos numéricos deben validarse después de convertirlos.
+DatePicker ya devuelve LocalDate, por lo que no necesita parseInt ni parseDouble.
 
-Al leer una venta se convierte el timestamp UTC a Perú y se separa en:
+## Reporte
 
-- `fechaVenta`: LocalDate, como las fechas de Reserva del hotel.
-- `horaVenta`: LocalTime, para mostrar la hora en la tabla del reporte.
+ReporteController pide al DAO listByDate(fecha), llena la tabla y suma el
+total de ventas, las entradas y la cantidad de operaciones. La columna
+final muestra la fecha de la función. Las ventas de una fecha se seleccionan
+por fechaVenta; no por la fecha de la función.
 
-El reporte suma `totalPagar`, suma `cantidadAsientos` y cuenta las ventas.
-Cantidad de ventas y cantidad de entradas no son lo mismo: una venta puede
-contener varias entradas. Los importes del resumen se acumulan con BigDecimal
-a partir de los valores guardados y se muestran con dos decimales.
+Los registros antiguos con fecha y hora se leen tomando su fecha. No se
+modifican ni se convierten de zona horaria. Las nuevas escrituras guardan
+solo la fecha. Un día sin ventas debe mostrar una lista vacía y totales cero.
 
-No hace falta una tabla Cliente para esta consulta. El nombre ya está
-guardado en cada venta. Crear fichas de clientes con DNI e historial sería
-otra función, que no se agregó artificialmente.
+## Tests
 
-## 10. Los tests y las relaciones
+Cada test de entidad tiene un menú con insertar, listar, buscar, actualizar
+y eliminar. Escribe las fechas como yyyy-MM-dd. Los menús trabajan sobre tu
+base real. Para registrar, crea primero películas y salas, después funciones
+y finalmente ventas. Para eliminar registros relacionados sigue el orden inverso.
 
-`main` es el punto desde el que Java empieza a ejecutar una clase. `static`
-permite llamarlo sin crear un objeto de la clase de prueba. `Scanner` lee
-la consola y `switch` selecciona qué operación ejecutar.
-
-Los tests son pruebas manuales, no pruebas JUnit. Cada menú contiene las
-cinco operaciones DAO. El test de reporte muestra hoy o recibe una fecha
-como argumento. El test de conexión solo verifica que puede abrir SQLite.
-
-Los datos escritos en estos menús se guardan en la base real. Para crear
-datos relacionados, sigue este orden:
-
-```text
-Película y Sala → Función → Venta → Reporte
-```
-
-Para eliminar datos relacionados, recorre el camino inverso. No se permite
-borrar una película o sala usada por una función ni una función con ventas.
-Estas comprobaciones están en los DAO, porque la base existente no declara
-claves foráneas. No impiden que alguien cambie las tablas directamente con
-otra herramienta SQL fuera del proyecto.
-
-El control de asientos disponibles y la detección de cruces de horarios
-siguen fuera de lo implementado. Consulta `COMPARACION_CON_HOTEL.md` para
-ver las correcciones verificadas y las diferencias intencionales.
+TestConexion solo verifica que puede abrir la base; no confirma por sí solo
+que sus tablas existan. TestReporte muestra las ventas de hoy y acepta otra
+fecha como argumento. Revisa los errores de consola antes de interpretar
+una lista vacía como ausencia de datos.

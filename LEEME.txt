@@ -1,55 +1,60 @@
-VERSION COMENTADA PARA ESTUDIAR
-Empieza por GUIA_PARA_ENTENDER_EL_PROYECTO.md.
-Todos los archivos Java y FXML incluyen comentarios.
-La logica del programa se conserva y la compilacion fue comprobada.
+PROYECTO DE CINE CORREGIDO - PATRON DEL HOTEL
 
-PROYECTO CINE - MISMA ESTRUCTURA DEL HOTEL, CON REPORTE REAL
-
-1. Extrae el ZIP en una carpeta nueva.
-2. Abre la carpeta Proyecto_final con IntelliJ y utiliza JDK 21.
-3. Si abres el pom.xml como Maven, recarga sus dependencias.
-4. Ejecuta TestConexion; luego puedes ejecutar los tests de cada entidad.
-5. Ejecuta HelloApplication para abrir la aplicación.
-
+ABRIR
+Extrae este ZIP en una carpeta nueva y abre Proyecto_final con IntelliJ.
+Usa JDK 21 y recarga Maven si el IDE lo solicita.
+Puedes ejecutar TestConexion o HelloApplication desde IntelliJ.
 También puedes abrir PROBAR_CONEXION.cmd o ABRIR_CINE.cmd.
-Incluye JavaFX y SQLite en lib para ejecutar sin depender de la importación Maven.
-Los scripts usan C:/Program Files/Java/jdk-21, que es tu instalación actual.
-La lista de SDK de IntelliJ pertenece al IDE: si no reconoce el SDK llamado 21,
-selecciona tu JDK 21 en Project Structure > Project SDK.
+Se incluyen JavaFX y SQLite en lib, configuraciones .run y configuración del módulo.
+
+TIPOS SOLICITADOS
+Funcion.horario es LocalDate.
+Venta.fechaVenta es LocalDate.
+Ambos contienen una fecha como 2026-10-22, sin hora.
+Se guardan con toString() y se recuperan con LocalDate.parse(), igual al hotel.
+No se utiliza LocalTime, ZoneId ni DateTimeFormatter.
+Los formularios tienen DatePicker para elegir cada fecha.
+En la interfaz, horario se muestra como "Fecha de función" para reflejar su contenido.
 
 BASE DE DATOS
-El proyecto usa directamente:
+La conexión conserva tu ruta:
 C:/poo/sqilte1U2/db/cine.db
-No necesitas moverla ni reemplazarla. No se modificó esa base.
-El ZIP no incluye otra base con datos de ejemplo.
+Tu base original no fue modificada y no necesitas sustituirla.
+Los registros antiguos que aún contienen fecha y hora se leen tomando la fecha.
+Las nuevas funciones y ventas se guardan como yyyy-MM-dd.
 
-REPORTE DEL DÍA
-Abre Reportes del Día en el menú.
-La fecha predeterminada es hoy en Perú. Puedes elegir otra fecha.
-El reporte muestra película, cliente, entradas, total y hora de cada venta.
-Calcula el dinero vendido, las entradas vendidas y la cantidad de ventas.
-Pulsa Actualizar después de registrar, editar o eliminar ventas.
-Las fechas se filtran por el día peruano y las horas se muestran en Perú.
+IMPORTANTE SOBRE LOS IDENTIFICADORES
+Se comprobó el archivo Cine.db recibido: sus cuatro tablas todavía tienen
+una columna primaria llamada id. Las consultas están adaptadas a ese archivo.
+En los modelos se conservan idpelicula, idsala, idfuncion e idventa.
+El DAO relaciona los nombres mediante alias SQL, por ejemplo id AS idpelicula.
+No se ejecutan renombrados de columnas ni cambios de esquema automáticamente.
+Si tienes otra copia con columnas renombradas, esta no es la base que se verificó.
 
-En la base revisada, las dos ventas existentes son del 19/10/2026:
-2 ventas, 7 entradas y S/ 56.00.
-Si consultas una fecha sin ventas, debe mostrar cero y una tabla vacía.
+ESTRUCTURA COMO EL HOTEL
+Se mantienen modelo, interfaces, implementacion, utils, controller y test.
+Los DAO crean los objetos dentro de searchById y listAll; no usan leerPelicula,
+leerSala, leerFuncion, leerVenta ni una constante compartida SELECT.
+Los controladores de tabla abren formularios modales y consultan isSaved().
+Los formularios validan y preparan los datos; el controlador de tabla llama al DAO.
 
-TESTS
-TestConexion: comprueba la conexión.
-TestPelicula, TestSala, TestFuncion y TestVenta: menús con insertar, listar,
-buscar por ID, actualizar y eliminar.
-Los datos que ingreses desde estos menús se guardan en tu base real.
-Antes de registrar funciones, crea películas y salas; antes de vender, crea funciones.
-Para eliminar registros relacionados, empieza por ventas y sigue con funciones.
+PROBAR
+TestPelicula, TestSala, TestFuncion y TestVenta tienen menús con las cinco operaciones.
+En los tests escribe las fechas como yyyy-MM-dd, por ejemplo 2026-10-22.
+TestReporte muestra hoy o acepta otra fecha en Program arguments, por ejemplo 2026-10-19.
+Las operaciones que hagas en estos tests trabajan sobre tu base real.
+El orden de registro es Película y Sala, después Función y finalmente Venta.
 
-TestReporte: muestra el reporte de hoy en consola.
-Para otra fecha, coloca 2026-10-19 en Program arguments de TestReporte en IntelliJ.
-No es necesario crear clientes para que el reporte funcione; se utiliza el nombre
-que ya guarda cada venta.
+REPORTE
+Filtra por fechaVenta, calcula total vendido, entradas y cantidad de ventas.
+La última columna muestra la fecha de la función (horario), no una hora de reloj.
+Puedes elegir otra fecha y pulsar Actualizar para refrescar los resultados.
+No necesitas crear clientes para este reporte: cada venta ya guarda su nombre.
 
-CAMBIOS Y VALIDACIÓN
-Consulta COMPARACION_CON_HOTEL.md para ver qué estaba mal, qué se corrigió,
-qué diferencias son intencionales y las pruebas realizadas.
-Se conservaron los paquetes y el patrón de tabla + formulario modal del hotel.
-El control de asientos disponibles y los cruces de horarios siguen pendientes.
+VALIDACIÓN
+Compilación completa Maven y compilación con dependencias locales: correctas.
+CRUD de las cuatro entidades y recorrido de los cuatro menús: correctos.
+Lectura de registros antiguos, fechas LocalDate y reporte: correctos.
+Carga de las vistas y uso de ambos calendarios: correctos.
+Las pruebas con escritura se hicieron en una copia aislada de cine.db.
+No se agregaron control de asientos disponibles ni detección de cruces de fechas.
