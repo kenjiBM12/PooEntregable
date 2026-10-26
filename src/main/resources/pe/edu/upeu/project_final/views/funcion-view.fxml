@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="10" alignment="CENTER" stylesheets="@style.css" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pe.edu.upeu.project_final.controller.FuncionController">
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <Label text="Programacion de Funciones" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #014074;"/>
+
+    <HBox spacing="10" alignment="CENTER">
+        <TextField fx:id="txtIdPelicula" promptText="ID Pelicula"/>
+        <TextField fx:id="txtIdSala" promptText="ID Sala"/>
+        <TextField fx:id="txtHorario" promptText="Horario (Ej: 18:30)"/>
+        <TextField fx:id="txtPrecio" promptText="Precio (S/.)"/>
+        <Button text="Programar" onAction="#guardar" styleClass="button-action-edit"/>
+    </HBox>
+
+    <TableView fx:id="tablaFunciones" prefHeight="350">
+        <columns>
+            <TableColumn fx:id="colId" text="ID" prefWidth="50"/>
+            <TableColumn fx:id="colPelicula" text="ID Pelicula" prefWidth="90"/>
+            <TableColumn fx:id="colSala" text="ID Sala" prefWidth="90"/>
+            <TableColumn fx:id="colHorario" text="Horario" prefWidth="120"/>
+            <TableColumn fx:id="colPrecio" text="Precio" prefWidth="90"/>
+        </columns>
+    </TableView>
+</VBox>

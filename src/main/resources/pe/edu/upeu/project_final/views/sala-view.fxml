@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="10" alignment="CENTER" stylesheets="@style.css" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pe.edu.upeu.project_final.controller.SalaController">
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <Label text="Gestion de Salas" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #014074;"/>
+
+    <HBox spacing="10" alignment="CENTER">
+        <TextField fx:id="txtNombre" promptText="Nombre"/>
+        <TextField fx:id="txtTipo" promptText="Tipo (2D, 3D, VIP)"/>
+        <TextField fx:id="txtCapacidad" promptText="Capacidad"/>
+        <Button text="Guardar" onAction="#guardar" styleClass="button-action-edit"/>
+    </HBox>
+
+    <TableView fx:id="tablaSalas" prefHeight="350">
+        <columns>
+            <TableColumn fx:id="colId" text="ID" prefWidth="50"/>
+            <TableColumn fx:id="colNombre" text="Nombre" prefWidth="180"/>
+            <TableColumn fx:id="colTipo" text="Tipo" prefWidth="120"/>
+            <TableColumn fx:id="colCapacidad" text="Capacidad" prefWidth="90"/>
+        </columns>
+    </TableView>
+</VBox>
