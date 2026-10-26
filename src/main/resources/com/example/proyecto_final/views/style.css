@@ -1,16 +1,21 @@
+
+
 .root {
     -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
 }
+
 
 .left-pane {
     -fx-background-color: #014074;
     -fx-alignment: center;
 }
 
+
 .right-pane {
     -fx-background-color: #F7F7F7;
     -fx-alignment: center-left;
 }
+
 
 .text-field {
     -fx-background-color: white;
@@ -25,7 +30,8 @@
     -fx-border-width: 2;
 }
 
-.button-login {
+
+.button-primary {
     -fx-background-color: #EFA30E;
     -fx-text-fill: white;
     -fx-font-weight: bold;
@@ -35,15 +41,17 @@
     -fx-padding: 10 30 10 30;
 }
 
-.button-login:hover {
+.button-primary:hover {
     -fx-background-color: #d48f0c;
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 5);
 }
+
 
 .sidebar {
     -fx-background-color: #014074;
     -fx-padding: 20 0 0 0;
 }
+
 
 .nav-button {
     -fx-background-color: transparent;
@@ -57,14 +65,16 @@
 }
 
 .nav-button:hover {
-    -fx-background-color: rgba(239, 163, 14, 0.1);
-    -fx-border-color: transparent transparent transparent #EFA30E;
+    -fx-background-color: rgba(239, 163, 14, 0.1); 
+    -fx-border-color: transparent transparent transparent #EFA30E; 
 }
+
 
 .header {
     -fx-background-color: white;
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 2);
 }
+
 
 .content-area {
     -fx-background-color: #F7F7F7;
@@ -72,16 +82,17 @@
 
 .table-view .column-header .label {
     -fx-alignment: CENTER_LEFT;
-    -fx-padding: 0 0 0 10;
+    -fx-padding: 0 0 0 10; 
 }
 
+
 .table-view .column-header {
-    -fx-background-color: #f4f4f4;
+    -fx-background-color: #f4f4f4; 
     -fx-border-color: #e0e0e0;
 }
 
 .table-view .column-header .label {
-    -fx-text-fill: #014074;
+    -fx-text-fill: #014074; 
     -fx-font-weight: bold;
 }
 

@@ -18,4 +18,5 @@ public interface IVentaDao {
     List<Venta> listAll();
 
     List<Venta> listByDate(LocalDate fecha);
+    boolean ValidateCapacidad(Venta v);
 }

@@ -1,90 +1,91 @@
 package com.example.proyecto_final.controller;
 
-import com.example.proyecto_final.modelo.*;
+import com.example.proyecto_final.modelo.Sala;
 import com.example.proyecto_final.utils.UtilAlerts;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 public class SalaFormController {
-    private final UtilAlerts utilAlerts = new UtilAlerts();
-    private Sala registro;
 
-    private boolean saved = false;
-
-    @FXML private Label lblTitulo;
-
-    @FXML private TextField txtNombre, txtTipo, txtCapacidad;
+    public static UtilAlerts utilAlerts = new UtilAlerts();
 
     @FXML
+    private Label lblTitulo;
 
-    public void initialize() {
+    @FXML
+    private TextField txtNombre, txtTipo, txtCapacidad;
 
-    }
+    private Sala sala;
+    private boolean saved = false;
 
     public boolean isSaved() {
         return saved;
     }
 
     public Sala getSala() {
-        return registro;
-    }
-
-    public void setSala(Sala value) {
-        registro = value;
-        saved = false;
-        lblTitulo.setText(value == null ? "Nuevo registro" : "Editar registro");
-        if (value != null) {
-            txtNombre.setText(value.getNombre());
-            txtTipo.setText(value.getTipo());
-            txtCapacidad.setText(String.valueOf(value.getCapacidad()));
-        }
+        return sala;
     }
 
     private boolean validate() {
-        if (txtNombre.getText().isBlank() || txtTipo.getText().isBlank()) {
-            return error("Complete nombre y tipo");
-        }
-        try {
-
-            if (Integer.parseInt(txtCapacidad.getText().trim()) <= 0) {
-                return error("La capacidad debe ser mayor que cero");
-            }
-        } catch (NumberFormatException e) {
-            return error("Ingrese una capacidad entera");
+        if (txtNombre.getText().isEmpty()
+                || txtTipo.getText().isEmpty()
+                || txtCapacidad.getText().isEmpty()) {
+            Alert alert = utilAlerts.mostrarAlerts(
+                    "",
+                    "Nombre, tipo y capacidad son obligatorios",
+                    "ERROR");
+            alert.show();
+            return false;
         }
         return true;
     }
 
-    @FXML
-
-    private void handleSave() {
-        if (!validate()) {
-            return;
-        }
-        if (registro == null) {
-            registro = new Sala();
-        }
-        registro.setNombre(txtNombre.getText().trim());
-        registro.setTipo(txtTipo.getText().trim());
-        registro.setCapacidad(Integer.parseInt(txtCapacidad.getText().trim()));
-        saved = true;
-        cerrar();
+    private void cerrar() {
+        Stage stage = (Stage) txtNombre.getScene().getWindow();
+        stage.close();
     }
 
     @FXML
-
     private void handleCancel() {
         cerrar();
     }
 
-    private void cerrar() {
-        Stage stage = (Stage) lblTitulo.getScene().getWindow();
-        stage.close();
+    @FXML
+    private void handleSave() {
+        if (validate()) {
+            try {
+                int capacidad = Integer.parseInt(txtCapacidad.getText());
+                if (sala == null) {
+                    sala = new Sala();
+                }
+                sala.setNombre(txtNombre.getText());
+                sala.setTipo(txtTipo.getText());
+                sala.setCapacidad(capacidad);
+                saved = true;
+                cerrar();
+            } catch (NumberFormatException e) {
+                Alert alert = utilAlerts.mostrarAlerts(
+                        "",
+                        "La capacidad debe ser un número entero",
+                        "ERROR");
+                alert.show();
+            }
+        }
     }
 
-    private boolean error(String mensaje) {
-        utilAlerts.mostrarAlerts("Datos incorrectos", mensaje, "WARNING").showAndWait();
-        return false;
+    public void setSala(Sala s) {
+        sala = s;
+        saved = false;
+        if (s != null) {
+            lblTitulo.setText("Editar sala");
+            txtNombre.setText(s.getNombre());
+            txtTipo.setText(s.getTipo());
+            txtCapacidad.setText(String.valueOf(s.getCapacidad()));
+        } else {
+            lblTitulo.setText("Nueva sala");
+        }
     }
 }

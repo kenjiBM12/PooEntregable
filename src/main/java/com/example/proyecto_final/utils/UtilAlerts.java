@@ -4,16 +4,21 @@ import javafx.scene.control.Alert;
 
 public class UtilAlerts {
 
-    public Alert mostrarAlerts(String titulo, String mensaje, String tipo) {
-        Alert alert = new Alert(Alert.AlertType.valueOf(tipo));
+    public static Alert mostrarAlerts(String titulo, String mensaje,String tipo){
+        Alert alert;
+        if (tipo.equals("WARNING")){
+            alert = new Alert(Alert.AlertType.WARNING);
+        } else if (tipo.equals("CONFIRMATION")) {
+            alert = new Alert(Alert.AlertType.CONFIRMATION);
+        }else{
+            alert = new Alert(Alert.AlertType.ERROR);
+        }
         alert.setTitle(titulo);
         alert.setHeaderText(null);
         alert.setContentText(mensaje);
         return alert;
     }
 
-    public static void mostrarAlerta(String titulo, String mensaje, Alert.AlertType tipo) {
-        Alert alert = new UtilAlerts().mostrarAlerts(titulo, mensaje, tipo.name());
-        alert.showAndWait();
-    }
+
+
 }

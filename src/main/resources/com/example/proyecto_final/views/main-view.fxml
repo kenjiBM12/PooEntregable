@@ -1,35 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.StackPane?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="650.0" prefWidth="950.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.proyecto_final.controller.MainController">
-
-    <left>
-        <VBox prefWidth="220.0" spacing="15.0" styleClass="sidebar" BorderPane.alignment="CENTER">
-            <padding>
-                <Insets top="30.0" bottom="20.0" left="15.0" right="15.0"/>
-            </padding>
+<BorderPane prefHeight="600.0" prefWidth="900.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.proyecto_final.controller.MainController">
+    <!--cabecera -->
+    <top>
+        <HBox alignment="CENTER_LEFT" prefHeight="70.0" styleClass="header" BorderPane.alignment="CENTER">
             <children>
-                <Label text="Sistema de Gestión Cine" style="-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;" />
-                <VBox spacing="8.0" style="-fx-padding: 20 0 0 0;">
-                    <Button mnemonicParsing="false" onAction="#showHome" prefWidth="190.0" styleClass="nav-button" text="Inicio" />
-                    <Button mnemonicParsing="false" onAction="#showClient" prefWidth="190.0" styleClass="nav-button" text="Peliculas" />
-                    <Button text="Salas" onAction="#showSalas" prefWidth="190" styleClass="nav-button"/>
-                    <Button text="Funciones" onAction="#showFunciones" prefWidth="190" styleClass="nav-button"/>
-                    <Button mnemonicParsing="false" onAction="#showVentas" prefWidth="190.0" styleClass="nav-button" text="Venta de Entradas" />
-                    <Button mnemonicParsing="false" onAction="#showReportes" prefWidth="190.0" styleClass="nav-button" text="Reportes del Día" />
-                </VBox>
+            <Label text="CINE" textFill="#014074">
+             <font><Font name="System Bold" size="24.0" /></font>
+                <HBox.margin><Insets left="20.0" /></HBox.margin>
+            </Label>
+            <Label text="Sistema de gestión de cine" textFill="#666666">
+                <HBox.margin><Insets left="10.0" /></HBox.margin>
+            </Label>
+            <Region HBox.hgrow="ALWAYS" />
+            <Label text="Bienvenido, Usuario" textFill="#014074">
+                <font><Font name="System Italic" size="14.0" /></font>
+                <HBox.margin><Insets right="20.0" /></HBox.margin>
+            </Label>
             </children>
-        </VBox>
-    </left>
+        </HBox>
+    </top>
+    <!--MENU IZQUIERDO -->
+   <left>
+    <VBox prefWidth="200.0" styleClass="sidebar" BorderPane.alignment="CENTER">
+        <children>
+            <Button maxWidth="-Infinity" onAction="#showHome"
+            mnemonicParsing="false" styleClass="nav-button" text="Inicio" />
+            <Button maxWidth="-Infinity" onAction="#showPeliculas"
+                    mnemonicParsing="false" styleClass="nav-button" text="Películas" />
+            <Button maxWidth="-Infinity" onAction="#showSalas"
+                    mnemonicParsing="false" styleClass="nav-button" text="Salas"/>
+            <Button maxWidth="-Infinity" onAction="#showFunciones"
+                    mnemonicParsing="false" styleClass="nav-button" text="Funciones"/>
+            <Button maxWidth="-Infinity" onAction="#showVentas"
+                    mnemonicParsing="false" styleClass="nav-button" text="Venta de entradas"/>
+            <Button maxWidth="-Infinity" onAction="#showReportes"
+                    mnemonicParsing="false" styleClass="nav-button" text="Reportes del día"/>
+        </children>
 
+    </VBox>
+   </left>
+    <!--area de contenido (body)-->
     <center>
-        <StackPane fx:id="contentArea" styleClass="content-area" BorderPane.alignment="CENTER" />
+        <VBox BorderPane.alignment="CENTER">
+            <StackPane fx:id="contentArea" styleClass="content-area" VBox.vgrow="ALWAYS">
+                <children>
+                    <Label text="Seleccione una opcion del menu"
+                           textFill="#999999" />
+                </children>
+            </StackPane>
+            <HBox alignment="CENTER" prefHeight="20.0">
+                <children>
+                    <Label text="Sistema de gestión de cine"
+                           textFill="#999999" />
+                </children>
+            </HBox>
+
+        </VBox>
+
+
     </center>
 
+
+
 </BorderPane>
+

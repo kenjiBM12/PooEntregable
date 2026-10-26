@@ -7,95 +7,78 @@ import com.example.proyecto_final.utils.UtilAlerts;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
-import java.math.BigDecimal;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import java.time.LocalDate;
 
-import java.util.Locale;
-
 public class ReporteController {
-
+    private final UtilAlerts utilAlert = new UtilAlerts();
     private final IVentaDao ventaDao = new VentaDaoImpl();
-    private final UtilAlerts utilAlerts = new UtilAlerts();
     private ObservableList<Venta> listaVentas;
-
-    @FXML private DatePicker dpFecha;
-
-    @FXML private Label lblTotal, lblEntradas, lblOperaciones, lblEstado;
-
-    @FXML private TableView<Venta> tablaReportes;
-
-    @FXML private TableColumn<Venta, Integer> colIdVenta, colCantidad;
-
-    @FXML private TableColumn<Venta, String> colPelicula, colCliente;
-    @FXML private TableColumn<Venta, LocalDate> colHorario;
-
-    @FXML private TableColumn<Venta, Double> colTotal;
+    @FXML
+    private TextField txtFecha;
+    @FXML
+    private Label lblTotal, lblEntradas, lblOperaciones, lblEstado;
+    @FXML
+    private TableView<Venta> tableReporte;
+    @FXML
+    private TableColumn<Venta, Integer> ColId, ColCantidad;
+    @FXML
+    private TableColumn<Venta, String> ColPelicula, ColCliente, ColHorario;
+    @FXML
+    private TableColumn<Venta, Double> ColTotal;
 
     @FXML
-
     public void initialize() {
-        tablaReportes.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-
-        colIdVenta.setCellValueFactory(cellData -> cellData.getValue().idventaProperty().asObject());
-        colPelicula.setCellValueFactory(cellData -> cellData.getValue().getFuncion().getPelicula().tituloProperty());
-        colCliente.setCellValueFactory(cellData -> cellData.getValue().clienteProperty());
-        colCantidad.setCellValueFactory(cellData -> cellData.getValue().cantidadAsientosProperty().asObject());
-        colTotal.setCellValueFactory(cellData -> cellData.getValue().totalPagarProperty().asObject());
-
-        colHorario.setCellValueFactory(cellData -> cellData.getValue().getFuncion().horarioProperty());
-        colTotal.setCellFactory(column -> new TableCell<>() {
-            @Override
-
-            protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? null : String.format(Locale.US, "%.2f", item));
-            }
-        });
-        dpFecha.setValue(LocalDate.now());
-        dpFecha.setOnAction(event -> cargarDatos());
-        cargarDatos();
-    }
-
-    @FXML
-
-    private void handleActualizar() {
+        ColId.setCellValueFactory(cellData ->
+                cellData.getValue().idventaProperty().asObject());
+        ColPelicula.setCellValueFactory(cellData ->
+                cellData.getValue().getFuncion().getPelicula().tituloProperty());
+        ColCliente.setCellValueFactory(cellData ->
+                cellData.getValue().clienteProperty());
+        ColCantidad.setCellValueFactory(cellData ->
+                cellData.getValue().cantidadAsientosProperty().asObject());
+        ColTotal.setCellValueFactory(cellData ->
+                cellData.getValue().totalPagarProperty().asObject());
+        ColHorario.setCellValueFactory(cellData ->
+                cellData.getValue().getFuncion().horarioProperty());
+        txtFecha.setText(LocalDate.now().toString());
         cargarDatos();
     }
 
     private void cargarDatos() {
-        if (dpFecha.getValue() == null) {
-            mostrarSinDatos("Seleccione una fecha");
-            return;
-        }
         try {
-            listaVentas = FXCollections.observableArrayList(ventaDao.listByDate(dpFecha.getValue()));
-            tablaReportes.setItems(listaVentas);
-
-            BigDecimal total = BigDecimal.ZERO;
-            long entradas = 0;
-            for (Venta v : listaVentas) {
-                total = total.add(BigDecimal.valueOf(v.getTotalPagar()));
-                entradas += v.getCantidadAsientos();
+            LocalDate fecha = LocalDate.parse(txtFecha.getText());
+            listaVentas = FXCollections.observableArrayList(ventaDao.listByDate(fecha));
+            tableReporte.setItems(listaVentas);
+            double total = 0;
+            int entradas = 0;
+            for (Venta venta : listaVentas) {
+                total = total + venta.getTotalPagar();
+                entradas = entradas + venta.getCantidadAsientos();
             }
-            lblTotal.setText(String.format(Locale.US, "Total vendido: S/ %.2f", total));
+            lblTotal.setText("Total vendido: S/ " + total);
             lblEntradas.setText("Entradas vendidas: " + entradas);
             lblOperaciones.setText("Ventas registradas: " + listaVentas.size());
-            lblEstado.setText("Fecha: " + dpFecha.getValue());
-            tablaReportes.setPlaceholder(new Label("No hay ventas registradas para esta fecha"));
-        } catch (RuntimeException e) {
-            mostrarSinDatos("No se pudo cargar el reporte");
-            e.printStackTrace();
-            utilAlerts.mostrarAlerts("Error", e.getMessage(), "ERROR").showAndWait();
+            lblEstado.setText("Fecha: " + fecha);
+        } catch (Exception e) {
+            listaVentas = FXCollections.observableArrayList();
+            tableReporte.setItems(listaVentas);
+            lblTotal.setText("Total vendido: S/ 0");
+            lblEntradas.setText("Entradas vendidas: 0");
+            lblOperaciones.setText("Ventas registradas: 0");
+            lblEstado.setText("Ingrese una fecha con formato aaaa-mm-dd");
+            Alert alert = utilAlert.mostrarAlerts("Error",
+                    "Ingrese una fecha con formato aaaa-mm-dd", "ERROR");
+            alert.show();
         }
     }
 
-    private void mostrarSinDatos(String mensaje) {
-        tablaReportes.setItems(FXCollections.observableArrayList());
-        tablaReportes.setPlaceholder(new Label(mensaje));
-        lblTotal.setText("Total vendido: —");
-        lblEntradas.setText("Entradas vendidas: —");
-        lblOperaciones.setText("Ventas registradas: —");
-        lblEstado.setText(mensaje);
+    @FXML
+    private void handleActualizar() {
+        cargarDatos();
     }
 }

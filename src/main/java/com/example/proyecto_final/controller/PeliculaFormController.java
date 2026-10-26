@@ -1,93 +1,94 @@
 package com.example.proyecto_final.controller;
 
-import com.example.proyecto_final.modelo.*;
+import com.example.proyecto_final.modelo.Pelicula;
 import com.example.proyecto_final.utils.UtilAlerts;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 public class PeliculaFormController {
-    private final UtilAlerts utilAlerts = new UtilAlerts();
-    private Pelicula registro;
 
-    private boolean saved = false;
-
-    @FXML private Label lblTitulo;
-
-    @FXML private TextField txtTitulo, txtGenero, txtDuracion, txtClasificacion;
+    public static UtilAlerts utilAlerts = new UtilAlerts();
 
     @FXML
+    private Label lblTitulo;
 
-    public void initialize() {
+    @FXML
+    private TextField txtTitulo, txtGenero, txtDuracion, txtClasificacion;
 
-    }
+    private Pelicula pelicula;
+    private boolean saved = false;
 
     public boolean isSaved() {
         return saved;
     }
 
     public Pelicula getPelicula() {
-        return registro;
-    }
-
-    public void setPelicula(Pelicula value) {
-        registro = value;
-        saved = false;
-        lblTitulo.setText(value == null ? "Nuevo registro" : "Editar registro");
-        if (value != null) {
-            txtTitulo.setText(value.getTitulo());
-            txtGenero.setText(value.getGenero());
-            txtDuracion.setText(String.valueOf(value.getDuracion()));
-            txtClasificacion.setText(value.getClasificacion());
-        }
+        return pelicula;
     }
 
     private boolean validate() {
-        if (txtTitulo.getText().isBlank() || txtGenero.getText().isBlank()
-                || txtClasificacion.getText().isBlank()) {
-            return error("Complete título, género y clasificación");
-        }
-        try {
-
-            if (Integer.parseInt(txtDuracion.getText().trim()) <= 0) {
-                return error("La duración debe ser mayor que cero");
-            }
-        } catch (NumberFormatException e) {
-            return error("Ingrese una duración entera en minutos");
+        if (txtTitulo.getText().isEmpty()
+                || txtGenero.getText().isEmpty()
+                || txtDuracion.getText().isEmpty()
+                || txtClasificacion.getText().isEmpty()) {
+            Alert alert = utilAlerts.mostrarAlerts(
+                    "",
+                    "Título, género, duración y clasificación son obligatorios",
+                    "ERROR");
+            alert.show();
+            return false;
         }
         return true;
     }
 
-    @FXML
-
-    private void handleSave() {
-        if (!validate()) {
-            return;
-        }
-        if (registro == null) {
-            registro = new Pelicula();
-        }
-        registro.setTitulo(txtTitulo.getText().trim());
-        registro.setGenero(txtGenero.getText().trim());
-        registro.setDuracion(Integer.parseInt(txtDuracion.getText().trim()));
-        registro.setClasificacion(txtClasificacion.getText().trim());
-        saved = true;
-        cerrar();
+    private void cerrar() {
+        Stage stage = (Stage) txtTitulo.getScene().getWindow();
+        stage.close();
     }
 
     @FXML
-
     private void handleCancel() {
         cerrar();
     }
 
-    private void cerrar() {
-        Stage stage = (Stage) lblTitulo.getScene().getWindow();
-        stage.close();
+    @FXML
+    private void handleSave() {
+        if (validate()) {
+            try {
+                int duracion = Integer.parseInt(txtDuracion.getText());
+                if (pelicula == null) {
+                    pelicula = new Pelicula();
+                }
+                pelicula.setTitulo(txtTitulo.getText());
+                pelicula.setGenero(txtGenero.getText());
+                pelicula.setDuracion(duracion);
+                pelicula.setClasificacion(txtClasificacion.getText());
+                saved = true;
+                cerrar();
+            } catch (NumberFormatException e) {
+                Alert alert = utilAlerts.mostrarAlerts(
+                        "",
+                        "La duración debe ser un número entero en minutos",
+                        "ERROR");
+                alert.show();
+            }
+        }
     }
 
-    private boolean error(String mensaje) {
-        utilAlerts.mostrarAlerts("Datos incorrectos", mensaje, "WARNING").showAndWait();
-        return false;
+    public void setPelicula(Pelicula p) {
+        pelicula = p;
+        saved = false;
+        if (p != null) {
+            lblTitulo.setText("Editar película");
+            txtTitulo.setText(p.getTitulo());
+            txtGenero.setText(p.getGenero());
+            txtDuracion.setText(String.valueOf(p.getDuracion()));
+            txtClasificacion.setText(p.getClasificacion());
+        } else {
+            lblTitulo.setText("Nueva película");
+        }
     }
 }

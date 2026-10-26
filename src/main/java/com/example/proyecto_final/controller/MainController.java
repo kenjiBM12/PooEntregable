@@ -26,7 +26,7 @@ public class MainController {
 
     @FXML
 
-    private void showClient() {
+    private void showPeliculas() {
         loadView("pelicula-view.fxml");
     }
 
@@ -56,7 +56,8 @@ public class MainController {
 
     private void loadView(String fxml) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/proyecto_final/views/" + fxml));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource
+                    ("/com/example/proyecto_final/views/" + fxml));
             Parent view = loader.load();
             contentArea.getChildren().setAll(view);
         } catch (IOException e) {

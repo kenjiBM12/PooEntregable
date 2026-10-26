@@ -1,10 +1,6 @@
+
 package com.example.proyecto_final.controller;
 
-import com.example.proyecto_final.HelloApplication;
-import com.example.proyecto_final.implementacion.SalaDaoImpl;
-import com.example.proyecto_final.interfaces.ISalaDao;
-import com.example.proyecto_final.modelo.Sala;
-import com.example.proyecto_final.utils.UtilAlerts;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -14,135 +10,202 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import java.io.IOException;
+
+import com.example.proyecto_final.HelloApplication;
+import com.example.proyecto_final.implementacion.SalaDaoImpl;
+import com.example.proyecto_final.interfaces.ISalaDao;
+import com.example.proyecto_final.modelo.Sala;
+import com.example.proyecto_final.utils.UtilAlerts;
+
 import java.util.Optional;
 
 public class SalaController {
-    private final UtilAlerts utilAlerts = new UtilAlerts();
 
-    private final ISalaDao dao = new SalaDaoImpl();
-    private ObservableList<Sala> lista;
-
-    @FXML private TableView<Sala> tabla;
-
-    @FXML private TableColumn<Sala, Number> colNumero;
-
-    @FXML private TableColumn<Sala, Integer> colId;
-
-    @FXML private TableColumn<Sala, String> colNombre;
-
-    @FXML private TableColumn<Sala, String> colTipo;
-
-    @FXML private TableColumn<Sala, Integer> colCapacidad;
+    private final UtilAlerts utilAlert = new UtilAlerts();
 
     @FXML
+    private TableView<Sala> tableSala;
 
+    @FXML
+    private TableColumn<Sala, Number> ColNum;
+
+    @FXML
+    private TableColumn<Sala, Integer> ColId;
+
+    @FXML
+    private TableColumn<Sala, String> ColNombre;
+
+    @FXML
+    private TableColumn<Sala, String> ColTipo;
+
+    @FXML
+    private TableColumn<Sala, Integer> ColCapacidad;
+
+    private final ISalaDao salaDao = new SalaDaoImpl();
+    private ObservableList<Sala> listaSala;
+
+    @FXML
     public void initialize() {
-        colNumero.setCellFactory(column -> new TableCell<>() {
-            @Override
+        ColNum.setCellFactory(colum ->
+                new TableCell<>(){
+                    @Override
+                    protected void updateItem(Number item, boolean empty){
+                        super.updateItem(item,empty);
+                        if (empty){
+                            setText(null);
+                        }else{
+                            setText(String.valueOf(getIndex() +1));
+                        }
+                    }
+                });
 
-            protected void updateItem(Number item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty ? null : String.valueOf(getIndex() + 1));
-            }
-        });
-
-        colId.setCellValueFactory(cellData ->
-
+        ColId.setCellValueFactory(cellData ->
                 cellData.getValue().idsalaProperty().asObject());
-        colNombre.setCellValueFactory(cellData ->
+        ColNombre.setCellValueFactory(cellData ->
                 cellData.getValue().nombreProperty());
-        colTipo.setCellValueFactory(cellData ->
+        ColTipo.setCellValueFactory(cellData ->
                 cellData.getValue().tipoProperty());
-        colCapacidad.setCellValueFactory(cellData ->
+        ColCapacidad.setCellValueFactory(cellData ->
                 cellData.getValue().capacidadProperty().asObject());
+        //llamar al metodo
         cargarDatos();
     }
 
     private void cargarDatos() {
+        listaSala = FXCollections.observableArrayList(
+                salaDao.listAll());
 
-        lista = FXCollections.observableArrayList(dao.listAll());
-        tabla.setItems(lista);
+        tableSala.setItems(listaSala);
     }
 
     @FXML
+    private void handleDelete() {
 
+        Sala selectId =
+                tableSala.getSelectionModel().getSelectedItem();
+
+        if (selectId != null) {
+
+            Alert confirm = utilAlert.mostrarAlerts(
+                    "Confirmar eliminacion",
+                    "Estas seguro de eliminar la sala: "
+                            + selectId.getNombre() + "?",
+                    "CONFIRMATION");
+
+            Optional<ButtonType> result = confirm.showAndWait();
+
+            if (result.isPresent() && result.get() == ButtonType.OK) {
+                if (salaDao.delete(selectId)) {
+                    listaSala.remove(selectId);
+                }
+            }
+        } else {
+            Alert warning = utilAlert.mostrarAlerts(
+                    "Seleccion requerida",
+                    "Seleccione una sala para eliminar",
+                    "WARNING");
+
+            warning.showAndWait();
+        }
+    }
+    @FXML
     private void handleNew() {
         showForm(null);
     }
 
     @FXML
-
     private void handleEdit() {
+        Sala seleccionado =
+                tableSala.getSelectionModel().getSelectedItem();
 
-        Sala seleccionado = tabla.getSelectionModel().getSelectedItem();
-        if (seleccionado == null) {
-            utilAlerts.mostrarAlerts("Selección requerida",
-                    "Seleccione un registro para editar", "WARNING").showAndWait();
-            return;
-        }
-        Sala completo = dao.searchById(seleccionado.getIdsala());
-        if (completo == null) {
-            utilAlerts.mostrarAlerts("Error",
-                    "No se pudo recuperar el registro", "ERROR").showAndWait();
-            return;
-        }
-        showForm(completo);
-    }
+        if (seleccionado != null) {
 
-    @FXML
+            Sala registroCompleto = salaDao.searchById(
+                    seleccionado.getIdsala());
 
-    private void handleDelete() {
-        Sala seleccionado = tabla.getSelectionModel().getSelectedItem();
-        if (seleccionado == null) {
-            utilAlerts.mostrarAlerts("Selección requerida",
-                    "Seleccione un registro para eliminar", "WARNING").showAndWait();
-            return;
-        }
-        Alert confirm = utilAlerts.mostrarAlerts("Confirmar eliminación",
-                "¿Eliminar el registro " + seleccionado.getIdsala() + "?", "CONFIRMATION");
+            showForm(registroCompleto);
 
-        Optional<ButtonType> respuesta = confirm.showAndWait();
-        if (respuesta.isPresent() && respuesta.get() == ButtonType.OK) {
-            if (dao.delete(seleccionado)) {
-                cargarDatos();
-            } else {
-                utilAlerts.mostrarAlerts("Error",
-                        "No se pudo eliminar. Revise las relaciones y la consola",
-                        "ERROR").showAndWait();
-            }
+        } else {
+            Alert alert = utilAlert.mostrarAlerts(
+                    "Seleccion requerida",
+                    "",
+                    "CONFIRMATION");
+
+            alert.show();
         }
     }
 
-    private void showForm(Sala registro) {
+    private void showForm(Sala s) {
+
         try {
-            FXMLLoader loader = new FXMLLoader(HelloApplication.class.getResource(
-                    "/com/example/proyecto_final/views/sala-form.fxml"));
+            FXMLLoader loader = new FXMLLoader(
+                    HelloApplication.class.getResource(
+                            "/com/example/proyecto_final/views/sala-form.fxml"));
+
             Parent root = loader.load();
+
             SalaFormController controller = loader.getController();
-            controller.setSala(registro);
+
+            controller.setSala(s);
 
             Stage stage = new Stage();
-            stage.setTitle(registro == null ? "Nuevo registro" : "Editar registro");
-            stage.initOwner(tabla.getScene().getWindow());
+
+            stage.setTitle(s == null ?
+                    "Nueva Sala" :
+                    "Editar Sala");
+
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setScene(new Scene(root));
-
             stage.showAndWait();
 
             if (controller.isSaved()) {
-                Sala procesado = controller.getSala();
-                boolean resultado = registro == null ? dao.insert(procesado) : dao.update(procesado);
-                utilAlerts.mostrarAlerts(resultado ? "Registro" : "Error",
-                        resultado ? "Operación realizada correctamente" :
-                                "No se pudo guardar. Revise la consola",
-                        resultado ? "INFORMATION" : "ERROR").showAndWait();
+
+                Sala salaProcesada = controller.getSala();
+
+                if (s == null) {
+
+                    boolean result = salaDao.insert(salaProcesada);
+
+                    if (result) {
+                        Alert alert = utilAlert.mostrarAlerts(
+                                "Success",
+                                "Registro satisfactorio!!!",
+                                "CONFIRMATION");
+                        alert.show();
+
+                    } else {
+                        Alert alert = utilAlert.mostrarAlerts(
+                                "Error",
+                                "Error al insertar!!!",
+                                "ERROR");
+                        alert.show();
+                    }
+
+                } else {
+
+                    boolean result = salaDao.update(salaProcesada);
+
+                    if (result) {
+                        Alert alert = utilAlert.mostrarAlerts(
+                                "Update",
+                                "Registro actualizado!!!",
+                                "WARNING");
+                        alert.show();
+
+                    } else {
+                        Alert alert = utilAlert.mostrarAlerts(
+                                "Error",
+                                "Error al actualizar!!!",
+                                "ERROR");
+                        alert.show();
+                    }
+                }
+
                 cargarDatos();
             }
-        } catch (IOException e) {
+
+        } catch (Exception e) {
             e.printStackTrace();
-            utilAlerts.mostrarAlerts("Error",
-                    "No se pudo abrir el formulario", "ERROR").showAndWait();
         }
     }
 }

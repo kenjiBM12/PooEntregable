@@ -1,7 +1,6 @@
 package com.example.proyecto_final.modelo;
 
 import javafx.beans.property.*;
-import java.time.LocalDate;
 
 public class Funcion {
 
@@ -14,8 +13,8 @@ public class Funcion {
     private final ObjectProperty<Sala> sala =
             new SimpleObjectProperty<>();
 
-    private final ObjectProperty<LocalDate> horario =
-            new SimpleObjectProperty<>();
+    private final StringProperty horario =
+            new SimpleStringProperty();
 
     private final DoubleProperty precio =
             new SimpleDoubleProperty();
@@ -23,14 +22,14 @@ public class Funcion {
     public Funcion() {
     }
 
-public Funcion(int idfuncion, Pelicula pelicula, Sala sala,
-               LocalDate horario, double precio){
+    public Funcion(int idfuncion, Pelicula pelicula, Sala sala,
+                   String horario, double precio) {
         setIdfuncion(idfuncion);
         setPelicula(pelicula);
         setSala(sala);
         setHorario(horario);
         setPrecio(precio);
-}
+    }
 
     public final int getIdfuncion() {
         return idfuncion.get();
@@ -68,15 +67,15 @@ public Funcion(int idfuncion, Pelicula pelicula, Sala sala,
         return sala;
     }
 
-    public final LocalDate getHorario() {
+    public final String getHorario() {
         return horario.get();
     }
 
-    public final void setHorario(LocalDate value) {
+    public final void setHorario(String value) {
         horario.set(value);
     }
 
-    public final ObjectProperty<LocalDate> horarioProperty() {
+    public final StringProperty horarioProperty() {
         return horario;
     }
 
@@ -91,4 +90,5 @@ public Funcion(int idfuncion, Pelicula pelicula, Sala sala,
     public final DoubleProperty precioProperty() {
         return precio;
     }
+
 }

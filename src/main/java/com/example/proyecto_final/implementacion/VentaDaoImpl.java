@@ -1,41 +1,56 @@
 package com.example.proyecto_final.implementacion;
 
 import com.example.proyecto_final.interfaces.IVentaDao;
-import com.example.proyecto_final.modelo.*;
+import com.example.proyecto_final.modelo.Venta;
+import com.example.proyecto_final.modelo.Funcion;
+import com.example.proyecto_final.modelo.Pelicula;
+import com.example.proyecto_final.modelo.Sala;
 import com.example.proyecto_final.utils.ConexionDB;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class VentaDaoImpl implements IVentaDao {
-
     @Override
     public boolean insert(Venta v) {
         boolean flag = false;
-        if (v == null || v.getFuncion() == null || v.getCliente() == null || v.getCliente().isBlank() || v.getCantidadAsientos() <= 0 || !Double.isFinite(v.getTotalPagar()) || v.getTotalPagar() <= 0) {
-            System.out.println("Datos de venta incorrectos");
+        if (v == null || v.getFuncion() == null || v.getCliente() == null
+                || v.getCliente().isEmpty() || v.getCantidadAsientos() <= 0) {
             return flag;
         }
-
+        Funcion funcion = new FuncionDaoImpl().searchById(v.getFuncion().getIdfuncion());
+        if (funcion == null) {
+            return flag;
+        }
+        double total = funcion.getPrecio() * v.getCantidadAsientos();
+        if (!(total > 0) || total > Double.MAX_VALUE) {
+            return flag;
+        }
+        Venta nueva = new Venta();
+        nueva.setFuncion(funcion);
+        nueva.setCantidadAsientos(v.getCantidadAsientos());
+        if (!ValidateCapacidad(nueva)) {
+            return flag;
+        }
         if (v.getFechaVenta() == null) {
             v.setFechaVenta(LocalDate.now());
         }
-        String query = "INSERT INTO venta (id_funcion, cliente, cantidad_asientos, total_pagar, fecha_venta) SELECT ?, ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM funcion f, pelicula p, sala s WHERE f.id_pelicula=p.id AND f.id_sala=s.id AND f.id=?)";
-
-        try (Connection cn = ConexionDB.getConexion();
+        v.setTotalPagar(total);
+        String query = "INSERT INTO venta(id_funcion,cliente,cantidad_asientos,total_pagar,fecha_venta) VALUES(?,?,?,?,?)";
+        try (Connection cn = ConexionDB.getConnection();
              PreparedStatement st = cn.prepareStatement(query)) {
-            st.setInt(1, v.getFuncion().getIdfuncion());
+            st.setInt(1, funcion.getIdfuncion());
             st.setString(2, v.getCliente());
             st.setInt(3, v.getCantidadAsientos());
             st.setDouble(4, v.getTotalPagar());
             st.setString(5, v.getFechaVenta().toString());
-            st.setInt(6, v.getFuncion().getIdfuncion());
-
             flag = st.executeUpdate() == 1;
         } catch (SQLException e) {
-            System.out.println("Error en insert de venta: " + e.getMessage());
+            System.out.println("Error al insertar venta: " + e.getMessage());
         }
         return flag;
     }
@@ -43,89 +58,108 @@ public class VentaDaoImpl implements IVentaDao {
     @Override
     public boolean update(Venta v) {
         boolean flag = false;
-        if (v == null || v.getFuncion() == null || v.getCliente() == null || v.getCliente().isBlank() || v.getCantidadAsientos() <= 0 || !Double.isFinite(v.getTotalPagar()) || v.getTotalPagar() <= 0) {
-            System.out.println("Datos de venta incorrectos");
+        if (v == null || v.getFuncion() == null || v.getCliente() == null
+                || v.getCliente().isEmpty() || v.getCantidadAsientos() <= 0
+                || v.getFechaVenta() == null) {
             return flag;
         }
-
-        if (v.getFechaVenta() == null) {
-            return false;
+        Venta anterior = searchById(v.getIdventa());
+        Funcion funcion = new FuncionDaoImpl().searchById(v.getFuncion().getIdfuncion());
+        if (anterior == null || funcion == null || !ValidateCapacidad(v)) {
+            return flag;
         }
-        String query = "UPDATE venta SET id_funcion=?, cliente=?, cantidad_asientos=?, total_pagar=?, fecha_venta=? WHERE id=? AND EXISTS (SELECT 1 FROM funcion f, pelicula p, sala s WHERE f.id_pelicula=p.id AND f.id_sala=s.id AND f.id=?)";
-
-        try (Connection cn = ConexionDB.getConexion();
+        double total;
+        if (anterior.getFuncion().getIdfuncion() == funcion.getIdfuncion()) {
+            if (anterior.getCantidadAsientos() <= 0) {
+                return flag;
+            }
+            if (anterior.getCantidadAsientos() == v.getCantidadAsientos()) {
+                total = anterior.getTotalPagar();
+            } else {
+                total = anterior.getTotalPagar() / anterior.getCantidadAsientos()
+                        * v.getCantidadAsientos();
+            }
+        } else {
+            total = funcion.getPrecio() * v.getCantidadAsientos();
+        }
+        if (!(total > 0) || total > Double.MAX_VALUE) {
+            return flag;
+        }
+        v.setTotalPagar(total);
+        String query = "UPDATE venta SET id_funcion=?,cliente=?,cantidad_asientos=?,total_pagar=?,fecha_venta=? WHERE idventa=?";
+        try (Connection cn = ConexionDB.getConnection();
              PreparedStatement st = cn.prepareStatement(query)) {
-            st.setInt(1, v.getFuncion().getIdfuncion());
+            st.setInt(1, funcion.getIdfuncion());
             st.setString(2, v.getCliente());
             st.setInt(3, v.getCantidadAsientos());
             st.setDouble(4, v.getTotalPagar());
             st.setString(5, v.getFechaVenta().toString());
             st.setInt(6, v.getIdventa());
-            st.setInt(7, v.getFuncion().getIdfuncion());
-
             flag = st.executeUpdate() == 1;
         } catch (SQLException e) {
-            System.out.println("Error en update de venta: " + e.getMessage());
+            System.out.println("Error al actualizar venta: " + e.getMessage());
         }
         return flag;
     }
 
     @Override
     public Venta searchById(int id) {
-        Venta registro = null;
-        String query = "SELECT v.id AS idventa, v.cliente, v.cantidad_asientos, v.total_pagar, "
-                + "substr(v.fecha_venta,1,10) AS fecha_venta, "
-                + "f.id AS idfuncion, substr(f.horario,1,10) AS fecha_funcion, f.precio, "
-                + "p.id AS idpelicula, p.titulo, p.genero, p.duracion, p.clasificacion, "
-                + "s.id AS idsala, s.nombre AS sala_nombre, s.tipo AS sala_tipo, s.capacidad "
-                + "FROM venta v, funcion f, pelicula p, sala s "
-                + "WHERE v.id_funcion=f.id AND f.id_pelicula=p.id AND f.id_sala=s.id AND v.id=?";
-        try (Connection cn = ConexionDB.getConexion();
+        Venta venta = null;
+        String query = "SELECT v.idventa,v.cliente,v.cantidad_asientos,v.total_pagar,v.fecha_venta,"
+                + "f.id AS idfuncion,f.horario,f.precio,"
+                + "p.idpelicula,p.titulo,p.genero,p.duracion,p.clasificacion,"
+                + "s.idsala,s.nombre AS sala_nombre,s.tipo AS sala_tipo,s.capacidad"
+                + " FROM venta v,funcion f,pelicula p,sala s"
+                + " WHERE v.id_funcion=f.id AND f.id_pelicula=p.idpelicula"
+                + " AND f.id_sala=s.idsala AND v.idventa=?";
+        try (Connection cn = ConexionDB.getConnection();
              PreparedStatement st = cn.prepareStatement(query)) {
             st.setInt(1, id);
             try (ResultSet rs = st.executeQuery()) {
                 if (rs.next()) {
-                    Pelicula p = new Pelicula();
-                    p.setIdpelicula(rs.getInt("idpelicula"));
-                    p.setTitulo(rs.getString("titulo"));
-                    p.setGenero(rs.getString("genero"));
-                    p.setDuracion(rs.getInt("duracion"));
-                    p.setClasificacion(rs.getString("clasificacion"));
+                    Pelicula pelicula = new Pelicula();
+                    pelicula.setIdpelicula(rs.getInt("idpelicula"));
+                    pelicula.setTitulo(rs.getString("titulo"));
+                    pelicula.setGenero(rs.getString("genero"));
+                    pelicula.setDuracion(rs.getInt("duracion"));
+                    pelicula.setClasificacion(rs.getString("clasificacion"));
 
-                    Sala s = new Sala();
-                    s.setIdsala(rs.getInt("idsala"));
-                    s.setNombre(rs.getString("sala_nombre"));
-                    s.setTipo(rs.getString("sala_tipo"));
-                    s.setCapacidad(rs.getInt("capacidad"));
+                    Sala sala = new Sala();
+                    sala.setIdsala(rs.getInt("idsala"));
+                    sala.setNombre(rs.getString("sala_nombre"));
+                    sala.setTipo(rs.getString("sala_tipo"));
+                    sala.setCapacidad(rs.getInt("capacidad"));
 
-                    Funcion f = new Funcion();
-                    f.setIdfuncion(rs.getInt("idfuncion"));
-                    f.setHorario(LocalDate.parse(rs.getString("fecha_funcion")));
-                    f.setPrecio(rs.getDouble("precio"));
-                    f.setPelicula(p);
-                    f.setSala(s);
+                    Funcion funcion = new Funcion();
+                    funcion.setIdfuncion(rs.getInt("idfuncion"));
+                    funcion.setHorario(rs.getString("horario"));
+                    funcion.setPrecio(rs.getDouble("precio"));
+                    funcion.setPelicula(pelicula);
+                    funcion.setSala(sala);
 
-                    registro = new Venta();
-                    registro.setIdventa(rs.getInt("idventa"));
-                    registro.setCliente(rs.getString("cliente"));
-                    registro.setCantidadAsientos(rs.getInt("cantidad_asientos"));
-                    registro.setTotalPagar(rs.getDouble("total_pagar"));
-                    registro.setFechaVenta(LocalDate.parse(rs.getString("fecha_venta")));
-                    registro.setFuncion(f);
+                    venta = new Venta();
+                    venta.setIdventa(rs.getInt("idventa"));
+                    venta.setCliente(rs.getString("cliente"));
+                    venta.setCantidadAsientos(rs.getInt("cantidad_asientos"));
+                    venta.setTotalPagar(rs.getDouble("total_pagar"));
+                    venta.setFechaVenta(LocalDate.parse(rs.getString("fecha_venta").substring(0, 10)));
+                    venta.setFuncion(funcion);
                 }
             }
-        } catch (SQLException | DateTimeParseException e) {
+        } catch (SQLException e) {
             System.out.println("Error al buscar venta: " + e.getMessage());
-            registro = null;
         }
-        return registro;
+        return venta;
     }
 
     @Override
     public boolean delete(Venta v) {
         boolean flag = false;
-        String query = "DELETE FROM venta WHERE id=?";
-        try (Connection cn = ConexionDB.getConexion();
+        if (v == null) {
+            return flag;
+        }
+        String query = "DELETE FROM venta WHERE idventa=?";
+        try (Connection cn = ConexionDB.getConnection();
              PreparedStatement st = cn.prepareStatement(query)) {
             st.setInt(1, v.getIdventa());
             flag = st.executeUpdate() == 1;
@@ -138,103 +172,96 @@ public class VentaDaoImpl implements IVentaDao {
     @Override
     public List<Venta> listAll() {
         List<Venta> lista = new ArrayList<>();
-        String query = "SELECT v.id AS idventa, v.cliente, v.cantidad_asientos, v.total_pagar, "
-                + "substr(v.fecha_venta,1,10) AS fecha_venta, "
-                + "f.id AS idfuncion, substr(f.horario,1,10) AS fecha_funcion, f.precio, "
-                + "p.id AS idpelicula, p.titulo, p.genero, p.duracion, p.clasificacion, "
-                + "s.id AS idsala, s.nombre AS sala_nombre, s.tipo AS sala_tipo, s.capacidad "
-                + "FROM venta v, funcion f, pelicula p, sala s "
-                + "WHERE v.id_funcion=f.id AND f.id_pelicula=p.id AND f.id_sala=s.id";
-        try (Connection cn = ConexionDB.getConexion();
+        String query = "SELECT v.idventa,v.cliente,v.cantidad_asientos,v.total_pagar,v.fecha_venta,"
+                + "f.id AS idfuncion,f.horario,f.precio,"
+                + "p.idpelicula,p.titulo,p.genero,p.duracion,p.clasificacion,"
+                + "s.idsala,s.nombre AS sala_nombre,s.tipo AS sala_tipo,s.capacidad"
+                + " FROM venta v,funcion f,pelicula p,sala s"
+                + " WHERE v.id_funcion=f.id AND f.id_pelicula=p.idpelicula AND f.id_sala=s.idsala";
+        try (Connection cn = ConexionDB.getConnection();
              PreparedStatement st = cn.prepareStatement(query);
              ResultSet rs = st.executeQuery()) {
             while (rs.next()) {
-                Pelicula p = new Pelicula();
-                p.setIdpelicula(rs.getInt("idpelicula"));
-                p.setTitulo(rs.getString("titulo"));
-                p.setGenero(rs.getString("genero"));
-                p.setDuracion(rs.getInt("duracion"));
-                p.setClasificacion(rs.getString("clasificacion"));
+                Pelicula pelicula = new Pelicula();
+                pelicula.setIdpelicula(rs.getInt("idpelicula"));
+                pelicula.setTitulo(rs.getString("titulo"));
+                pelicula.setGenero(rs.getString("genero"));
+                pelicula.setDuracion(rs.getInt("duracion"));
+                pelicula.setClasificacion(rs.getString("clasificacion"));
 
-                Sala s = new Sala();
-                s.setIdsala(rs.getInt("idsala"));
-                s.setNombre(rs.getString("sala_nombre"));
-                s.setTipo(rs.getString("sala_tipo"));
-                s.setCapacidad(rs.getInt("capacidad"));
+                Sala sala = new Sala();
+                sala.setIdsala(rs.getInt("idsala"));
+                sala.setNombre(rs.getString("sala_nombre"));
+                sala.setTipo(rs.getString("sala_tipo"));
+                sala.setCapacidad(rs.getInt("capacidad"));
 
-                Funcion f = new Funcion();
-                f.setIdfuncion(rs.getInt("idfuncion"));
-                f.setHorario(LocalDate.parse(rs.getString("fecha_funcion")));
-                f.setPrecio(rs.getDouble("precio"));
-                f.setPelicula(p);
-                f.setSala(s);
+                Funcion funcion = new Funcion();
+                funcion.setIdfuncion(rs.getInt("idfuncion"));
+                funcion.setHorario(rs.getString("horario"));
+                funcion.setPrecio(rs.getDouble("precio"));
+                funcion.setPelicula(pelicula);
+                funcion.setSala(sala);
 
-                Venta registro = new Venta();
-                registro.setIdventa(rs.getInt("idventa"));
-                registro.setCliente(rs.getString("cliente"));
-                registro.setCantidadAsientos(rs.getInt("cantidad_asientos"));
-                registro.setTotalPagar(rs.getDouble("total_pagar"));
-                registro.setFechaVenta(LocalDate.parse(rs.getString("fecha_venta")));
-                registro.setFuncion(f);
-                lista.add(registro);
+                Venta venta = new Venta();
+                venta.setIdventa(rs.getInt("idventa"));
+                venta.setCliente(rs.getString("cliente"));
+                venta.setCantidadAsientos(rs.getInt("cantidad_asientos"));
+                venta.setTotalPagar(rs.getDouble("total_pagar"));
+                venta.setFechaVenta(LocalDate.parse(rs.getString("fecha_venta").substring(0, 10)));
+                venta.setFuncion(funcion);
+                lista.add(venta);
             }
-        } catch (SQLException | DateTimeParseException e) {
-            System.out.println("Error al listar venta: " + e.getMessage());
+        } catch (SQLException e) {
+            System.out.println("Error al listar ventas: " + e.getMessage());
         }
         return lista;
     }
 
     @Override
     public List<Venta> listByDate(LocalDate fecha) {
-        if (fecha == null) {
-            throw new IllegalArgumentException("Seleccione una fecha");
-        }
         List<Venta> lista = new ArrayList<>();
-        String query = "SELECT v.id AS idventa, v.cliente, v.cantidad_asientos, v.total_pagar, "
-                + "substr(v.fecha_venta,1,10) AS fecha_venta, "
-                + "f.id AS idfuncion, substr(f.horario,1,10) AS fecha_funcion, f.precio, "
-                + "p.id AS idpelicula, p.titulo, p.genero, p.duracion, p.clasificacion, "
-                + "s.id AS idsala, s.nombre AS sala_nombre, s.tipo AS sala_tipo, s.capacidad "
-                + "FROM venta v, funcion f, pelicula p, sala s "
-                + "WHERE v.id_funcion=f.id AND f.id_pelicula=p.id AND f.id_sala=s.id AND substr(v.fecha_venta,1,10)=? ORDER BY v.id";
-        try (Connection cn = ConexionDB.getConexion();
-             PreparedStatement st = cn.prepareStatement(query)) {
-            st.setString(1, fecha.toString());
-            try (ResultSet rs = st.executeQuery()) {
-                while (rs.next()) {
-                    Pelicula p = new Pelicula();
-                    p.setIdpelicula(rs.getInt("idpelicula"));
-                    p.setTitulo(rs.getString("titulo"));
-                    p.setGenero(rs.getString("genero"));
-                    p.setDuracion(rs.getInt("duracion"));
-                    p.setClasificacion(rs.getString("clasificacion"));
-
-                    Sala s = new Sala();
-                    s.setIdsala(rs.getInt("idsala"));
-                    s.setNombre(rs.getString("sala_nombre"));
-                    s.setTipo(rs.getString("sala_tipo"));
-                    s.setCapacidad(rs.getInt("capacidad"));
-
-                    Funcion f = new Funcion();
-                    f.setIdfuncion(rs.getInt("idfuncion"));
-                    f.setHorario(LocalDate.parse(rs.getString("fecha_funcion")));
-                    f.setPrecio(rs.getDouble("precio"));
-                    f.setPelicula(p);
-                    f.setSala(s);
-
-                    Venta registro = new Venta();
-                    registro.setIdventa(rs.getInt("idventa"));
-                    registro.setCliente(rs.getString("cliente"));
-                    registro.setCantidadAsientos(rs.getInt("cantidad_asientos"));
-                    registro.setTotalPagar(rs.getDouble("total_pagar"));
-                    registro.setFechaVenta(LocalDate.parse(rs.getString("fecha_venta")));
-                    registro.setFuncion(f);
-                    lista.add(registro);
-                }
+        if (fecha == null) {
+            return lista;
+        }
+        List<Venta> ventas = listAll();
+        for (Venta venta : ventas) {
+            if (fecha.equals(venta.getFechaVenta())) {
+                lista.add(venta);
             }
-        } catch (SQLException | DateTimeParseException e) {
-            throw new IllegalStateException("No se pudo cargar el reporte: " + e.getMessage(), e);
         }
         return lista;
+    }
+
+    @Override
+    public boolean ValidateCapacidad(Venta v) {
+        boolean flag = false;
+        if (v == null || v.getFuncion() == null || v.getCantidadAsientos() <= 0) {
+            return flag;
+        }
+        Funcion funcion = new FuncionDaoImpl().searchById(v.getFuncion().getIdfuncion());
+        if (funcion == null) {
+            return flag;
+        }
+        long ocupados = 0;
+        String query = "SELECT cantidad_asientos FROM venta WHERE id_funcion=?";
+        if (v.getIdventa() > 0) {
+            query = query + " AND idventa<>?";
+        }
+        try (Connection cn = ConexionDB.getConnection();
+             PreparedStatement st = cn.prepareStatement(query)) {
+            st.setInt(1, funcion.getIdfuncion());
+            if (v.getIdventa() > 0) {
+                st.setInt(2, v.getIdventa());
+            }
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    ocupados += rs.getInt("cantidad_asientos");
+                }
+            }
+            flag = ocupados + v.getCantidadAsientos() <= funcion.getSala().getCapacidad();
+        } catch (SQLException e) {
+            System.out.println("Error al validar capacidad: " + e.getMessage());
+        }
+        return flag;
     }
 }

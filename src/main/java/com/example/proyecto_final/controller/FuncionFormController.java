@@ -1,50 +1,48 @@
 package com.example.proyecto_final.controller;
 
-import com.example.proyecto_final.modelo.*;
+import com.example.proyecto_final.implementacion.PeliculaDaoImpl;
+import com.example.proyecto_final.implementacion.SalaDaoImpl;
+import com.example.proyecto_final.modelo.Funcion;
+import com.example.proyecto_final.modelo.Pelicula;
+import com.example.proyecto_final.modelo.Sala;
 import com.example.proyecto_final.utils.UtilAlerts;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-import java.time.LocalDate;
 
-import com.example.proyecto_final.implementacion.*;
-import javafx.collections.FXCollections;
-import javafx.util.StringConverter;
+import java.util.List;
 
 public class FuncionFormController {
-    private final UtilAlerts utilAlerts = new UtilAlerts();
-    private Funcion registro;
 
-    private boolean saved = false;
-
-    @FXML private Label lblTitulo;
-
-    @FXML private ComboBox<Pelicula> cbPelicula;
-
-    @FXML private ComboBox<Sala> cbSala;
-
-    @FXML private TextField txtPrecio;
-    @FXML private DatePicker dpHorario;
+    public static UtilAlerts utilAlerts = new UtilAlerts();
 
     @FXML
+    private Label lblTitulo;
 
+    @FXML
+    private ComboBox<String> cbPelicula, cbSala;
+
+    @FXML
+    private TextField txtHorario, txtPrecio;
+
+    private Funcion funcion;
+    private boolean saved = false;
+    private List<Pelicula> peliculas;
+    private List<Sala> salas;
+
+    @FXML
     public void initialize() {
-        dpHorario.setValue(LocalDate.now());
-        dpHorario.setEditable(false);
-        cbPelicula.setItems(FXCollections.observableArrayList(new PeliculaDaoImpl().listAll()));
-        cbSala.setItems(FXCollections.observableArrayList(new SalaDaoImpl().listAll()));
-        cbPelicula.setConverter(new StringConverter<>() {
-
-            public String toString(Pelicula p) { return p == null ? "" : p.getIdpelicula() + " - " + p.getTitulo(); }
-
-            public Pelicula fromString(String text) { return null; }
-        });
-        cbSala.setConverter(new StringConverter<>() {
-
-            public String toString(Sala s) { return s == null ? "" : s.getIdsala() + " - " + s.getNombre(); }
-
-            public Sala fromString(String text) { return null; }
-        });
+        peliculas = new PeliculaDaoImpl().listAll();
+        for (Pelicula p : peliculas) {
+            cbPelicula.getItems().add(p.getIdpelicula() + " - " + p.getTitulo());
+        }
+        salas = new SalaDaoImpl().listAll();
+        for (Sala s : salas) {
+            cbSala.getItems().add(s.getIdsala() + " - " + s.getNombre());
+        }
     }
 
     public boolean isSaved() {
@@ -52,72 +50,72 @@ public class FuncionFormController {
     }
 
     public Funcion getFuncion() {
-        return registro;
-    }
-
-    public void setFuncion(Funcion value) {
-        registro = value;
-        saved = false;
-        lblTitulo.setText(value == null ? "Nuevo registro" : "Editar registro");
-        if (value != null) {
-            cbPelicula.getItems().stream()
-                    .filter(p -> p.getIdpelicula() == value.getPelicula().getIdpelicula())
-                    .findFirst().ifPresent(p -> cbPelicula.setValue(p));
-            cbSala.getItems().stream()
-                    .filter(s -> s.getIdsala() == value.getSala().getIdsala())
-                    .findFirst().ifPresent(s -> cbSala.setValue(s));
-            dpHorario.setValue(value.getHorario());
-            txtPrecio.setText(String.valueOf(value.getPrecio()));
-        }
+        return funcion;
     }
 
     private boolean validate() {
-        if (cbPelicula.getValue() == null || cbSala.getValue() == null
-                || dpHorario.getValue() == null) {
-            return error("Seleccione película, sala y complete el horario");
-        }
-        try {
-
-            double precio = Double.parseDouble(txtPrecio.getText().trim());
-            if (!Double.isFinite(precio) || precio <= 0) {
-                return error("El precio debe ser mayor que cero");
-            }
-        } catch (NumberFormatException e) {
-            return error("Ingrese un precio numérico");
+        if (cbPelicula.getValue() == null
+                || cbSala.getValue() == null
+                || txtHorario.getText().isEmpty()
+                || txtPrecio.getText().isEmpty()) {
+            Alert alert = utilAlerts.mostrarAlerts("",
+                    "Película, sala, horario y precio son obligatorios",
+                    "ERROR");
+            alert.show();
+            return false;
         }
         return true;
     }
 
-    @FXML
-
-    private void handleSave() {
-        if (!validate()) {
-            return;
-        }
-        if (registro == null) {
-            registro = new Funcion();
-        }
-        registro.setPelicula(cbPelicula.getValue());
-        registro.setSala(cbSala.getValue());
-        registro.setHorario(dpHorario.getValue());
-        registro.setPrecio(Double.parseDouble(txtPrecio.getText().trim()));
-        saved = true;
-        cerrar();
+    private void cerrar() {
+        Stage stage = (Stage) txtHorario.getScene().getWindow();
+        stage.close();
     }
 
     @FXML
-
     private void handleCancel() {
         cerrar();
     }
 
-    private void cerrar() {
-        Stage stage = (Stage) lblTitulo.getScene().getWindow();
-        stage.close();
+    @FXML
+    private void handleSave() {
+        if (validate()) {
+            try {
+                double precio = Double.parseDouble(txtPrecio.getText());
+                if (funcion == null) {
+                    funcion = new Funcion();
+                }
+                funcion.setPelicula(peliculas.get(cbPelicula.getSelectionModel().getSelectedIndex()));
+                funcion.setSala(salas.get(cbSala.getSelectionModel().getSelectedIndex()));
+                funcion.setHorario(txtHorario.getText());
+                funcion.setPrecio(precio);
+                saved = true;
+                cerrar();
+            } catch (NumberFormatException e) {
+                Alert alert = utilAlerts.mostrarAlerts("",
+                        "El precio debe ser un número",
+                        "ERROR");
+                alert.show();
+            }
+        }
     }
 
-    private boolean error(String mensaje) {
-        utilAlerts.mostrarAlerts("Datos incorrectos", mensaje, "WARNING").showAndWait();
-        return false;
+    public void setFuncion(Funcion f) {
+        this.funcion = f;
+        if (f != null) {
+            lblTitulo.setText("Editar función");
+            for (int i = 0; i < peliculas.size(); i++) {
+                if (peliculas.get(i).getIdpelicula() == f.getPelicula().getIdpelicula()) {
+                    cbPelicula.getSelectionModel().select(i);
+                }
+            }
+            for (int i = 0; i < salas.size(); i++) {
+                if (salas.get(i).getIdsala() == f.getSala().getIdsala()) {
+                    cbSala.getSelectionModel().select(i);
+                }
+            }
+            txtHorario.setText(f.getHorario());
+            txtPrecio.setText(String.valueOf(f.getPrecio()));
+        }
     }
 }

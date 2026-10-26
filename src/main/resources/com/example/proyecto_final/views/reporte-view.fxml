@@ -3,35 +3,53 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.example.proyecto_final.controller.ReporteController"
-      spacing="18" stylesheets="@style.css" style="-fx-background-color: #F7F7F7;">
-    <padding><Insets top="25" right="25" bottom="25" left="25"/></padding>
-    <Label text="Reporte de ventas del día"
-           style="-fx-font-size: 24; -fx-font-weight: bold; -fx-text-fill: #014074;"/>
-    <HBox spacing="12" alignment="CENTER_LEFT">
-        <Label text="Fecha de venta:"/>
-        <DatePicker fx:id="dpFecha" editable="false"/>
-        <Button text="Actualizar" onAction="#handleActualizar"/>
-    </HBox>
-    <FlowPane hgap="25" vgap="12"
-              style="-fx-background-color: white; -fx-padding: 18; -fx-background-radius: 8;">
-        <Label fx:id="lblTotal" text="Total vendido: S/ 0.00"
-               style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #18834b;"/>
-        <Label fx:id="lblEntradas" text="Entradas vendidas: 0"
-               style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #014074;"/>
-        <Label fx:id="lblOperaciones" text="Ventas registradas: 0"
-               style="-fx-font-size: 16; -fx-text-fill: #014074;"/>
-    </FlowPane>
-    <TableView fx:id="tablaReportes" VBox.vgrow="ALWAYS">
-        <columns>
-            <TableColumn fx:id="colIdVenta" text="ID" prefWidth="55"/>
-            <TableColumn fx:id="colPelicula" text="Película" prefWidth="190"/>
-            <TableColumn fx:id="colCliente" text="Cliente" prefWidth="150"/>
-            <TableColumn fx:id="colCantidad" text="Entradas" prefWidth="80"/>
-            <TableColumn fx:id="colTotal" text="Total (S/)" prefWidth="100"/>
-            <TableColumn fx:id="colHorario" text="Fecha función" prefWidth="100"/>
-        </columns>
-    </TableView>
-    <Label fx:id="lblEstado" wrapText="true" style="-fx-text-fill: #666666;"/>
+<?import javafx.scene.text.Font?>
+<VBox spacing="20.0" style="-fx-background-color: #F7F7F7;"
+      stylesheets="@style.css" xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.example.proyecto_final.controller.ReporteController">
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
+    </padding>
+    <children>
+        <HBox alignment="CENTER_LEFT" spacing="15.0">
+            <children>
+                <Label text="Reporte de ventas del día" textFill="#014074">
+                    <font><Font name="System Bold" size="20.0"/></font>
+                </Label>
+            </children>
+        </HBox>
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <children>
+                <Label text="Fecha de venta"/>
+                <TextField fx:id="txtFecha" promptText="aaaa-mm-dd" onAction="#handleActualizar"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button mnemonicParsing="false" styleClass="button-primary"
+                        onAction="#handleActualizar" text="ACTUALIZAR"/>
+            </children>
+        </HBox>
+        <VBox spacing="10.0">
+            <children>
+                <Label fx:id="lblTotal" text="Total vendido: S/ 0.00" textFill="#014074">
+                    <font><Font name="System Bold" size="18.0"/></font>
+                </Label>
+                <Label fx:id="lblEntradas" text="Entradas vendidas: 0" textFill="#014074"/>
+                <Label fx:id="lblOperaciones" text="Ventas registradas: 0" textFill="#014074"/>
+            </children>
+        </VBox>
+        <TableView fx:id="tableReporte" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="ColId" prefWidth="30.0" text="ID" visible="false"/>
+                <TableColumn fx:id="ColPelicula" prefWidth="170.0" text="Película"/>
+                <TableColumn fx:id="ColCliente" prefWidth="140.0" text="Cliente"/>
+                <TableColumn fx:id="ColCantidad" prefWidth="80.0" text="Entradas"/>
+                <TableColumn fx:id="ColTotal" prefWidth="90.0" text="Total (S/)"/>
+                <TableColumn fx:id="ColHorario" prefWidth="100.0" text="Horario función"/>
+            </columns>
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+            </columnResizePolicy>
+        </TableView>
+        <Label fx:id="lblEstado" wrapText="true" textFill="#666666"/>
+    </children>
 </VBox>

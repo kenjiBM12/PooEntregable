@@ -1,45 +1,44 @@
 package com.example.proyecto_final.controller;
 
-import com.example.proyecto_final.modelo.*;
+import com.example.proyecto_final.implementacion.FuncionDaoImpl;
+import com.example.proyecto_final.modelo.Funcion;
+import com.example.proyecto_final.modelo.Venta;
 import com.example.proyecto_final.utils.UtilAlerts;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+
 import java.time.LocalDate;
 
-import com.example.proyecto_final.implementacion.*;
-import javafx.collections.FXCollections;
-import javafx.util.StringConverter;
+import java.util.List;
 
 public class VentaFormController {
-    private final UtilAlerts utilAlerts = new UtilAlerts();
-    private Venta registro;
 
-    private boolean saved = false;
-
-    @FXML private Label lblTitulo;
-
-    @FXML private ComboBox<Funcion> cbFuncion;
-
-    @FXML private TextField txtCliente, txtCantidad;
-    @FXML private DatePicker dpFechaVenta;
+    public static UtilAlerts utilAlerts = new UtilAlerts();
 
     @FXML
+    private Label lblTitulo;
 
+    @FXML
+    private ComboBox<String> cbFuncion;
+
+    @FXML
+    private TextField txtCliente, txtCantidad, txtFechaVenta;
+
+    private Venta venta;
+    private boolean saved = false;
+    private List<Funcion> funciones;
+
+    @FXML
     public void initialize() {
-        dpFechaVenta.setValue(LocalDate.now());
-        dpFechaVenta.setEditable(false);
-        cbFuncion.setItems(FXCollections.observableArrayList(new FuncionDaoImpl().listAll()));
-        cbFuncion.setConverter(new StringConverter<>() {
-
-            public String toString(Funcion f) {
-                return f == null ? "" : f.getIdfuncion() + " - " + f.getPelicula().getTitulo()
-                        + " | " + f.getSala().getNombre() + " | " + f.getHorario()
-                        + " | S/ " + f.getPrecio();
-            }
-
-            public Funcion fromString(String text) { return null; }
-        });
+        funciones = new FuncionDaoImpl().listAll();
+        for (Funcion f : funciones) {
+            cbFuncion.getItems().add(f.getIdfuncion() + " - "
+                    + f.getPelicula().getTitulo() + " - " + f.getHorario());
+        }
     }
 
     public boolean isSaved() {
@@ -47,72 +46,76 @@ public class VentaFormController {
     }
 
     public Venta getVenta() {
-        return registro;
-    }
-
-    public void setVenta(Venta value) {
-        registro = value;
-        saved = false;
-        lblTitulo.setText(value == null ? "Nuevo registro" : "Editar registro");
-        if (value != null) {
-            cbFuncion.getItems().stream()
-                    .filter(f -> f.getIdfuncion() == value.getFuncion().getIdfuncion())
-                    .findFirst().ifPresent(f -> cbFuncion.setValue(f));
-            dpFechaVenta.setValue(value.getFechaVenta());
-            txtCliente.setText(value.getCliente());
-            txtCantidad.setText(String.valueOf(value.getCantidadAsientos()));
-        }
+        return venta;
     }
 
     private boolean validate() {
-        if (cbFuncion.getValue() == null || txtCliente.getText().isBlank() || dpFechaVenta.getValue() == null) {
-            return error("Seleccione función e ingrese el cliente");
-        }
-        try {
-
-            int cantidad = Integer.parseInt(txtCantidad.getText().trim());
-            double precio = cbFuncion.getValue().getPrecio();
-            if (cantidad <= 0 || precio <= 0 || !Double.isFinite(precio * cantidad)) {
-                return error("Ingrese cantidad y precio de función válidos");
-            }
-        } catch (NumberFormatException e) {
-            return error("Ingrese una cantidad entera");
+        if (cbFuncion.getValue() == null
+                || txtCliente.getText().isEmpty()
+                || txtCantidad.getText().isEmpty()
+                || txtFechaVenta.getText().isEmpty()) {
+            Alert alert = utilAlerts.mostrarAlerts("",
+                    "Función, cliente, cantidad y fecha son obligatorios",
+                    "ERROR");
+            alert.show();
+            return false;
         }
         return true;
     }
 
-    @FXML
-
-    private void handleSave() {
-        if (!validate()) {
-            return;
-        }
-        if (registro == null) {
-            registro = new Venta();
-        }
-        registro.setFuncion(cbFuncion.getValue());
-        registro.setCliente(txtCliente.getText().trim());
-        registro.setFechaVenta(dpFechaVenta.getValue());
-        registro.setCantidadAsientos(Integer.parseInt(txtCantidad.getText().trim()));
-
-        registro.setTotalPagar(registro.getCantidadAsientos() * registro.getFuncion().getPrecio());
-        saved = true;
-        cerrar();
+    private void cerrar() {
+        Stage stage = (Stage) txtCliente.getScene().getWindow();
+        stage.close();
     }
 
     @FXML
-
     private void handleCancel() {
         cerrar();
     }
 
-    private void cerrar() {
-        Stage stage = (Stage) lblTitulo.getScene().getWindow();
-        stage.close();
+    @FXML
+    private void handleSave() {
+        if (validate()) {
+            try {
+                int cantidad = Integer.parseInt(txtCantidad.getText());
+                LocalDate fechaVenta = LocalDate.parse(txtFechaVenta.getText());
+                Funcion funcion = funciones.get(cbFuncion.getSelectionModel().getSelectedIndex());
+                if (venta == null) {
+                    venta = new Venta();
+                }
+                venta.setFuncion(funcion);
+                venta.setCliente(txtCliente.getText());
+                venta.setFechaVenta(fechaVenta);
+                venta.setCantidadAsientos(cantidad);
+                venta.setTotalPagar(cantidad * funcion.getPrecio());
+                saved = true;
+                cerrar();
+            } catch (NumberFormatException e) {
+                Alert alert = utilAlerts.mostrarAlerts("",
+                        "La cantidad debe ser un número entero",
+                        "ERROR");
+                alert.show();
+            } catch (Exception e) {
+                Alert alert = utilAlerts.mostrarAlerts("",
+                        "La fecha debe tener el formato aaaa-mm-dd",
+                        "ERROR");
+                alert.show();
+            }
+        }
     }
 
-    private boolean error(String mensaje) {
-        utilAlerts.mostrarAlerts("Datos incorrectos", mensaje, "WARNING").showAndWait();
-        return false;
+    public void setVenta(Venta v) {
+        this.venta = v;
+        if (v != null) {
+            lblTitulo.setText("Editar venta");
+            for (int i = 0; i < funciones.size(); i++) {
+                if (funciones.get(i).getIdfuncion() == v.getFuncion().getIdfuncion()) {
+                    cbFuncion.getSelectionModel().select(i);
+                }
+            }
+            txtCliente.setText(v.getCliente());
+            txtCantidad.setText(String.valueOf(v.getCantidadAsientos()));
+            txtFechaVenta.setText(String.valueOf(v.getFechaVenta()));
+        }
     }
 }
