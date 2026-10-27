@@ -2,32 +2,50 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 
-<VBox alignment="CENTER" spacing="15.0" style="-fx-background-color: #F7F7F7;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pe.edu.upeu.project_final.controller.VentaController">
+<!-- ADAPTADO: tabla, columnas y botones coinciden con VentaController. -->
+<VBox spacing="12.0" stylesheets="@style.css"
+      xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="pe.edu.upeu.project_final.controller.VentaController">
     <padding>
-        <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+        <Insets top="20.0" right="20.0" bottom="20.0" left="20.0"/>
     </padding>
-    <children>
-        <Label style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #014074;" text="Módulo de Venta de Entradas" />
 
-        <VBox maxWidth="400.0" spacing="10.0">
-            <Label text="Seleccionar Película:" style="-fx-font-weight: bold;"/>
-            <ComboBox fx:id="cbPeliculas" prefWidth="400.0" promptText="Elija una película..." />
+    <Label text="Ventas"
+           style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #014074;"/>
 
-            <Label text="Cantidad de Entradas:" style="-fx-font-weight: bold;"/>
-            <TextField fx:id="txtCantidad" promptText="Ej. 2" />
+    <HBox spacing="10.0" alignment="CENTER_LEFT">
+        <Button text="Nuevo" onAction="#handleNew" styleClass="button-login"/>
+        <Button text="Editar" onAction="#handleEdit" styleClass="button-action-edit"/>
+        <Button text="Eliminar" onAction="#handleDelete" styleClass="button-action-delete"/>
+        <Button text="Listar todo" onAction="#handleListAll"/>
+    </HBox>
 
-            <Label text="Precio Unitario (S/.):" style="-fx-font-weight: bold;"/>
-            <TextField fx:id="txtPrecio" promptText="15.00" />
+    <!-- ADAPTADO: se enlaza únicamente la búsqueda por ID existente en el controlador. -->
+    <HBox spacing="10.0" alignment="CENTER_LEFT">
+        <Label text="Buscar por ID:"/>
+        <TextField fx:id="txtId" promptText="ID" prefWidth="110.0"
+                   onAction="#handleSearchById"/>
+        <Button text="Buscar ID" onAction="#handleSearchById" styleClass="button-action-edit"/>
+    </HBox>
 
-            <HBox spacing="10.0" alignment="CENTER_RIGHT" style="-fx-padding: 10 0 0 0;">
-                <Button fx:id="btnComprar" styleClass="button-login" text="Registrar Venta" />
-            </HBox>
-        </VBox>
-    </children>
+    <TableView fx:id="tablaVentas" prefHeight="380.0" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colId" text="ID venta" prefWidth="80.0"/>
+            <TableColumn fx:id="colFuncion" text="ID función" prefWidth="90.0"/>
+            <TableColumn fx:id="colCliente" text="Cliente" prefWidth="160.0"/>
+            <TableColumn fx:id="colCantidad" text="Cantidad" prefWidth="95.0"/>
+            <TableColumn fx:id="colTotal" text="Total (S/)" prefWidth="110.0"/>
+            <TableColumn fx:id="colFecha" text="Fecha de venta" prefWidth="180.0"/>
+        </columns>
+        <placeholder>
+            <Label text="No hay registros para mostrar."/>
+        </placeholder>
+    </TableView>
 </VBox>

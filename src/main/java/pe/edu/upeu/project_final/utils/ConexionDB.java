@@ -12,7 +12,7 @@ public class ConexionDB {
         try{
             if (connection == null || connection.isClosed()){
                 Class.forName("org.sqlite.JDBC");
-                String url ="jdbc:sqlite:C:/sqlite/db/Cine.db";
+                String url = "jdbc:sqlite:C:/poo/sqilte1U2/db/Cine.db";
                 connection = DriverManager.getConnection(url);
                 connection.setAutoCommit(true);
                 try(Statement stmt = connection.createStatement()){

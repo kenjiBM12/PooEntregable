@@ -5,14 +5,11 @@ import pe.edu.upeu.project_final.modelo.Sala;
 import java.util.List;
 
 public interface ISalaDao {
-    public boolean insert(Sala s);
+    boolean insert(Sala s);
+    boolean update(Sala s);
+    Sala searchById(int id);
+    boolean delete(Sala s);
+    List<Sala> listAll();
 
-    public boolean update(Sala s);
-
-    public Sala searchById(int id);
-
-    public boolean delete(Sala s);
-
-    public List<Sala> listAll();
 
 }

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- ADAPTADO: el formulario incorpora los campos y eventos que espera SalaFormController. -->
+<VBox spacing="18.0" prefWidth="520.0" stylesheets="@style.css"
+      xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="pe.edu.upeu.project_final.controller.SalaFormController">
+    <padding>
+        <Insets top="25.0" right="25.0" bottom="25.0" left="25.0"/>
+    </padding>
+
+    <Label fx:id="lblTitulo" text="Datos de la sala"
+           style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #014074;"/>
+
+    <GridPane hgap="12.0" vgap="12.0">
+        <columnConstraints>
+            <ColumnConstraints minWidth="120.0"/>
+            <ColumnConstraints hgrow="ALWAYS"/>
+        </columnConstraints>
+        <Label text="Nombre:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <TextField fx:id="txtNombre" promptText="Nombre de la sala"
+                   GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+        <Label text="Tipo:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <TextField fx:id="txtTipo" promptText="Ej. 2D, 3D o VIP"
+                   GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+        <Label text="Capacidad:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <TextField fx:id="txtCapacidad" promptText="Cantidad de asientos"
+                   GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+    </GridPane>
+
+    <!-- ADAPTADO: los botones llaman a Guardar y Cancelar del controlador actual. -->
+    <HBox spacing="10.0" alignment="CENTER_RIGHT">
+        <Button text="Cancelar" onAction="#handleCancel" cancelButton="true"/>
+        <Button text="Guardar" onAction="#handleSave" defaultButton="true"
+                styleClass="button-login"/>
+    </HBox>
+</VBox>

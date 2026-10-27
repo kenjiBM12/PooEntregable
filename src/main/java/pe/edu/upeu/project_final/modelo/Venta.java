@@ -1,11 +1,6 @@
 package pe.edu.upeu.project_final.modelo;
 
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
 
 public class Venta {
     private final IntegerProperty id = new SimpleIntegerProperty();
@@ -14,7 +9,6 @@ public class Venta {
     private final IntegerProperty cantidadAsientos = new SimpleIntegerProperty();
     private final DoubleProperty totalPagar = new SimpleDoubleProperty();
     private final StringProperty fechaVenta = new SimpleStringProperty();
-
     public Venta() {
     }
 
@@ -26,7 +20,6 @@ public class Venta {
         setTotalPagar(totalPagar);
         setFechaVenta(fechaVenta);
     }
-
     public final int getId() {
         return id.get();
     }

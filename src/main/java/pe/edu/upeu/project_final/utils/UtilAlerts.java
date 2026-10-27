@@ -1,3 +1,4 @@
+
 package pe.edu.upeu.project_final.utils;
 
 import javafx.scene.control.Alert;
@@ -10,6 +11,8 @@ public class UtilAlerts {
             alert = new Alert(Alert.AlertType.WARNING);
         } else if (tipo.equals("CONFIRMATION")) {
             alert = new Alert(Alert.AlertType.CONFIRMATION);
+        } else if (tipo.equals("INFORMATION")) {
+            alert = new Alert(Alert.AlertType.INFORMATION);
         }else{
             alert = new Alert(Alert.AlertType.ERROR);
         }

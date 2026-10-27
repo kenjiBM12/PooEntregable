@@ -5,14 +5,11 @@ import pe.edu.upeu.project_final.modelo.Pelicula;
 import java.util.List;
 
 public interface IPeliculaDao {
-    public boolean insert(Pelicula p);
+    boolean insert(Pelicula p);
+    boolean update(Pelicula p);
+    Pelicula searchById(int id);
+    boolean delete(Pelicula p);
+    List<Pelicula> listAll();
 
-    public boolean update(Pelicula p);
-
-    public Pelicula searchById(int id);
-
-    public boolean delete(Pelicula p);
-
-    public List<Pelicula> listAll();
 
 }
