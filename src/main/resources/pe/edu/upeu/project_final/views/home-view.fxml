@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.StackPane?>
+
+<!-- CORREGIDO: la cabecera XML es válida; se conserva la portada ajustable sobre fondo negro. -->
+<StackPane fx:id="root" minHeight="0.0" minWidth="0.0"
+           xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+           style="-fx-background-color: #000000;">
+    <ImageView fitHeight="${root.height}" fitWidth="${root.width}"
+               pickOnBounds="true" preserveRatio="true">
+        <image>
+            <Image url="@../img/Cine_portada.png"/>
+        </image>
+    </ImageView>
+</StackPane>
