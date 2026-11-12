@@ -1,0 +1,31 @@
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
+<StackPane fx:id="mainContainer" style="-fx-background-color: #F7F7F7"
+           xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
+    <children>
+        <VBox alignment="CENTER" spacing="30.0">
+            <children>
+                <Label text="Bienvenido al sistema de Gestion Cine" textFill="#014074">
+                    <font>
+                        <Font name="System Bold" size="28.0"/>
+                    </font>
+                </Label>
+                <ImageView fx:id="imgCine" fitHeight="450.0"
+                           fitWidth="800.0" pickOnBounds="true" preserveRatio="true">
+                    <image>
+                        <Image url="@../img/cine_portada.png"/>
+                    </image>
+                </ImageView>
+
+
+            </children>
+
+        </VBox>
+
+    </children>
+
+</StackPane>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane prefHeight="600.0" prefWidth="900.0" stylesheets="@style.css"
+            xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="pe.edu.upeu.gestioo_de_cine.controller.MainController">
+    <!--cabecera -->
+    <top>
+        <HBox alignment="CENTER_LEFT" prefHeight="70.0" styleClass="header" BorderPane.alignment="CENTER">
+            <children>
+                <Label text="CINEMAX" textFill="#014074">
+                    <font><Font name="System Bold" size="24.0" /></font>
+                    <HBox.margin><Insets left="20.0" /></HBox.margin>
+                </Label>
+                <Label text="Gestion de cine" textFill="#666666">
+                    <HBox.margin><Insets left="10.0" /></HBox.margin>
+                </Label>
+                <Region HBox.hgrow="ALWAYS" />
+                <Label text="Bienvenido, " fx:id="lblUsuario" textFill="#014074">
+                    <font><Font name="System Italic" size="14.0" /></font>
+                    <HBox.margin><Insets right="20.0" /></HBox.margin>
+                </Label>
+            </children>
+        </HBox>
+    </top>
+    <!--MENU IZQUIERDO -->
+    <left>
+        <VBox prefWidth="200.0" styleClass="sidebar" BorderPane.alignment="CENTER">
+            <children>
+                <Button maxWidth="Infinity" onAction="#showHome" mnemonicParsing="false"
+                        styleClass="nav-button" text="Inicio" />
+                <Button maxWidth="Infinity" onAction="#showPeli" mnemonicParsing="false"
+                        styleClass="nav-button" text="Peliculas" />
+                <Button maxWidth="Infinity" onAction="#showSal" mnemonicParsing="false"
+                        styleClass="nav-button" text="Peliculas" />
+                <Region VBox.vgrow="ALWAYS"/>
+
+            </children>
+
+        </VBox>
+    </left>
+    <!--area de contenido (body)-->
+    <center>
+        <VBox BorderPane.alignment="CENTER">
+            <StackPane fx:id="contentArea" styleClass="content-area" VBox.vgrow="ALWAYS">
+                <children>
+                    <Label text="Seleccione una opcion del menu"
+                           textFill="#999999" />
+                </children>
+            </StackPane>
+            <HBox alignment="CENTER" prefHeight="20.0">
+                <children>
+                    <Label text="©copyright Pevdxd-2026"
+                           textFill="#999999" />
+                </children>
+            </HBox>
+        </VBox>
+    </center>
+</BorderPane>

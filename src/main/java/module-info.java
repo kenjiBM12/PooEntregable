@@ -1,5 +1,4 @@
-
-module pe.edu.upeu.project_final {
+module pe.edu.upeu.gestioo_de_cine {
     requires javafx.controls;
     requires javafx.fxml;
 
@@ -8,23 +7,14 @@ module pe.edu.upeu.project_final {
     requires net.synedra.validatorfx;
     requires org.kordamp.bootstrapfx.core;
     requires java.sql;
-    //requiero la dependencia de sqlite
-    requires org.xerial.sqlitejdbc;
-    requires java.desktop;
     requires javafx.base;
     requires javafx.graphics;
+    requires java.desktop;
 
-    opens pe.edu.upeu.project_final to javafx.fxml;
 
-    opens pe.edu.upeu.project_final.modelo to javafx.base, javafx.fxml;
-    opens pe.edu.upeu.project_final.controller to javafx.fxml;
 
-    exports pe.edu.upeu.project_final;
-
-    exports pe.edu.upeu.project_final.utils;
-    exports pe.edu.upeu.project_final.test;
-    exports pe.edu.upeu.project_final.interfaces;
-    exports pe.edu.upeu.project_final.implementacion;
-    exports pe.edu.upeu.project_final.controller;
-
+    opens pe.edu.upeu.gestioo_de_cine to javafx.fxml;
+    opens pe.edu.upeu.gestioo_de_cine.controller to javafx.fxml;
+    exports pe.edu.upeu.gestioo_de_cine;
+    opens pe.edu.upeu.gestioo_de_cine.implementacion to javafx.fxml;
 }
