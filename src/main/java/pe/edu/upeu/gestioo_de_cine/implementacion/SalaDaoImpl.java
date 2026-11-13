@@ -15,24 +15,6 @@ import java.util.List;
 public class SalaDaoImpl implements ISalaDao {
     @Override
     public boolean insert(Sala s) {
-        /*
-             boolean flag = false;
-        String query = "INSERT INTO cliente(nombre,apellidos,dni,email,genero)VALUES(?,?,?,?,?);";
-        try (Connection cn = ConexionDB.getConnection();
-             PreparedStatement st = cn.prepareStatement(query)) {
-            st.setString(1,c.getNombre());
-            st.setString(2,c.getApellidos());
-            st.setString(3,c.getDni());
-            st.setString(4,c.getEmail());
-            st.setString(5,c.getGenero());
-            st.executeUpdate();
-            flag=true;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return flag;
-    }
-         */
         boolean flag = false;
         String query = "INSERT INTO sala(numero,nombre,tipo,capacidad,estado)"
                 + " VALUES(?,?,?,?,?); ";
@@ -109,16 +91,11 @@ public class SalaDaoImpl implements ISalaDao {
     @Override
     public Sala searchByNum(int num) {
         Sala s = null;
-
         String query = "SELECT * FROM sala WHERE numero = ?";
-
         try (Connection cn = ConexionDB.getConnection();
              PreparedStatement st = cn.prepareStatement(query)) {
-
             st.setInt(1, num);
-
             try (ResultSet rs = st.executeQuery()) {
-
                 if (rs.next()) {
                     s = new Sala();
                     s.setIdsala(rs.getInt("idsala"));

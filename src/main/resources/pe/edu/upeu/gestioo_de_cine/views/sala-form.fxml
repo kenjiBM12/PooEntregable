@@ -43,7 +43,7 @@
                 <Label text="Capacidad" GridPane.rowIndex="3"/>
                 <TextField fx:id="txtCapacidad" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
                 <Label text="Estado" GridPane.rowIndex="4"/>
-                <TextField fx:id="Estado" maxWidth="-Infinity" GridPane.columnIndex="1"
+                <TextField fx:id="txtEstado" maxWidth="-Infinity" GridPane.columnIndex="1"
                           GridPane.rowIndex="4"/>
             </children>
         </GridPane>

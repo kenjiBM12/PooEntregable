@@ -28,7 +28,7 @@ public class ClienteDaoImpl implements IClienteDao {
             st.executeUpdate();
             flag=true;
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.printf("Error al insertar Cliente"+e.getMessage());
         }
         return flag;
     }
@@ -49,7 +49,7 @@ public class ClienteDaoImpl implements IClienteDao {
             st.executeUpdate();
             flag=true;
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Error al actualizar cliente:"+e.getMessage());
         }
         return flag;
     }
@@ -73,7 +73,7 @@ public class ClienteDaoImpl implements IClienteDao {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Error al listar cliente por Id:" + e.getMessage());
         }
         return cl;
     }
@@ -88,7 +88,7 @@ public class ClienteDaoImpl implements IClienteDao {
             st.executeUpdate();
             flag=true;
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Error al eliminar cliente:" + e.getMessage());
         }
         return flag;
     }
@@ -114,7 +114,7 @@ public class ClienteDaoImpl implements IClienteDao {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Error al listar cliente:" + e.getMessage());
         }
         return lista;
     }
@@ -138,7 +138,7 @@ public class ClienteDaoImpl implements IClienteDao {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Error al listar cliente por Id:" + e.getMessage());
         }
         return cl;
     }

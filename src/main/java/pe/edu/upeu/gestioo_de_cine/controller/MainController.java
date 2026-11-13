@@ -6,7 +6,6 @@ import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 
-import java.awt.desktop.UserSessionEvent;
 import java.io.IOException;
 
 public class MainController {
@@ -25,12 +24,24 @@ public class MainController {
         loadView("home-view.fxml");
     }
     @FXML
+    private void showCliente(){
+        loadView("cliente-view.fxml");
+    }
+    @FXML
     private void showPeli(){
         loadView("pelicula-view.fxml");
     }
     @FXML
     private void showSal(){
         loadView("sala-view.fxml");
+    }
+    @FXML
+    private void showFuncion(){
+        loadView("funcion-view.fxml");
+    }
+    @FXML
+    private void showVenta(){
+        loadView("venta-view.fxml");
     }
 
     //metodo que llama y busca a las vistas

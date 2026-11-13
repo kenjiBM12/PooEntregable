@@ -7,14 +7,23 @@ module pe.edu.upeu.gestioo_de_cine {
     requires net.synedra.validatorfx;
     requires org.kordamp.bootstrapfx.core;
     requires java.sql;
+    //requiero la dependencia de sqlite
+    requires org.xerial.sqlitejdbc;
+    requires java.desktop;
     requires javafx.base;
     requires javafx.graphics;
-    requires java.desktop;
-
-
 
     opens pe.edu.upeu.gestioo_de_cine to javafx.fxml;
+
+    opens pe.edu.upeu.gestioo_de_cine.modelo to javafx.base, javafx.fxml;
     opens pe.edu.upeu.gestioo_de_cine.controller to javafx.fxml;
+    opens pe.edu.upeu.gestioo_de_cine.views to javafx.fxml;
+
     exports pe.edu.upeu.gestioo_de_cine;
-    opens pe.edu.upeu.gestioo_de_cine.implementacion to javafx.fxml;
+
+    exports pe.edu.upeu.gestioo_de_cine.utils;
+    exports pe.edu.upeu.gestioo_de_cine.test;
+    exports pe.edu.upeu.gestioo_de_cine.interfaces;
+    exports pe.edu.upeu.gestioo_de_cine.implementacion;
+    exports pe.edu.upeu.gestioo_de_cine.controller;
 }

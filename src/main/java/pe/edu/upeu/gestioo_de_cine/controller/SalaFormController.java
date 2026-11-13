@@ -24,10 +24,8 @@ public class SalaFormController {
 
     @FXML
     public void initialize(){
-        cbTipo.getItems().addAll("Accion","Drama","Comedia","Suspenso");
-
+        cbTipo.getItems().addAll("2D","3D","XD","VIP");
     }
-
 
     public boolean isSaved(){
         return saved;
@@ -35,6 +33,7 @@ public class SalaFormController {
     public Sala getSala(){
         return sala;
     }
+
     private boolean validate(){
         if (txtNombre.getText().isBlank()
                 || txtNumero.getText().isBlank()
@@ -48,51 +47,57 @@ public class SalaFormController {
         }
         try {
             Integer.parseInt(txtNumero.getText().trim());
+            Integer.parseInt(txtCapacidad.getText().trim());
         } catch (NumberFormatException e) {
             utilAlerts.mostrarAlerts(
                     "Número inválido",
-                    "Ingresa un número entero.",
+                    "Ingresa números enteros válidos en número y capacidad.",
                     "WARNING"
             ).showAndWait();
             return false;
         }
-
         return true;
     }
+
     private void cerrar(){
         Stage stage = (Stage) txtNombre.getScene().getWindow();
         stage.close();
     }
-    //actions of the views
+
     @FXML
     private void handleCancel(){
         cerrar();
     }
+
     @FXML
     private void handleSave(){
         if (validate()){
-            if (sala == null)
+            if (sala == null) {
                 sala = new Sala();
-            sala.setNumero(Integer.parseInt(txtNumero.getText()));
-            sala.setNombre(txtNombre.getText());
-            sala.setCapacidad(Integer.parseInt(txtNumero.getText()));
-            sala.setEstado(txtEstado.getText());
+            }
+            sala.setNumero(Integer.parseInt(txtNumero.getText().trim()));
+            sala.setNombre(txtNombre.getText().trim());
+            sala.setCapacidad(Integer.parseInt(txtCapacidad.getText().trim()));
+            sala.setEstado(txtEstado.getText().trim());
             sala.setTipo(cbTipo.getValue());
-            saved =true;
+            saved = true;
             cerrar();
         }
     }
-    //metodo para enviar los datos al formulario y editar
+
     public void setSala(Sala s){
         this.sala = s;
-        if (s!=null){
-            lblTitulo.setText("Editar Sala");
+        if (s != null){
+            if (lblTitulo != null) {
+                lblTitulo.setText("Editar Sala");
+            }
             txtNumero.setText(String.valueOf(s.getNumero()));
             txtNombre.setText(s.getNombre());
             txtCapacidad.setText(String.valueOf(s.getCapacidad()));
             txtEstado.setText(s.getEstado());
+            if (s.getTipo() != null) {
+                cbTipo.setValue(s.getTipo());
+            }
         }
     }
 }
-
-

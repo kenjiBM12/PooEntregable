@@ -33,10 +33,16 @@
             <children>
                 <Button maxWidth="Infinity" onAction="#showHome" mnemonicParsing="false"
                         styleClass="nav-button" text="Inicio" />
+                <Button maxWidth="Infinity" onAction="#showCliente" mnemonicParsing="false"
+                        styleClass="nav-button" text="Clientes" />
                 <Button maxWidth="Infinity" onAction="#showPeli" mnemonicParsing="false"
                         styleClass="nav-button" text="Peliculas" />
                 <Button maxWidth="Infinity" onAction="#showSal" mnemonicParsing="false"
-                        styleClass="nav-button" text="Peliculas" />
+                        styleClass="nav-button" text="Salas" />
+                <Button maxWidth="Infinity" onAction="#showFuncion" mnemonicParsing="false"
+                        styleClass="nav-button" text="Funciones" />
+                <Button maxWidth="Infinity" onAction="#showVenta" mnemonicParsing="false"
+                        styleClass="nav-button" text="Venta de Entradas" />
                 <Region VBox.vgrow="ALWAYS"/>
 
             </children>
