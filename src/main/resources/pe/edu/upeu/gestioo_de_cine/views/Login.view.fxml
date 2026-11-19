@@ -20,10 +20,10 @@
                 <!-- LADO IZQUIERDO-->
                 <VBox prefWidth="250.0" styleClass="left-pane" HBox.hgrow="ALWAYS">
                     <children>
-                        <Label text="UPeU" textFill="WHITE">
+                        <Label text="CINE" textFill="WHITE">
                             <font><Font name="System Bold" size="48.0"/></font>
                         </Label>
-                        <Label text="Sistema de Reserva" textFill="WHITE">
+                        <Label text="Sistema de Reserva de cine " textFill="WHITE">
                             <font><Font size="14.0"/></font>
                         </Label>
                     </children>
