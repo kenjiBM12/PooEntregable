@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox spacing="18.0" stylesheets="@style.css"
+      xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="pe.edu.upeu.taller_colaborativo.controller.HomeController">
+    <padding>
+        <Insets bottom="20.0" left="25.0" right="25.0" top="22.0"/>
+    </padding>
+    <children>
+
+        <Label styleClass="titulo-vista" text="Panel de inicio"/>
+        <Label styleClass="subtitulo-vista" text="Resumen de la cartelera y de las ventas de la sesión."/>
+
+        <!-- Tarjetas de resumen -->
+        <HBox spacing="18.0">
+            <children>
+                <VBox prefWidth="180.0" spacing="4.0" styleClass="stat-card" HBox.hgrow="ALWAYS">
+                    <children>
+                        <Label fx:id="lblPeliculas" styleClass="stat-numero" text="0"/>
+                        <Label styleClass="stat-texto" text="Películas en cartelera"/>
+                    </children>
+                </VBox>
+                <VBox prefWidth="180.0" spacing="4.0" styleClass="stat-card" HBox.hgrow="ALWAYS">
+                    <children>
+                        <Label fx:id="lblFunciones" styleClass="stat-numero" text="0"/>
+                        <Label styleClass="stat-texto" text="Funciones programadas"/>
+                    </children>
+                </VBox>
+                <VBox prefWidth="180.0" spacing="4.0" styleClass="stat-card" HBox.hgrow="ALWAYS">
+                    <children>
+                        <Label fx:id="lblRecaudacion" styleClass="stat-numero" text="S/ 0.00"/>
+                        <Label styleClass="stat-texto" text="Recaudación de la sesión"/>
+                    </children>
+                </VBox>
+                <VBox prefWidth="180.0" spacing="4.0" styleClass="stat-card" HBox.hgrow="ALWAYS">
+                    <children>
+                        <Label fx:id="lblEntradas" styleClass="stat-numero" text="0"/>
+                        <Label styleClass="stat-texto" text="Entradas vendidas"/>
+                    </children>
+                </VBox>
+            </children>
+        </HBox>
+
+        <!-- Próxima función del programa -->
+        <VBox spacing="10.0" styleClass="panel">
+            <children>
+                <Label styleClass="panel-titulo" text="Próxima función"/>
+                <Separator/>
+                <Label fx:id="lblProximaFuncion" styleClass="tarjeta-titulo" wrapText="true"
+                       text="Todavía no hay funciones programadas."/>
+            </children>
+        </VBox>
+
+        <Region VBox.vgrow="ALWAYS"/>
+
+    </children>
+</VBox>

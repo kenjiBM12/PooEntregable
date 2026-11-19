@@ -8,5 +8,7 @@ module pe.edu.upeu.taller_colaborativo {
     requires org.kordamp.bootstrapfx.core;
 
     opens pe.edu.upeu.taller_colaborativo to javafx.fxml;
+    opens pe.edu.upeu.taller_colaborativo.controller to javafx.fxml;
+
     exports pe.edu.upeu.taller_colaborativo;
 }
