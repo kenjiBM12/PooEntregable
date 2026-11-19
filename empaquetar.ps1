@@ -2,8 +2,7 @@
 #   .\empaquetar.ps1                -> imagen de app + instalador .exe
 #   .\empaquetar.ps1 -SoloImagen    -> solo la carpeta con el .exe (no requiere WiX)
 #
-# Requisitos: JDK 21 (jpackage) y, para el instalador, WiX Toolset v3 en el PATH
-# o instalado en "C:\Program Files (x86)\WiX Toolset v3.14".
+# Requisitos: JDK 17 o superior (jpackage) y, para el instalador, WiX Toolset v3.
 
 param(
     [string]$Version = "1.0",
@@ -21,17 +20,47 @@ $img = "src\main\resources\pe\edu\upeu\taller_colaborativo\img"
 $ico = "$img\logo.ico"
 $png = "$img\logo.png"
 
-# 1. Ubicar jpackage (no siempre esta en el PATH)
-$jpackage = "jpackage"
-if (-not (Get-Command jpackage -ErrorAction SilentlyContinue)) {
+# 1. Ubicar jpackage (normalmente no esta en el PATH)
+$jpackage = $null
+if (Get-Command jpackage -ErrorAction SilentlyContinue) {
+    $jpackage = "jpackage"
+}
+if (-not $jpackage -and $env:JAVA_HOME) {
     $candidato = Join-Path $env:JAVA_HOME "bin\jpackage.exe"
-    if ($env:JAVA_HOME -and (Test-Path $candidato)) {
-        $jpackage = $candidato
-    } else {
-        throw "No se encontro jpackage. Agrega %JAVA_HOME%\bin al PATH o define JAVA_HOME."
+    if (Test-Path $candidato) { $jpackage = $candidato }
+}
+if (-not $jpackage) {
+    $carpetas = @(
+        "$env:ProgramFiles\Java",
+        "$env:ProgramFiles\Eclipse Adoptium",
+        "$env:ProgramFiles\Amazon Corretto",
+        "$env:ProgramFiles\Microsoft",
+        "$env:ProgramFiles\Zulu",
+        "$env:LOCALAPPDATA\Programs\Eclipse Adoptium"
+    )
+    foreach ($carpeta in $carpetas) {
+        if (-not (Test-Path $carpeta)) { continue }
+        $encontrado = Get-ChildItem -Path $carpeta -Filter "jpackage.exe" -Recurse -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match '\\bin\\jpackage\.exe$' } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+        if ($encontrado) { $jpackage = $encontrado.FullName; break }
     }
 }
+if (-not $jpackage) {
+    throw "No se encontro jpackage. Instala un JDK 17 o superior y agrega su carpeta bin al PATH."
+}
 Write-Host "jpackage: $jpackage"
+
+# mvnw.cmd exige JAVA_HOME: lo deducimos del jpackage encontrado
+if ($jpackage -eq "jpackage") {
+    $jdk = Split-Path (Split-Path (Get-Command java).Source -Parent) -Parent
+} else {
+    $jdk = Split-Path (Split-Path $jpackage -Parent) -Parent
+}
+if ($jdk -and (Test-Path (Join-Path $jdk "bin\java.exe"))) {
+    $env:JAVA_HOME = $jdk
+}
 
 # 2. Compilar y copiar las dependencias a target\libs
 Write-Host "Compilando con Maven..."
