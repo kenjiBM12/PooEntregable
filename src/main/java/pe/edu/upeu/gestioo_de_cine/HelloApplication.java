@@ -6,12 +6,17 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.net.URL;
 
 public class HelloApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class
-                .getResource("/pe/edu/upeu/gestioo_de_cine/views/main-view.fxml"));
+        URL fxmlUrl = HelloApplication.class
+                .getResource("/pe/edu/upeu/gestioo_de_cine/views/Login.view.fxml");
+        if (fxmlUrl == null) {
+            throw new IOException("No se encontró Login.view.fxml en views");
+        }
+        FXMLLoader fxmlLoader = new FXMLLoader(fxmlUrl);
         Scene scene = new Scene(fxmlLoader.load());
         stage.setTitle("Sistema Cine!");
         stage.setScene(scene);
