@@ -99,7 +99,7 @@ public class SalaController {
 
             Alert confirmacion = UtilAlerts.mostrarAlerts("Confirmar eliminación",
                     "¿Está seguro de eliminar la " + seleccionada.getNombre() + "?",
-                    Alert.AlertType.CONFIRMATION);
+                    "CONFIRMATION");
             Optional<ButtonType> respuesta = confirmacion.showAndWait();
 
             if (respuesta.isPresent() && respuesta.get() == ButtonType.OK) {
@@ -110,7 +110,7 @@ public class SalaController {
 
     private boolean avisarSiNoHaySeleccion(String mensaje) {
         if (tableSala.getSelectionModel().getSelectedItem() == null) {
-            UtilAlerts.mostrarAlerts("Selección requerida", mensaje, Alert.AlertType.WARNING).showAndWait();
+            UtilAlerts.mostrarAlerts("Selección requerida", mensaje, "WARNING").showAndWait();
             return false;
         }
         return true;

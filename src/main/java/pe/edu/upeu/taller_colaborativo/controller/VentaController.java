@@ -10,6 +10,7 @@ import javafx.scene.layout.GridPane;
 import javafx.util.StringConverter;
 import pe.edu.upeu.taller_colaborativo.modelo.Funcion;
 import pe.edu.upeu.taller_colaborativo.modelo.Sala;
+import pe.edu.upeu.taller_colaborativo.utils.UtilAlerts;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -181,13 +182,12 @@ public class VentaController {
             return;
         }
 
-        Alert alerta = new Alert(Alert.AlertType.INFORMATION);
-        alerta.setTitle("Compra registrada");
-        alerta.setHeaderText(null);
-        alerta.setContentText("Película: " + funcion.getPelicula().getTitulo()
-                + "\nFunción: " + funcion.getDescripcion()
-                + "\nButacas: " + lblResumenButacas.getText()
-                + "\nTotal: " + lblTotal.getText());
+        Alert alerta = UtilAlerts.mostrarAlerts("Compra registrada",
+                "Película: " + funcion.getPelicula().getTitulo()
+                        + "\nFunción: " + funcion.getDescripcion()
+                        + "\nButacas: " + lblResumenButacas.getText()
+                        + "\nTotal: " + lblTotal.getText(),
+                "INFORMATION");
         alerta.showAndWait();
 
         // La venta queda registrada y con eso sus butacas pasan a estar ocupadas

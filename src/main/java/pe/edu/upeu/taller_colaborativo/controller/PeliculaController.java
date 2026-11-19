@@ -113,7 +113,7 @@ public class PeliculaController {
 
             Alert confirmacion = UtilAlerts.mostrarAlerts("Confirmar eliminación",
                     "¿Está seguro de eliminar la película " + seleccionada.getTitulo() + "?",
-                    Alert.AlertType.CONFIRMATION);
+                    "CONFIRMATION");
             Optional<ButtonType> respuesta = confirmacion.showAndWait();
 
             if (respuesta.isPresent() && respuesta.get() == ButtonType.OK) {
@@ -125,7 +125,7 @@ public class PeliculaController {
     // Devuelve true cuando hay una fila seleccionada
     private boolean avisarSiNoHaySeleccion(String mensaje) {
         if (tablePelicula.getSelectionModel().getSelectedItem() == null) {
-            UtilAlerts.mostrarAlerts("Selección requerida", mensaje, Alert.AlertType.WARNING).showAndWait();
+            UtilAlerts.mostrarAlerts("Selección requerida", mensaje, "WARNING").showAndWait();
             return false;
         }
         return true;

@@ -55,8 +55,6 @@
                             </children>
                         </VBox>
 
-                        <Label fx:id="lblError" styleClass="mensaje-error" wrapText="true"/>
-
                         <Button maxWidth="Infinity" mnemonicParsing="false"
                                 onAction="#handleLogin" styleClass="button-login"
                                 text="INGRESAR"/>

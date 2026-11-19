@@ -161,7 +161,7 @@ public class FuncionController {
                             ? "¿Está seguro de eliminar esta función?"
                             : "¿Está seguro de eliminar esta función? También se borrarán sus "
                             + ventas + (ventas == 1 ? " venta registrada." : " ventas registradas."),
-                    Alert.AlertType.CONFIRMATION);
+                    "CONFIRMATION");
             Optional<ButtonType> respuesta = confirmacion.showAndWait();
 
             if (respuesta.isPresent() && respuesta.get() == ButtonType.OK) {
@@ -174,7 +174,7 @@ public class FuncionController {
 
     private boolean avisarSiNoHaySeleccion(String mensaje) {
         if (tableFuncion.getSelectionModel().getSelectedItem() == null) {
-            UtilAlerts.mostrarAlerts("Selección requerida", mensaje, Alert.AlertType.WARNING).showAndWait();
+            UtilAlerts.mostrarAlerts("Selección requerida", mensaje, "WARNING").showAndWait();
             return false;
         }
         return true;

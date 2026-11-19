@@ -130,13 +130,13 @@ public class VentaListaController {
         if (seleccionada == null) {
             UtilAlerts.mostrarAlerts("Selección requerida",
                     "Seleccione una venta de la tabla para anularla.",
-                    Alert.AlertType.WARNING).showAndWait();
+                    "WARNING").showAndWait();
             return;
         }
 
         Alert confirmacion = UtilAlerts.mostrarAlerts("Confirmar anulación",
                 "¿Anular la venta de las butacas " + seleccionada.getButacas() + "?",
-                Alert.AlertType.CONFIRMATION);
+                "CONFIRMATION");
 
         if (confirmacion.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
             // Al quitar la venta, sus butacas quedan libres otra vez

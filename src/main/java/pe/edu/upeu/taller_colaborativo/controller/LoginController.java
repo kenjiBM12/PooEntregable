@@ -4,10 +4,11 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
+import javafx.scene.control.Alert;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+import pe.edu.upeu.taller_colaborativo.utils.UtilAlerts;
 
 import java.io.IOException;
 
@@ -17,8 +18,6 @@ public class LoginController {
     private TextField txtUsuario;
     @FXML
     private PasswordField txtClave;
-    @FXML
-    private Label lblError;
 
     @FXML
     private void handleLogin() {
@@ -27,14 +26,19 @@ public class LoginController {
 
         // Primera validacion: que no deje los campos vacios
         if (usuario.isEmpty() || clave.isEmpty()) {
-            lblError.setText("Complete el usuario y la contraseña para continuar.");
+            Alert alert = UtilAlerts.mostrarAlerts("Campos Vacios",
+                    "porfavor ingrese el usuario y la clave", "WARNING");
+            alert.showAndWait();
             return;
         }
 
         // Aqui se valida el usuario contra la base de datos.
         // Cuando el equipo tenga listo UsuarioDaoImpl se cambia por:
         // Usuario u = usuarioDao.login(usuario, clave);
-        lblError.setText("");
+        Alert alert = UtilAlerts.mostrarAlerts("Acceso Concedido",
+                "¡Bienvenido, " + usuario + "!", "INFORMATION");
+        alert.showAndWait();
+
         abrirMenuPrincipal(usuario);
     }
 
