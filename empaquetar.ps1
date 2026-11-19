@@ -20,6 +20,97 @@ $img = "src\main\resources\pe\edu\upeu\taller_colaborativo\img"
 $ico = "$img\logo.ico"
 $png = "$img\logo.png"
 
+# Genera un .ico valido (entradas BMP de 16 a 256 px) a partir del .png.
+# Windows rechaza el .ico que devuelve Bitmap.GetHicon para tamanos pequenos.
+function New-Icono {
+    param([string]$entrada, [string]$salida)
+
+    Add-Type -AssemblyName System.Drawing
+    $origen = [System.Drawing.Bitmap]::FromFile($entrada)
+    $tamanos = @(16, 24, 32, 48, 64, 128, 256)
+    $bloques = @()
+
+    foreach ($t in $tamanos) {
+        $bmp = New-Object System.Drawing.Bitmap($t, $t, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+        $g = [System.Drawing.Graphics]::FromImage($bmp)
+        $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+        $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+        $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+        $g.DrawImage($origen, 0, 0, $t, $t)
+        $g.Dispose()
+
+        $rect = New-Object System.Drawing.Rectangle(0, 0, $t, $t)
+        $datos = $bmp.LockBits($rect, [System.Drawing.Imaging.ImageLockMode]::ReadOnly, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+        $stride = $datos.Stride
+        $linea = New-Object byte[] ($stride * $t)
+        [System.Runtime.InteropServices.Marshal]::Copy($datos.Scan0, $linea, 0, $linea.Length)
+        $bmp.UnlockBits($datos)
+        $bmp.Dispose()
+
+        # el ICO guarda los pixeles de abajo hacia arriba en BGRA
+        $fila = $t * 4
+        $pixeles = New-Object byte[] ($fila * $t)
+        for ($y = 0; $y -lt $t; $y++) {
+            [Array]::Copy($linea, ($t - 1 - $y) * $stride, $pixeles, $y * $fila, $fila)
+        }
+
+        $ms = New-Object System.IO.MemoryStream
+        $w = New-Object System.IO.BinaryWriter($ms)
+        $w.Write([int]40)
+        $w.Write([int]$t)
+        $w.Write([int]($t * 2))
+        $w.Write([int16]1)
+        $w.Write([int16]32)
+        $w.Write([int]0)
+        $w.Write([int]($fila * $t))
+        $w.Write([int]0)
+        $w.Write([int]0)
+        $w.Write([int]0)
+        $w.Write([int]0)
+        $w.Write($pixeles)
+
+        $filaMascara = [int]([math]::Ceiling($t / 8.0))
+        if ($filaMascara % 4 -ne 0) { $filaMascara += 4 - ($filaMascara % 4) }
+        $w.Write((New-Object byte[] ($filaMascara * $t)))
+        $w.Flush()
+
+        $bloques += , @($t, $ms.ToArray())
+        $w.Dispose()
+        $ms.Dispose()
+    }
+
+    $salidaMs = New-Object System.IO.MemoryStream
+    $bw = New-Object System.IO.BinaryWriter($salidaMs)
+    $bw.Write([int16]0)
+    $bw.Write([int16]1)
+    $bw.Write([int16]$bloques.Count)
+
+    $offset = 6 + 16 * $bloques.Count
+    foreach ($b in $bloques) {
+        $t = $b[0]
+        $ancho = 0
+        if ($t -lt 256) { $ancho = $t }
+        $bw.Write([byte]$ancho)
+        $bw.Write([byte]$ancho)
+        $bw.Write([byte]0)
+        $bw.Write([byte]0)
+        $bw.Write([int16]1)
+        $bw.Write([int16]32)
+        $bw.Write([int]$b[1].Length)
+        $bw.Write([int]$offset)
+        $offset += $b[1].Length
+    }
+    foreach ($b in $bloques) {
+        $bw.Write($b[1])
+    }
+    $bw.Flush()
+
+    [System.IO.File]::WriteAllBytes($salida, $salidaMs.ToArray())
+    $bw.Dispose()
+    $salidaMs.Dispose()
+    $origen.Dispose()
+}
+
 # 1. Ubicar jpackage (normalmente no esta en el PATH)
 $jpackage = $null
 if (Get-Command jpackage -ErrorAction SilentlyContinue) {
@@ -69,14 +160,7 @@ if ($LASTEXITCODE -ne 0) { throw "Fallo el build de Maven." }
 
 # 3. Generar el .ico a partir del .png si no existe (jpackage no acepta .png)
 if (-not (Test-Path $ico)) {
-    Add-Type -AssemblyName System.Drawing
-    $bmp = [System.Drawing.Bitmap]::FromFile((Resolve-Path $png))
-    $icono = [System.Drawing.Icon]::FromHandle($bmp.GetHicon())
-    $flujo = [System.IO.File]::Create((Join-Path $raiz $ico))
-    $icono.Save($flujo)
-    $flujo.Close()
-    $icono.Dispose()
-    $bmp.Dispose()
+    New-Icono -entrada (Resolve-Path $png).Path -salida (Join-Path $raiz $ico)
     Write-Host "Generado $ico"
 }
 
@@ -99,7 +183,7 @@ Write-Host "  target\dist\$nombreApp\$nombreApp.exe"
 
 if (-not $SoloImagen) {
     Write-Host "Generando instalador .exe (necesita WiX Toolset v3)..."
-    & $jpackage --type exe @parametros --win-shortcut --win-menu --win-dir-chooser
+    & $jpackage --type exe @parametros --win-shortcut --win-menu --win-per-user-install
     if ($LASTEXITCODE -ne 0) {
         throw "Fallo jpackage al crear el instalador. Verifica que WiX Toolset v3 este instalado."
     }
