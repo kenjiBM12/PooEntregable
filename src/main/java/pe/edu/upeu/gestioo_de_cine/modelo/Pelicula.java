@@ -8,7 +8,7 @@ import javafx.beans.property.StringProperty;
 public class Pelicula {
     private final IntegerProperty idpelicula = new SimpleIntegerProperty();
     private final IntegerProperty numero = new SimpleIntegerProperty();
-    private final StringProperty nombre = new SimpleStringProperty();
+    private final StringProperty titulo = new SimpleStringProperty();
     private final StringProperty categoria = new SimpleStringProperty();
     private final StringProperty duracion = new SimpleStringProperty();
     private final StringProperty clasificacion = new SimpleStringProperty();
@@ -16,11 +16,11 @@ public class Pelicula {
     public Pelicula() {
     }
 
-    public Pelicula(int idpelicula, int numero, String nombre,
+    public Pelicula(int idpelicula, int numero, String titulo,
                     String duracion, String categoria, String clasisficacion) {
         setidpelicula(idpelicula);
         setNumero(numero);
-        setNombre(nombre);
+        setTitulo(titulo);
         setDuracion(duracion);
         setCategoria(categoria);
         setClasificacion(clasisficacion);
@@ -77,16 +77,16 @@ public class Pelicula {
         return numero;
     }
 
-    public final String getNombre() {
-        return nombre.get();
+    public final String getTitulo() {
+        return titulo.get();
     }
 
-    public final void setNombre(String value) {
-        nombre.set(value);
+    public final void setTitulo(String value) {
+        titulo.set(value);
     }
 
-    public final StringProperty nombreProperty() {
-        return nombre;
+    public final StringProperty tituloProperty() {
+        return titulo;
     }
 
     public final Integer getidpelicula() {
@@ -101,4 +101,9 @@ public class Pelicula {
         return idpelicula;
     }
 
+    //para que el ComboBox muestre el nombre y no el paquete de la clase
+    @Override
+    public String toString() {
+        return getTitulo();
+    }
 }

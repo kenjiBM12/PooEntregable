@@ -14,8 +14,7 @@ public class testSala {
             for (Sala sala : lista) {
                 System.out.println("ID_sala: " + sala.getIdsala());
                 System.out.println("Numero: " + sala.getNumero());
-                System.out.println("Nombre: " + sala.getNombre());
-                System.out.println("Tipo: " + sala.getTipo());
+                System.out.println("TipoSala: " + sala.getTipoSala());
                 System.out.println("Capacidad: " + sala.getCapacidad());
                 System.out.println("Estado: " + sala.getEstado());
             }
@@ -27,8 +26,7 @@ public class testSala {
     public static void insertar() {
         Sala s = new Sala();
         s.setNumero(1);
-        s.setNombre("sala 3");
-        s.setTipo("2D");
+        s.setTipoSala("2D");
         s.setCapacidad(23);
         s.setEstado("disponible");
         boolean result = sa.insert(s);
@@ -58,8 +56,7 @@ public class testSala {
             return;
         }
         sala.setNumero(2);
-        sala.setNombre("sala actualizada");
-        sala.setTipo("120");
+        sala.setTipoSala("120");
         sala.setCapacidad(24);
         sala.setEstado("disponible");
 
@@ -82,8 +79,8 @@ public class testSala {
         }
 
         sala.setNumero(11);
-        sala.setNombre("sala actulizada num");
-        sala.setTipo("3D");
+
+        sala.setTipoSala("3D");
         sala.setCapacidad(23);
         sala.setEstado("disponible");
 

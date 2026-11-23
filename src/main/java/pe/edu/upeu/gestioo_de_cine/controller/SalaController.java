@@ -1,11 +1,20 @@
 package pe.edu.upeu.gestioo_de_cine.controller;
+
+import java.util.Optional;
+
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import pe.edu.upeu.gestioo_de_cine.HelloApplication;
@@ -14,153 +23,236 @@ import pe.edu.upeu.gestioo_de_cine.interfaces.ISalaDao;
 import pe.edu.upeu.gestioo_de_cine.modelo.Sala;
 import pe.edu.upeu.gestioo_de_cine.utils.UtilAlerts;
 
-import java.util.Optional;
-
 public class SalaController {
-    private static UtilAlerts utilAlert = new UtilAlerts();
-    //definimos la tabla
+
+    private final UtilAlerts utilAlert = new UtilAlerts();
+
     @FXML
     private TableView<Sala> tableSala;
-
-    //variable correlativa
     @FXML
     private TableColumn<Sala, Number> ColNum;
     @FXML
     private TableColumn<Sala, Integer> ColNumero;
     @FXML
-    private TableColumn<Sala,Integer> ColId;
+    private TableColumn<Sala, Integer> ColId;
     @FXML
-    private TableColumn<Sala,String> ColNombre;
+    private TableColumn<Sala, String> ColtipoSala;
     @FXML
-    private TableColumn<Sala,String> Coltipo;
+    private TableColumn<Sala, Integer> ColCapacidad;
     @FXML
-    private TableColumn<Sala,Integer> ColCapacidad;
+    private TableColumn<Sala, String> ColEstado;
     @FXML
-    private TableColumn<Sala,String> ColEstado;
+    private TextField txtBuscar;
 
     private final ISalaDao salaDao = new SalaDaoImpl();
     private ObservableList<Sala> listaSala;
+    //se conserva la lista completa para poder buscar sin perder datos
+    private ObservableList<Sala> todosLosSalas;
 
     @FXML
     public void initialize() {
-        ColNum.setCellFactory(colum -> new TableCell<>(){
+        ColNum.setCellFactory(columna -> new TableCell<>() {
             @Override
-            protected void updateItem(Number item, boolean empty){
-                super.updateItem(item,empty);
-                if (empty){
+            protected void updateItem(Number item, boolean empty) {
+                super.updateItem(item, empty);
+
+                if (empty) {
                     setText(null);
-                }else{
-                    setText(String.valueOf(getIndex() +1));
+                } else {
+                    setText(String.valueOf(getIndex() + 1));
                 }
             }
         });
-        ColNumero.setCellValueFactory(cellData -> cellData.getValue()
-                .numeroProperty().asObject());
+
+        ColNumero.setCellValueFactory(
+                celda -> celda.getValue().numeroProperty().asObject()
+        );
+
+
+        // Coltipo conserva su fx:id, pero ahora apunta a tipoSala.
+        ColtipoSala.setCellValueFactory(
+                celda -> celda.getValue().tipoSalaProperty()
+        );
+
         ColId.setCellValueFactory(
-                cellData -> cellData.getValue()
-                        .idsalaProperty().asObject());
-        ColNombre.setCellValueFactory(
-                cellData -> cellData.getValue()
-                        .nombreProperty());
-        Coltipo.setCellValueFactory(
-                cellData -> cellData.getValue()
-                        .tipoProperty());
+                celda -> celda.getValue().idsalaProperty().asObject()
+        );
         ColCapacidad.setCellValueFactory(
-                cellData -> cellData.getValue()
-                        .capacidadProperty().asObject());
+                celda -> celda.getValue().capacidadProperty().asObject()
+        );
         ColEstado.setCellValueFactory(
-                cellData -> cellData.getValue()
-                        .estadoProperty());
-        //llamar al metodo
+                celda -> celda.getValue().estadoProperty()
+        );
+
         cargarDatos();
     }
 
-private void cargarDatos(){
-    listaSala = FXCollections.observableArrayList(salaDao.listAll());
-    tableSala.setItems(listaSala);
-}
-@FXML
-private void handleDelete(){
-   Sala selectId = tableSala.getSelectionModel().getSelectedItem();
-    if (selectId !=null){
-        Alert confirm = utilAlert.mostrarAlerts("Confirmar eliminacion",
-                "Estas seguro de eliminar la sala: "+selectId.getNombre()+"?",
-                "CONFIRMATION");
-        Optional<ButtonType> result = confirm.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK){
-            if (salaDao.delete(selectId)){
-                listaSala.remove(selectId);
+    private void cargarDatos() {
+        todosLosSalas = FXCollections.observableArrayList(salaDao.listAll());
+        listaSala = FXCollections.observableArrayList(todosLosSalas);
+        tableSala.setItems(listaSala);
+    }
 
+    @FXML
+    private void handleBuscar() {
+        filtrar();
+    }
+
+    //filtra la lista por numero, tipo o estado con un for normal
+    private void filtrar() {
+        String texto = txtBuscar != null ? txtBuscar.getText().trim().toLowerCase() : "";
+        listaSala.clear();
+        for (Sala s : todosLosSalas) {
+            if (texto.isEmpty()
+                    || contiene(String.valueOf(s.getNumero()), texto)
+                    || contiene(s.getTipoSala(), texto)
+                    || contiene(s.getEstado(), texto)) {
+                listaSala.add(s);
             }
-        }else{
-            Alert warning =  utilAlert.mostrarAlerts("Seleccion requerida",
-                    "Seleccione una sala para eliminar","WARNING");
-            warning.showAndWait();
         }
     }
-}
+
+    private boolean contiene(String valor, String texto) {
+        return valor != null && valor.toLowerCase().contains(texto);
+    }
 
     @FXML
-    private void handleNew(){
-        // System.out.println("abriendo el formulario");
+    private void handleDelete() {
+        Sala salaSeleccionada =
+                tableSala.getSelectionModel().getSelectedItem();
+
+        if (salaSeleccionada == null) {
+            utilAlert.mostrarAlerts(
+                    "Selección requerida",
+                    "Seleccione una sala para eliminar.",
+                    "WARNING"
+            ).showAndWait();
+            return;
+        }
+
+        String descripcion = "Sala " + salaSeleccionada.getNumero()
+                + " — " + salaSeleccionada.getTipoSala();
+
+        Alert confirmacion = utilAlert.mostrarAlerts(
+                "Confirmar eliminación",
+                "¿Está seguro de eliminar " + descripcion + "?",
+                "CONFIRMATION"
+        );
+
+        Optional<ButtonType> resultado = confirmacion.showAndWait();
+
+        if (resultado.isPresent()
+                && resultado.get() == ButtonType.OK) {
+            try {
+                if (salaDao.delete(salaSeleccionada)) {
+                    listaSala.remove(salaSeleccionada);
+                    todosLosSalas.remove(salaSeleccionada);
+                } else {
+                    utilAlert.mostrarAlerts(
+                            "Error",
+                            "No se pudo eliminar la sala.",
+                            "ERROR"
+                    ).showAndWait();
+                }
+            } catch (RuntimeException e) {
+                //si la sala tiene funciones, la base no deja borrarla
+                System.out.println("Error al eliminar sala: " + e.getMessage());
+                //el DAO ya explica el motivo (por ejemplo: tiene funciones programadas)
+                utilAlert.mostrarAlerts("No se pudo eliminar",
+                        e.getMessage(), "ERROR").showAndWait();
+            }
+        }
+    }
+
+    @FXML
+    private void handleNew() {
         showForm(null);
+    }
 
-    }
     @FXML
-    private void handleEdit(){
-        Sala selectClient = tableSala.getSelectionModel().getSelectedItem();
-        if (selectClient !=null){
-            Sala salaFull = salaDao.searchById(selectClient.getIdsala());
-            showForm(salaFull);
-        }else{
-            Alert alert = utilAlert.mostrarAlerts("Seleccion requerida",
-                    "","CONFIRMATION");
-            alert.show();
+    private void handleEdit() {
+        Sala salaSeleccionada =
+                tableSala.getSelectionModel().getSelectedItem();
+
+        if (salaSeleccionada == null) {
+            utilAlert.mostrarAlerts(
+                    "Selección requerida",
+                    "Seleccione una sala de la tabla para editar.",
+                    "WARNING"
+            ).showAndWait();
+            return;
         }
+
+        Sala salaCompleta =
+                salaDao.searchById(salaSeleccionada.getIdsala());
+
+        showForm(salaCompleta);
     }
-    private void showForm(Sala s){
-        try{
-            FXMLLoader loader = new FXMLLoader(HelloApplication.class
-                    .getResource("/pe/edu/upeu/gestioo_de_cine/views/sala-form.fxml"));
+
+    private void showForm(Sala salaEditar) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    HelloApplication.class.getResource(
+                            "/pe/edu/upeu/gestioo_de_cine/views/sala-form.fxml"
+                    )
+            );
+
             Parent root = loader.load();
             SalaFormController controller = loader.getController();
-            controller.setSala(s); //pasamos el cliente null si es nuevo
+            controller.setSala(salaEditar);
+
             Stage stage = new Stage();
-            stage.setTitle(s==null ? "Nueva sala": "Editar sala");
+            stage.setTitle(
+                    salaEditar == null ? "Nueva sala" : "Editar sala"
+            );
             stage.initModality(Modality.APPLICATION_MODAL);
-            stage.setScene( new Scene(root));
+            stage.setScene(new Scene(root));
             stage.showAndWait();
-            if (controller.isSaved()){
-                Sala salaProcesado = controller.getSala();
-                if (s == null){
-                    boolean result =  salaDao.insert(salaProcesado);
-                    if (result){
-                        Alert alert = utilAlert.mostrarAlerts("Success",
-                                "Registro satisfactorio!!!","CONFIRMATION");
-                        alert.show();
-                    }else{
-                        Alert alert = utilAlert.mostrarAlerts("Error",
-                                "Error al insertar!!!","ERROR");
-                        alert.show();
+
+            if (controller.isSaved()) {
+                Sala salaProcesada = controller.getSala();
+                try {
+                    boolean resultado;
+
+                    if (salaEditar == null) {
+                        resultado = salaDao.insert(salaProcesada);
+                    } else {
+                        salaProcesada.setIdsala(salaEditar.getIdsala());
+                        resultado = salaDao.update(salaProcesada);
                     }
-                }else{
-                    boolean result =  salaDao.update(salaProcesado);
-                    if (result){
-                        Alert alert = utilAlert.mostrarAlerts("Update",
-                                "Registro actualizado!!!","WARNING");
-                        alert.showAndWait();
-                    }else{
-                        Alert alert = utilAlert.mostrarAlerts("Error",
-                                "Error al actualizar!!!","ERROR");
-                        alert.show();
+
+                    if (resultado) {
+                        utilAlert.mostrarAlerts(
+                                "Correcto",
+                                "Los datos de la sala se guardaron.",
+                                "CONFIRMATION"
+                        ).showAndWait();
+                    } else {
+                        utilAlert.mostrarAlerts(
+                                "Error",
+                                "No se pudieron guardar los datos de la sala.",
+                                "ERROR"
+                        ).showAndWait();
                     }
+                } catch (RuntimeException e) {
+                    //por ejemplo: el numero de sala ya existe
+                    System.out.println("Error al guardar sala: " + e.getMessage());
+                    utilAlert.mostrarAlerts("No se pudo guardar",
+                            "Revise los datos de la sala.\nDetalle: " + e.getMessage(),
+                            "ERROR").showAndWait();
                 }
                 cargarDatos();
             }
-
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println(
+                    "Error al abrir el formulario de sala: "
+                            + e.getMessage()
+            );
+            utilAlert.mostrarAlerts(
+                    "Error",
+                    "No se pudo abrir el formulario de sala.",
+                    "ERROR"
+            ).showAndWait();
         }
     }
-
 }

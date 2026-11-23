@@ -5,57 +5,69 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<BorderPane prefHeight="600.0" prefWidth="900.0" stylesheets="@style.css"
+<BorderPane prefHeight="640.0" prefWidth="1100.0" stylesheets="@style.css"
             xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="pe.edu.upeu.gestioo_de_cine.controller.MainController">
-    <!--cabecera -->
+    <!--cabecera con la marca del cine -->
     <top>
-        <HBox alignment="CENTER_LEFT" prefHeight="70.0" styleClass="header" BorderPane.alignment="CENTER">
+        <HBox alignment="CENTER_LEFT" prefHeight="74.0" styleClass="header" BorderPane.alignment="CENTER">
             <children>
-                <Label text="CINEMAX" textFill="#014074">
-                    <font><Font name="System Bold" size="24.0" /></font>
-                    <HBox.margin><Insets left="20.0" /></HBox.margin>
-                </Label>
-                <Label text="Gestion de cine" textFill="#666666">
-                    <HBox.margin><Insets left="10.0" /></HBox.margin>
-                </Label>
+                <VBox spacing="0.0">
+                    <HBox.margin><Insets left="22.0" /></HBox.margin>
+                    <children>
+                        <Label styleClass="header-marca" text="CINEMAX" />
+                        <Label styleClass="header-sub" text="Sistema de venta de entradas" />
+                    </children>
+                </VBox>
                 <Region HBox.hgrow="ALWAYS" />
-                <Label text="Bienvenido, " fx:id="lblUsuario" textFill="#014074">
-                    <font><Font name="System Italic" size="14.0" /></font>
-                    <HBox.margin><Insets right="20.0" /></HBox.margin>
-                </Label>
+                <VBox alignment="CENTER_RIGHT" spacing="2.0">
+                    <HBox.margin><Insets right="22.0" /></HBox.margin>
+                    <children>
+                        <Label fx:id="lblUsuario" styleClass="usuario" text="" />
+                        <Label fx:id="lblRol" styleClass="header-sub" text="" />
+                    </children>
+                </VBox>
             </children>
         </HBox>
     </top>
     <!--MENU IZQUIERDO -->
     <left>
-        <VBox prefWidth="200.0" styleClass="sidebar" BorderPane.alignment="CENTER">
+        <VBox prefWidth="215.0" styleClass="sidebar" BorderPane.alignment="CENTER">
             <children>
-                <Button maxWidth="Infinity" onAction="#showHome" mnemonicParsing="false"
+                <Label styleClass="menu-titulo" text="MENÚ" />
+                <Button fx:id="btnInicio" maxWidth="Infinity" onAction="#showHome" mnemonicParsing="false"
                         styleClass="nav-button" text="Inicio" />
-                <Button maxWidth="Infinity" onAction="#showPeli" mnemonicParsing="false"
-                        styleClass="nav-button" text="Peliculas" />
-                <Button maxWidth="Infinity" onAction="#showSal" mnemonicParsing="false"
-                        styleClass="nav-button" text="Peliculas" />
-                <Region VBox.vgrow="ALWAYS"/>
-
+                <Button fx:id="btnClientes" maxWidth="Infinity" onAction="#showCliente" mnemonicParsing="false"
+                        styleClass="nav-button" text="Clientes" />
+                <Button fx:id="btnPeliculas" maxWidth="Infinity" onAction="#showPeli" mnemonicParsing="false"
+                        styleClass="nav-button" text="Películas" />
+                <Button fx:id="btnSalas" maxWidth="Infinity" onAction="#showSal" mnemonicParsing="false"
+                        styleClass="nav-button" text="Salas" />
+                <Button fx:id="btnFunciones" maxWidth="Infinity" onAction="#showFuncion" mnemonicParsing="false"
+                        styleClass="nav-button" text="Funciones" />
+                <Button fx:id="btnVentas" maxWidth="Infinity" onAction="#showVenta" mnemonicParsing="false"
+                        styleClass="nav-button" text="Venta de entradas" />
+                <Button fx:id="btnButacas" maxWidth="Infinity" onAction="#showButacas" mnemonicParsing="false"
+                        styleClass="nav-button" text="Butacas" />
+                <Button fx:id="btnUsuarios" maxWidth="Infinity" onAction="#showUsuarios" mnemonicParsing="false"
+                        styleClass="nav-button" text="Usuarios" />
+                <Region VBox.vgrow="ALWAYS" />
+                <Button maxWidth="Infinity" onAction="#handleLogout" mnemonicParsing="false"
+                        styleClass="nav-button-salir" text="Cerrar sesión" />
             </children>
-
         </VBox>
     </left>
-    <!--area de contenido (body)-->
+    <!--area de contenido (body) -->
     <center>
         <VBox BorderPane.alignment="CENTER">
             <StackPane fx:id="contentArea" styleClass="content-area" VBox.vgrow="ALWAYS">
                 <children>
-                    <Label text="Seleccione una opcion del menu"
-                           textFill="#999999" />
+                    <Label styleClass="leyenda" text="Seleccione una opción del menú" />
                 </children>
             </StackPane>
-            <HBox alignment="CENTER" prefHeight="20.0">
+            <HBox alignment="CENTER" prefHeight="26.0" styleClass="pie">
                 <children>
-                    <Label text="©copyright Pevdxd-2026"
-                           textFill="#999999" />
+                    <Label styleClass="leyenda" text="© CINEMAX 2026  ·  Taller de POO - UPeU" />
                 </children>
             </HBox>
         </VBox>

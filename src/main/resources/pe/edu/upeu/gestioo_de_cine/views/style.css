@@ -1,111 +1,556 @@
+/* ==========================================================
+   style.css - Sistema de venta de entradas del cine
+   Taller Colaborativo - POO
+   Paleta: fondo oscuro, dorado para los botones principales
+   ========================================================== */
 
-/* Fondo general */
-        .root {
-        -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
-        }
+.root {
+    -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    -fx-font-size: 13px;
+}
 
-        /* Panel Azul Izquierdo */
-        .left-pane {
-        -fx-background-color: #014074;
-        -fx-alignment: center;
-        }
+/* ---------------- LOGIN ---------------- */
 
-        /* Panel Gris Derecho */
-        .right-pane {
-        -fx-background-color: #F7F7F7;
-        -fx-alignment: center-left;
-        }
+/* Panel izquierdo con la marca del cine */
+.left-pane {
+    -fx-background-color: #1B1F2B;
+    -fx-alignment: center-left;
+}
 
-        /* Estilo de los campos de texto */
-        .text-field {
-        -fx-background-color: white;
-        -fx-border-color: #DCDCDC;
-        -fx-border-radius: 5;
-        -fx-background-radius: 5;
-        -fx-padding: 10;
-        }
+/* Panel derecho con el formulario */
+.right-pane {
+    -fx-background-color: #12151C;
+    -fx-alignment: center-left;
+}
 
-        .text-field:focused {
-        -fx-border-color: #014074;
-        -fx-border-width: 2;
-        }
+.marca {
+    -fx-text-fill: #E4B04A;
+    -fx-font-size: 46px;
+    -fx-font-weight: bold;
+}
 
-        /* BOTÓN AMARILLO PRO */
-        .button-login {
-        -fx-background-color: #EFA30E;
-        -fx-text-fill: white;
-        -fx-font-weight: bold;
-        -fx-font-size: 14px;
-        -fx-background-radius: 10;
-        -fx-cursor: hand;
-        -fx-padding: 10 30 10 30;
-        }
+.marca-sub {
+    -fx-text-fill: #EDEFF4;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
 
-        .button-login:hover {
-        -fx-background-color: #d48f0c;
-        -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 5);
-        }
+.titulo-login {
+    -fx-text-fill: #EDEFF4;
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+}
 
-        /* Sidebar */
-        .sidebar {
-        -fx-background-color: #014074;
-        -fx-padding: 20 0 0 0;
-        }
+.leyenda {
+    -fx-text-fill: #9AA3B5;
+    -fx-font-size: 12px;
+}
 
-        /* Botones de Navegación */
-        .nav-button {
-        -fx-background-color: transparent;
-        -fx-text-fill: white;
-        -fx-alignment: center-left;
-        -fx-font-size: 14px;
-        -fx-padding: 15 20 15 20;
-        -fx-cursor: hand;
-        -fx-border-color: transparent transparent transparent transparent;
-        -fx-border-width: 0 0 0 5;
-        }
+.etiqueta {
+    -fx-text-fill: #9AA3B5;
+    -fx-font-size: 12px;
+}
 
-        .nav-button:hover {
-        -fx-background-color: rgba(239, 163, 14, 0.1); /* Amarillo con transparencia */
-        -fx-border-color: transparent transparent transparent #EFA30E; /* Borde amarillo lateral */
-        }
+.mensaje-error {
+    -fx-text-fill: #E4766C;
+    -fx-font-size: 12px;
+}
 
-        /* Cabecera */
-        .header {
-        -fx-background-color: white;
-        -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 2);
-        }
+/* ---------------- CAMPOS DE TEXTO ---------------- */
 
-        /* Contenedor de contenido */
-        .content-area {
-        -fx-background-color: #F7F7F7;
-        }
-        /* Alinear el texto de las cabeceras a la izquierda */
-        .table-view .column-header .label {
-        -fx-alignment: CENTER_LEFT;
-        -fx-padding: 0 0 0 10; /* Un pequeño margen a la izquierda para que no pegue al borde */
-        }
+.text-field, .password-field {
+    -fx-background-color: #1B1F2B;
+    -fx-text-fill: #EDEFF4;
+    -fx-prompt-text-fill: #6C748A;
+    -fx-border-color: #2C3244;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 10;
+}
 
-        /* Opcional: Si quieres que las cabeceras tengan el color azul de tu marca */
-        .table-view .column-header {
-        -fx-background-color: #f4f4f4; /* Color de fondo de la cabecera */
-        -fx-border-color: #e0e0e0;
-        }
+.text-field:focused, .password-field:focused {
+    -fx-border-color: #E4B04A;
+    -fx-border-width: 2;
+}
 
-        .table-view .column-header .label {
-        -fx-text-fill: #014074; /* Tu color azul para el texto de la cabecera */
-        -fx-font-weight: bold;
-        }
+.combo-box {
+    -fx-background-color: #262C3B;
+    -fx-background-radius: 6;
+    -fx-padding: 2;
+}
 
-        .button-action-edit{
-        -fx-background-color: #014074;
-        -fx-text-fill: white;
-        }
-        .button-action-delete{
-        -fx-background-color: #FF6666;
-        -fx-text-fill: white;
-        }
+.combo-box .list-cell {
+    -fx-text-fill: #EDEFF4;
+    -fx-background-color: transparent;
+}
 
-        .button-action-cancel{
-        -fx-background-color: #EFA30E;
-        -fx-text-fill: white;
-        }
+.combo-box .arrow {
+    -fx-background-color: #C9D0E0;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: #1B1F2B;
+    -fx-border-color: #2C3244;
+}
+
+.combo-box-popup .list-view .list-cell:filled:hover {
+    -fx-background-color: #262C3B;
+}
+
+/* ---------------- BOTONES ---------------- */
+
+.button-login {
+    -fx-background-color: #E4B04A;
+    -fx-text-fill: #12151C;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+    -fx-padding: 10 30 10 30;
+}
+
+.button-login:hover {
+    -fx-background-color: #C89A38;
+}
+
+.boton-tarjeta {
+    -fx-background-color: #262C3B;
+    -fx-text-fill: #EDEFF4;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+    -fx-padding: 7 14 7 14;
+    -fx-font-size: 12px;
+}
+
+.boton-tarjeta:hover {
+    -fx-background-color: #E4B04A;
+    -fx-text-fill: #12151C;
+}
+
+/* ---------------- MENU PRINCIPAL ---------------- */
+
+.header {
+    -fx-background-color: #1B1F2B;
+    -fx-border-color: transparent transparent #2C3244 transparent;
+}
+
+.header-marca {
+    -fx-text-fill: #E4B04A;
+    -fx-font-size: 19px;
+    -fx-font-weight: bold;
+}
+
+.header-sub {
+    -fx-text-fill: #9AA3B5;
+    -fx-font-size: 12px;
+}
+
+.usuario {
+    -fx-text-fill: #EDEFF4;
+    -fx-font-size: 13px;
+}
+
+.sidebar {
+    -fx-background-color: #171B26;
+    -fx-padding: 18 0 0 0;
+}
+
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #C9D0E0;
+    -fx-alignment: center-left;
+    -fx-font-size: 13px;
+    -fx-padding: 14 20 14 20;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 0 4;
+}
+
+.nav-button:hover {
+    -fx-background-color: rgba(228, 176, 74, 0.10);
+    -fx-border-color: transparent transparent transparent #E4B04A;
+}
+
+.nav-button-activo {
+    -fx-background-color: rgba(228, 176, 74, 0.16);
+    -fx-text-fill: #E4B04A;
+    -fx-border-color: transparent transparent transparent #E4B04A;
+}
+
+.nav-button-salir {
+    -fx-background-color: transparent;
+    -fx-text-fill: #E4766C;
+    -fx-alignment: center-left;
+    -fx-font-size: 13px;
+    -fx-padding: 14 20 14 20;
+    -fx-cursor: hand;
+}
+
+.nav-button-salir:hover {
+    -fx-background-color: rgba(228, 118, 108, 0.12);
+}
+
+.content-area {
+    -fx-background-color: #12151C;
+}
+
+.pie {
+    -fx-background-color: #171B26;
+}
+
+/* ---------------- CONTENIDO DE LAS VISTAS ---------------- */
+
+.titulo-vista {
+    -fx-text-fill: #EDEFF4;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+}
+
+.subtitulo-vista {
+    -fx-text-fill: #9AA3B5;
+    -fx-font-size: 12px;
+}
+
+/* Tarjetas de pelicula */
+.tarjeta {
+    -fx-background-color: #1B1F2B;
+    -fx-background-radius: 10;
+    -fx-border-color: #2C3244;
+    -fx-border-radius: 10;
+    -fx-padding: 16;
+}
+
+/* Poster de la pelicula dentro de la tarjeta */
+.poster {
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.45), 12, 0, 0, 4);
+}
+
+.tarjeta:hover {
+    -fx-border-color: #E4B04A;
+}
+
+.tarjeta-titulo {
+    -fx-text-fill: #EDEFF4;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+}
+
+.tarjeta-detalle {
+    -fx-text-fill: #9AA3B5;
+    -fx-font-size: 12px;
+}
+
+.tarjeta-horario {
+    -fx-text-fill: #E4B04A;
+    -fx-font-size: 12px;
+}
+
+.clasificacion {
+    -fx-background-color: #262C3B;
+    -fx-text-fill: #E4B04A;
+    -fx-background-radius: 4;
+    -fx-padding: 2 8 2 8;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+/* Tarjetas del inicio */
+.stat-card {
+    -fx-background-color: #1B1F2B;
+    -fx-background-radius: 10;
+    -fx-border-color: #2C3244;
+    -fx-border-radius: 10;
+    -fx-padding: 18;
+}
+
+.stat-numero {
+    -fx-text-fill: #E4B04A;
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+}
+
+.stat-texto {
+    -fx-text-fill: #9AA3B5;
+    -fx-font-size: 12px;
+}
+
+/* Paneles de la venta de entradas */
+.panel {
+    -fx-background-color: #1B1F2B;
+    -fx-background-radius: 10;
+    -fx-padding: 18;
+    -fx-border-color: #2C3244;
+    -fx-border-radius: 10;
+}
+
+.panel-titulo {
+    -fx-text-fill: #EDEFF4;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.valor {
+    -fx-text-fill: #EDEFF4;
+    -fx-font-size: 13px;
+}
+
+.total {
+    -fx-text-fill: #E4B04A;
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+}
+
+.pantalla {
+    -fx-background-color: linear-gradient(to bottom, #3A4356, #222836);
+    -fx-background-radius: 0 0 40 40;
+    -fx-text-fill: #C9D0E0;
+    -fx-alignment: center;
+    -fx-padding: 6;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+/* Butacas. El ancho lo calcula VentaController segun el panel disponible,
+   asi que aqui no se declara min-width: ese valor vive solo en el controlador */
+.butaca {
+    -fx-background-color: #262C3B;
+    -fx-text-fill: #C9D0E0;
+    -fx-background-radius: 5;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+    -fx-font-size: 10px;
+}
+
+.butaca:hover {
+    -fx-background-color: #333C50;
+}
+
+.butaca-elegida {
+    -fx-background-color: #E4B04A;
+    -fx-text-fill: #12151C;
+    -fx-font-weight: bold;
+}
+
+.butaca-ocupada {
+    -fx-background-color: #20242F;
+    -fx-text-fill: #555C6B;
+    -fx-opacity: 1;
+}
+
+.fila-etiqueta {
+    -fx-text-fill: #6C748A;
+    -fx-font-size: 11px;
+}
+
+.leyenda-butacas {
+    -fx-text-fill: #6C748A;
+    -fx-font-size: 11px;
+}
+
+.separator .line {
+    -fx-border-color: #2C3244;
+}
+
+/* ---------------- TABLAS (para los modulos siguientes) ---------------- */
+
+.table-view {
+    -fx-background-color: #1B1F2B;
+    -fx-border-color: #2C3244;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+
+.table-view .column-header {
+    -fx-background-color: #222836;
+    -fx-border-color: #2C3244;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #E4B04A;
+    -fx-font-weight: bold;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 0 0 0 10;
+}
+
+.table-view .table-cell {
+    -fx-text-fill: #EDEFF4;
+    -fx-border-color: transparent transparent #262C3B transparent;
+}
+
+.table-row-cell {
+    -fx-background-color: #1B1F2B;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #1E2230;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: rgba(228, 176, 74, 0.25);
+}
+
+.button-action-edit {
+    -fx-background-color: #E4B04A;
+    -fx-text-fill: #12151C;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+    -fx-padding: 7 16 7 16;
+}
+
+.button-action-delete {
+    -fx-background-color: #B23A3A;
+    -fx-text-fill: white;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+    -fx-padding: 7 16 7 16;
+}
+
+/* ---------------- SCROLL ---------------- */
+
+.scroll-pane {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar:vertical {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar:vertical .thumb {
+    -fx-background-color: #2C3244;
+    -fx-background-radius: 4;
+}
+
+/* ---------------- FORMULARIOS EN VENTANA MODAL ---------------- */
+
+.form-dialogo {
+    -fx-background-color: #1B1F2B;
+}
+
+.titulo-form {
+    -fx-text-fill: #EDEFF4;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+/* ---------------- SELECTOR DE FECHA ---------------- */
+
+.date-picker {
+    -fx-background-color: #262C3B;
+    -fx-background-radius: 6;
+}
+
+.date-picker .text-field {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 6;
+}
+
+.date-picker .arrow-button {
+    -fx-background-color: #262C3B;
+}
+
+.date-picker .arrow-button .arrow {
+    -fx-background-color: #C9D0E0;
+}
+
+.date-picker-popup {
+    -fx-background-color: #1B1F2B;
+    -fx-border-color: #2C3244;
+}
+
+.date-picker-popup > .month-year-pane {
+    -fx-background-color: #222836;
+}
+
+.date-picker-popup .label {
+    -fx-text-fill: #EDEFF4;
+}
+
+.date-picker-popup .day-name-cell {
+    -fx-text-fill: #9AA3B5;
+}
+
+.date-picker-popup .day-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #EDEFF4;
+}
+
+.date-picker-popup .day-cell:hover {
+    -fx-background-color: #262C3B;
+}
+
+.date-picker-popup .day-cell:selected {
+    -fx-background-color: #E4B04A;
+    -fx-text-fill: #12151C;
+}
+/* ---------------- VISTAS DE LISTADO ---------------- */
+
+/* fondo de las pantallas que se cargan dentro del area de contenido */
+.page {
+    -fx-background-color: #12151C;
+}
+
+/* titulo pequeno dentro del menu lateral */
+.menu-titulo {
+    -fx-text-fill: #6C748A;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 4 20;
+}
+
+/* barra de busqueda y filtros */
+.toolbar {
+    -fx-background-color: #1B1F2B;
+    -fx-border-color: #2C3244;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 10 12 10 12;
+}
+
+/* mensaje que aparece cuando la tabla no tiene filas */
+.tabla-vacia {
+    -fx-text-fill: #6C748A;
+    -fx-font-size: 12px;
+}
+
+/* resumen de boletos activos y total */
+.resumen {
+    -fx-text-fill: #E4B04A;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+/* boton secundario, para acciones neutras */
+.button-secundario {
+    -fx-background-color: #262C3B;
+    -fx-text-fill: #EDEFF4;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+    -fx-padding: 8 16 8 16;
+    -fx-font-size: 12px;
+}
+
+.button-secundario:hover {
+    -fx-background-color: #333C50;
+}
+
+/* estado de una venta: se distingue por color y por texto */
+.table-view .estado-activa {
+    -fx-text-fill: #6FD08C;
+    -fx-font-weight: bold;
+}
+
+.table-view .estado-anulada {
+    -fx-text-fill: #E4766C;
+    -fx-font-weight: bold;
+}
+
+/* etiqueta de ayuda dentro de los formularios */
+.campo-ayuda {
+    -fx-text-fill: #6C748A;
+    -fx-font-size: 11px;
+}

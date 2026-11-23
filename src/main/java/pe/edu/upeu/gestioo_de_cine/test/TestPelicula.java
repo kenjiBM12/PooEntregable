@@ -15,7 +15,7 @@ import java.util.List;
                 for (Pelicula pelicula : lista) {
                     System.out.println("ID_CLIENTE:" + pelicula.getidpelicula());
                     System.out.println("Numero:" + pelicula.getNumero());
-                    System.out.println("Nombre:" + pelicula.getNombre());
+                    System.out.println("Nombre:" + pelicula.getTitulo());
                     System.out.println("Duracion:" + pelicula.getDuracion());
                     System.out.println("Categoria:" + pelicula.getCategoria());
                     System.out.println("Clasificacion:" + pelicula.getClasificacion());
@@ -27,7 +27,7 @@ import java.util.List;
 
         public static void insertar() {
             Pelicula p = new Pelicula();
-            p.setNombre("Ninja mericano");
+            p.setTitulo("Ninja mericano");
             p.setNumero(123);
             p.setDuracion("123");
             p.setCategoria("Accion");
@@ -59,7 +59,7 @@ import java.util.List;
                 return;
             }
 
-            pelicula.setNombre("Película actualizada");
+            pelicula.setTitulo("Película actualizada");
             pelicula.setNumero(10);
             pelicula.setDuracion("120");
             pelicula.setCategoria("Drama");
@@ -83,7 +83,7 @@ import java.util.List;
                 return;
             }
 
-            pelicula.setNombre("ninja americano");
+            pelicula.setTitulo("ninja americano");
             pelicula.setNumero(11);
             pelicula.setDuracion("120");
             pelicula.setCategoria("Drama");

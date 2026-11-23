@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox spacing="12.0" styleClass="page" stylesheets="@style.css"
+      xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="pe.edu.upeu.gestioo_de_cine.controller.ButacaController">
+    <padding>
+        <Insets bottom="18.0" left="24.0" right="24.0" top="20.0"/>
+    </padding>
+    <children>
+
+        <HBox alignment="CENTER_LEFT" spacing="14.0">
+            <children>
+                <VBox spacing="2.0">
+                    <children>
+                        <Label styleClass="titulo-vista" text="Butacas por función"/>
+                        <Label styleClass="subtitulo-vista"
+                               text="Las butacas con ✕ ya están vendidas en la función elegida."/>
+                    </children>
+                </VBox>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button mnemonicParsing="false" onAction="#handleGenerar" styleClass="button-login"
+                        text="+ GENERAR BUTACAS"/>
+            </children>
+        </HBox>
+
+        <ComboBox fx:id="cboFuncion" maxWidth="Infinity"/>
+
+        <Label fx:id="lblSala" styleClass="leyenda" wrapText="true"/>
+
+        <Label styleClass="pantalla" maxWidth="Infinity" text="PANTALLA"/>
+
+        <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="AS_NEEDED"
+                    vbarPolicy="AS_NEEDED" VBox.vgrow="ALWAYS"
+                    style="-fx-background-color: transparent; -fx-background: transparent;">
+            <content>
+                <GridPane fx:id="gridButacas" alignment="CENTER" hgap="5.0" vgap="5.0"/>
+            </content>
+        </ScrollPane>
+
+        <Label styleClass="leyenda-butacas" text="Número = libre   ·   ✕ = ocupada"/>
+
+        <Label fx:id="lblMensaje" styleClass="mensaje-error" wrapText="true"/>
+
+    </children>
+</VBox>

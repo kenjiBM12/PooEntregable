@@ -15,38 +15,20 @@ import java.util.List;
 public class SalaDaoImpl implements ISalaDao {
     @Override
     public boolean insert(Sala s) {
-        /*
-             boolean flag = false;
-        String query = "INSERT INTO cliente(nombre,apellidos,dni,email,genero)VALUES(?,?,?,?,?);";
-        try (Connection cn = ConexionDB.getConnection();
-             PreparedStatement st = cn.prepareStatement(query)) {
-            st.setString(1,c.getNombre());
-            st.setString(2,c.getApellidos());
-            st.setString(3,c.getDni());
-            st.setString(4,c.getEmail());
-            st.setString(5,c.getGenero());
-            st.executeUpdate();
-            flag=true;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return flag;
-    }
-         */
         boolean flag = false;
-        String query = "INSERT INTO sala(numero,nombre,tipo,capacidad,estado)"
-                + " VALUES(?,?,?,?,?); ";
-        try (Connection cn = ConexionDB.getConnection();
-             PreparedStatement st = cn.prepareStatement(query)) {
+        //la tabla sala usa numero y tipo_sala; ya no existe la columna nombre
+        String query = "INSERT INTO sala(numero,tipo_sala,capacidad,estado)"
+                + " VALUES(?,?,?,?); ";
+        Connection cn = ConexionDB.getConnection();
+        try (PreparedStatement st = cn.prepareStatement(query)) {
             st.setInt(1, s.getNumero());
-            st.setString(2, s.getNombre());
-            st.setString(3, s.getTipo());
-            st.setInt(4, s.getCapacidad());
-            st.setString(5, s.getEstado());
-            st.executeUpdate();
-            flag = true;
+            st.setString(2, s.getTipoSala());
+            st.setInt(3, s.getCapacidad());
+            st.setString(4, s.getEstado());
+            //true solo si se guardo una fila
+            flag = st.executeUpdate() > 0;
         } catch (SQLException e) {
-            System.out.println("Error al insertar sala:" + e.getMessage());
+            throw new RuntimeException("Error al insertar sala:" + e.getMessage(), e);
         }
         return flag;
     }
@@ -55,21 +37,19 @@ public class SalaDaoImpl implements ISalaDao {
     @Override
     public boolean update(Sala s) {
         boolean flag = false;
-        String query = " UPDATE sala SET numero=?, nombre =?, tipo=?, " +
+        String query = " UPDATE sala SET numero=?, tipo_sala=?, " +
                 "capacidad=?, estado=? " +
                 " WHERE idsala=?; ";
-        try (Connection cn = ConexionDB.getConnection();
-             PreparedStatement st = cn.prepareStatement(query)) {
+        Connection cn = ConexionDB.getConnection();
+        try (PreparedStatement st = cn.prepareStatement(query)) {
             st.setInt(1, s.getNumero());
-            st.setString(2, s.getNombre());
-            st.setString(3, s.getTipo());
-            st.setInt(4, s.getCapacidad());
-            st.setString(5, s.getEstado());
-            st.setInt(6, s.getIdsala());
-            st.executeUpdate();
-            flag = true;
+            st.setString(2, s.getTipoSala());
+            st.setInt(3, s.getCapacidad());
+            st.setString(4, s.getEstado());
+            st.setInt(5, s.getIdsala());
+            flag = st.executeUpdate() > 0;
         } catch (SQLException e) {
-            System.out.println("Error al actualizar sala: " + e.getMessage());
+            throw new RuntimeException("Error al actualizar sala: " + e.getMessage(), e);
         }
         return flag;
 
@@ -81,8 +61,8 @@ public class SalaDaoImpl implements ISalaDao {
 
         String query = "SELECT * FROM sala WHERE idsala = ?";
 
-        try (Connection cn = ConexionDB.getConnection();
-             PreparedStatement st = cn.prepareStatement(query)) {
+        Connection cn = ConexionDB.getConnection();
+        try (PreparedStatement st = cn.prepareStatement(query)) {
 
             st.setInt(1, id);
 
@@ -92,15 +72,14 @@ public class SalaDaoImpl implements ISalaDao {
                     s = new Sala();
                     s.setIdsala(rs.getInt("idsala"));
                     s.setNumero(rs.getInt("numero"));
-                    s.setNombre(rs.getString("nombre"));
-                    s.setTipo(rs.getString("tipo"));
+                    s.setTipoSala(rs.getString("tipo_sala"));
                     s.setCapacidad(rs.getInt("capacidad"));
                     s.setEstado(rs.getString("estado"));
 
                 }
             }
         } catch (SQLException e) {
-            System.out.println("Error al buscar sala por ID: " + e.getMessage());
+            throw new RuntimeException("Error al buscar sala por ID: " + e.getMessage(), e);
         }
 
         return s;
@@ -109,29 +88,23 @@ public class SalaDaoImpl implements ISalaDao {
     @Override
     public Sala searchByNum(int num) {
         Sala s = null;
-
         String query = "SELECT * FROM sala WHERE numero = ?";
-
-        try (Connection cn = ConexionDB.getConnection();
-             PreparedStatement st = cn.prepareStatement(query)) {
-
+        Connection cn = ConexionDB.getConnection();
+        try (PreparedStatement st = cn.prepareStatement(query)) {
             st.setInt(1, num);
-
             try (ResultSet rs = st.executeQuery()) {
-
                 if (rs.next()) {
                     s = new Sala();
                     s.setIdsala(rs.getInt("idsala"));
                     s.setNumero(rs.getInt("numero"));
-                    s.setNombre(rs.getString("nombre"));
-                    s.setTipo(rs.getString("tipo"));
+                    s.setTipoSala(rs.getString("tipo_sala"));
                     s.setCapacidad(rs.getInt("capacidad"));
                     s.setEstado(rs.getString("estado"));
 
                 }
             }
         } catch (SQLException e) {
-            System.out.println("Error al buscar sala por numero: " + e.getMessage());
+            throw new RuntimeException("Error al buscar sala por numero: " + e.getMessage(), e);
         }
 
         return s;
@@ -140,38 +113,75 @@ public class SalaDaoImpl implements ISalaDao {
     @Override
     public boolean delete(Sala s) {
         boolean flag = false;
-        String query = "DELETE FROM sala WHERE idsala=?";
-        try (Connection cn = ConexionDB.getConnection();
-             PreparedStatement st = cn.prepareStatement(query)) {
+        Connection cn = ConexionDB.getConnection();
+
+        //la sala esta amarrada a sus funciones y butacas: se revisa antes de borrar
+        String queryFunciones = "SELECT COUNT(*) FROM funcion WHERE id_sala=?";
+        try (PreparedStatement st = cn.prepareStatement(queryFunciones)) {
             st.setInt(1, s.getIdsala());
-            st.executeUpdate();
-            flag = true;
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next() && rs.getInt(1) > 0) {
+                    throw new RuntimeException("La sala " + s.getNumero() + " tiene "
+                            + rs.getInt(1) + " función(es) programada(s).\n"
+                            + "Elimine primero esas funciones en el módulo Funciones.");
+                }
+            }
         } catch (SQLException e) {
-            System.out.println("Error al eliminar sala: " + e.getMessage());
+            throw new RuntimeException("Error al revisar las funciones de la sala: "
+                    + e.getMessage(), e);
+        }
+
+        //las butacas pertenecen a la sala, se borran junto con ella
+        String queryButacas = "DELETE FROM butaca WHERE id_sala=?";
+        String query = "DELETE FROM sala WHERE idsala=?";
+        try {
+            //si algo falla no queda la sala a medio borrar
+            cn.setAutoCommit(false);
+            try (PreparedStatement st = cn.prepareStatement(queryButacas)) {
+                st.setInt(1, s.getIdsala());
+                st.executeUpdate();
+            }
+            try (PreparedStatement st = cn.prepareStatement(query)) {
+                st.setInt(1, s.getIdsala());
+                flag = st.executeUpdate() > 0;
+            }
+            cn.commit();
+        } catch (SQLException e) {
+            try {
+                cn.rollback();
+            } catch (SQLException ex) {
+                System.out.println("Error al revertir el borrado de la sala: " + ex.getMessage());
+            }
+            throw new RuntimeException("Error al eliminar sala: " + e.getMessage(), e);
+        } finally {
+            try {
+                cn.setAutoCommit(true);
+            } catch (SQLException ex) {
+                System.out.println("Error al reactivar el autocommit: " + ex.getMessage());
+            }
         }
         return flag;
     }
     @Override
     public List<Sala> listAll() {
         List<Sala> lista = new ArrayList<>();
-        String query = "SELECT * FROM sala";
+        String query = "SELECT * FROM sala ORDER BY numero";
 
-        try (Connection cn = ConexionDB.getConnection();
-             PreparedStatement st = cn.prepareStatement(query);
+        Connection cn = ConexionDB.getConnection();
+        try (PreparedStatement st = cn.prepareStatement(query);
              ResultSet rs = st.executeQuery()) {
 
             while (rs.next()) {
                 Sala s = new Sala();
                 s.setIdsala(rs.getInt("idsala"));
                 s.setNumero(rs.getInt("numero"));
-                s.setNombre(rs.getString("nombre"));
-                s.setTipo(rs.getString("tipo"));
+                s.setTipoSala(rs.getString("tipo_sala"));
                 s.setCapacidad(rs.getInt("capacidad"));
                 s.setEstado(rs.getString("estado"));
                 lista.add(s);
             }
         } catch (SQLException e) {
-            System.out.println("Error al listar salas: " + e.getMessage());
+            throw new RuntimeException("Error al listar salas: " + e.getMessage(), e);
         }
 
         return lista;

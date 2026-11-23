@@ -13,6 +13,8 @@ public class Cliente {
     private final StringProperty dni = new SimpleStringProperty();
     private final StringProperty email = new SimpleStringProperty();
     private final StringProperty genero = new SimpleStringProperty();
+    //telefono: se pide en la venta de entradas
+    private final StringProperty telefono = new SimpleStringProperty();
 
     public Cliente() {}
     public Cliente(int idcliente, String nombre, String apellidos,
@@ -101,5 +103,16 @@ public class Cliente {
         return email;
     }
 
+    public final String getTelefono() {
+        return telefono.get();
+    }
+
+    public final void setTelefono(String value) {
+        telefono.set(value);
+    }
+
+    public final StringProperty telefonoProperty() {
+        return telefono;
+    }
 
 }

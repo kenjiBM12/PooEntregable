@@ -16,7 +16,7 @@ public class PeliculaFormController {
     @FXML
     private Label lblTitulo;
     @FXML
-    private TextField txtNumero,txtNombre,txtDuracion,txtClasificacion;
+    private TextField txtNumero,txtTitulo,txtDuracion,txtClasificacion;
     @FXML
     private ComboBox<String> cbCategoria;
     private Pelicula pelicula;
@@ -34,18 +34,19 @@ public class PeliculaFormController {
         return pelicula;
     }
     private boolean validate(){
-        if (txtNombre.getText().isBlank()
+        if (txtTitulo.getText().isBlank()
                 || txtNumero.getText().isBlank()
                 || txtDuracion.getText().isBlank()
                 || txtClasificacion.getText().isBlank()
                 || cbCategoria.getValue() == null) {
             Alert alert = utilAlerts.mostrarAlerts("",
                     "Completa todos los campos obligatorios.","ERROR");
-            alert.show();
+            alert.showAndWait();
             return false;
         }
+        int numero;
         try {
-            Integer.parseInt(txtNumero.getText().trim());
+            numero = Integer.parseInt(txtNumero.getText().trim());
         } catch (NumberFormatException e) {
             utilAlerts.mostrarAlerts(
                     "Número inválido",
@@ -54,11 +55,37 @@ public class PeliculaFormController {
             ).showAndWait();
             return false;
         }
+        //el codigo de la pelicula debe ser un numero positivo
+        if (numero <= 0) {
+            utilAlerts.mostrarAlerts("Número inválido",
+                    "El número de la película debe ser mayor que cero.", "WARNING").showAndWait();
+            return false;
+        }
+        //la duracion debe ser mayor que cero: "120" minutos o "1:50" horas
+        if (!duracionValida(txtDuracion.getText())) {
+            utilAlerts.mostrarAlerts("Duración inválida",
+                    "Ingresa la duración en minutos (ejemplo: 120) o como horas:minutos (ejemplo: 1:50).",
+                    "WARNING").showAndWait();
+            return false;
+        }
 
         return true;
     }
+
+    //revisa que la duracion sea un numero positivo, con o sin "h" al final
+    private boolean duracionValida(String texto) {
+        String valor = texto.trim().replace("h", "").replace("H", "").trim();
+        if (valor.matches("[0-9]{1,3}")) {
+            return Integer.parseInt(valor) > 0;
+        }
+        if (valor.matches("[0-9]{1,2}:[0-5][0-9]")) {
+            String[] partes = valor.split(":");
+            return Integer.parseInt(partes[0]) > 0 || Integer.parseInt(partes[1]) > 0;
+        }
+        return false;
+    }
     private void cerrar(){
-        Stage stage = (Stage) txtNombre.getScene().getWindow();
+        Stage stage = (Stage) txtTitulo.getScene().getWindow();
         stage.close();
     }
     //actions of the views
@@ -71,10 +98,10 @@ public class PeliculaFormController {
         if (validate()){
             if (pelicula == null)
                 pelicula = new Pelicula();
-            pelicula.setNumero(Integer.parseInt(txtNumero.getText()));
-            pelicula.setNombre(txtNombre.getText());
-            pelicula.setDuracion(txtDuracion.getText());
-            pelicula.setClasificacion(txtClasificacion.getText());
+            pelicula.setNumero(Integer.parseInt(txtNumero.getText().trim()));
+            pelicula.setTitulo(txtTitulo.getText().trim());
+            pelicula.setDuracion(txtDuracion.getText().trim());
+            pelicula.setClasificacion(txtClasificacion.getText().trim());
             pelicula.setCategoria(cbCategoria.getValue());
             saved =true;
             cerrar();
@@ -86,7 +113,7 @@ public class PeliculaFormController {
         if (p!=null){
             lblTitulo.setText("Editar Pelicula");
             txtNumero.setText(p.getNumero().toString());
-            txtNombre.setText(p.getNombre());
+            txtTitulo.setText(p.getTitulo());
             txtDuracion.setText(p.getDuracion());
             txtClasificacion.setText(p.getClasificacion());
             cbCategoria.setValue(p.getCategoria());

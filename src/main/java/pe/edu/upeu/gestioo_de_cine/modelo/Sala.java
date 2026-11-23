@@ -8,20 +8,18 @@ import javafx.beans.property.StringProperty;
 public class Sala {
     private final IntegerProperty idsala = new SimpleIntegerProperty(this, "idsala");
     private final IntegerProperty numero = new SimpleIntegerProperty(this, "numero");
-    private final StringProperty nombre = new SimpleStringProperty(this, "nombre");
-    private final StringProperty tipo = new SimpleStringProperty(this, "tipo");
+    private final StringProperty tipoSala = new SimpleStringProperty(this, "tipo");
     private final IntegerProperty capacidad = new SimpleIntegerProperty(this, "capacidad");
     private final StringProperty estado = new SimpleStringProperty(this, "estado");
 
 
     public Sala() {
     }
-    public Sala(int idsala, int numero, String nombre, String tipo,
+    public Sala(int idsala, int numero, String tipoSala,
                 int capacidad, String estado) {
         setIdsala(idsala);
         setNumero(numero);
-        setNombre(nombre);
-        setTipo(tipo);
+        setTipoSala(tipoSala);
         setCapacidad(capacidad);
         setEstado(estado);
     }
@@ -49,28 +47,16 @@ public class Sala {
         return capacidad;
     }
 
-    public final String getTipo() {
-        return tipo.get();
+    public final String getTipoSala() {
+        return tipoSala.get();
     }
 
-    public final void setTipo(String value) {
-        tipo.set(value);
+    public final void setTipoSala(String value) {
+        tipoSala.set(value);
     }
 
-    public final StringProperty tipoProperty() {
-        return tipo;
-    }
-
-    public final String getNombre() {
-        return nombre.get();
-    }
-
-    public final void setNombre(String value) {
-        nombre.set(value);
-    }
-
-    public final StringProperty nombreProperty() {
-        return nombre;
+    public final StringProperty tipoSalaProperty() {
+        return tipoSala;
     }
 
     public final int getNumero() {
@@ -95,6 +81,17 @@ public class Sala {
 
     public final IntegerProperty idsalaProperty() {
         return idsala;
+    }
+
+    //etiqueta que se muestra al usuario: "Sala 2 — 3D"
+    public String getEtiqueta() {
+        String tipoSala = getTipoSala() != null ? getTipoSala() : "";
+        return "Sala " + getNumero() + " — " + tipoSala;
+    }
+
+    @Override
+    public String toString() {
+        return getEtiqueta();
     }
 
 }
