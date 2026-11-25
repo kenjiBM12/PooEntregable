@@ -151,12 +151,23 @@ public class UsuarioController {
                         + seleccionado.getUsuario() + "?", "CONFIRMATION");
         Optional<ButtonType> result = confirm.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
+            int estadoAnterior = seleccionado.getActivo();
             seleccionado.setActivo(nuevoEstado);
-            if (usuarioDao.update(seleccionado)) {
-                cargarDatos();
-            } else {
+            //CORREGIDO: si la base falla se regresa el estado en memoria, para
+            //que la tabla no muestre un cambio que en realidad no se guardo
+            try {
+                if (usuarioDao.update(seleccionado)) {
+                    cargarDatos();
+                } else {
+                    seleccionado.setActivo(estadoAnterior);
+                    utilAlert.mostrarAlerts("Error",
+                            "No se pudo cambiar el estado del usuario", "ERROR").showAndWait();
+                }
+            } catch (RuntimeException e) {
+                seleccionado.setActivo(estadoAnterior);
+                System.out.println("Error al cambiar el estado del usuario: " + e.getMessage());
                 utilAlert.mostrarAlerts("Error",
-                        "No se pudo cambiar el estado del usuario", "ERROR").showAndWait();
+                        "No se pudo cambiar el estado del usuario.", "ERROR").showAndWait();
             }
         }
     }

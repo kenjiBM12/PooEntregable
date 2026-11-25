@@ -106,7 +106,7 @@ public class FuncionFormController {
             return false;
         }
         try {
-            double precio = Double.parseDouble(txtPrecio.getText().trim());
+            double precio = leerPrecio();
             if (precio <= 0) {
                 utilAlerts.mostrarAlerts("Precio invalido",
                         "El precio debe ser mayor que cero.", "WARNING").showAndWait();
@@ -118,6 +118,13 @@ public class FuncionFormController {
             return false;
         }
         return true;
+    }
+
+    //CORREGIDO: en espanol el precio se escribe con coma (12,50) y
+    //Double.parseDouble solo acepta punto; aqui se cambia la coma por punto
+    //para que el precio se pueda escribir de las dos formas
+    private double leerPrecio() {
+        return Double.parseDouble(txtPrecio.getText().trim().replace(',', '.'));
     }
 
     private void cerrar() {
@@ -160,7 +167,7 @@ public class FuncionFormController {
         funcion.setSala(cbSala.getValue());
         funcion.setFecha(dpFecha.getValue().toString());
         funcion.setHorario(txtHorario.getText().trim());
-        funcion.setPrecio(Double.parseDouble(txtPrecio.getText().trim()));
+        funcion.setPrecio(leerPrecio());
         saved = true;
         cerrar();
     }

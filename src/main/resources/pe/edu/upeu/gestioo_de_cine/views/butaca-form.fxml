@@ -18,12 +18,12 @@
     </padding>
     <children>
 
-        <Label fx:id="lblTitulo" styleClass="titulo-form" text="Generar butacas"/>
+        <Label fx:id="lblTitulo" styleClass="titulo-form" text="Cuadricula de butacas"/>
         <Label fx:id="lblSala" styleClass="leyenda" wrapText="true"/>
         <Separator/>
 
         <Label styleClass="leyenda"
-               text="Filas x columnas no puede superar la capacidad de la sala. Las butacas que ya existen no se duplican."/>
+               text="Al guardar se ajustan las butacas y la capacidad de la sala. Si una butaca que se quitaria ya tiene ventas, el cambio se rechaza."/>
 
         <GridPane hgap="12.0" vgap="12.0">
             <columnConstraints>
@@ -48,7 +48,7 @@
                         text="Cancelar"/>
                 <Button mnemonicParsing="false" onAction="#handleSave"
                         prefHeight="32.0" prefWidth="110.0" styleClass="button-login"
-                        text="Generar"/>
+                        text="Guardar"/>
             </children>
         </HBox>
 

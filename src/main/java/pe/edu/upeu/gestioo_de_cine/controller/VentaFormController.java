@@ -8,6 +8,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import pe.edu.upeu.gestioo_de_cine.implementacion.ButacaDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.implementacion.ClienteDaoImpl;
@@ -38,7 +39,10 @@ public class VentaFormController {
 
     //limite de boletos que se pueden vender en una sola compra
     private static final int MAX_BOLETOS = 10;
-
+    @FXML
+    private VBox panelPaso12, panelPaso3;
+    @FXML
+    private Button btnSiguiente;
     @FXML
     private ComboBox<Pelicula> cboPelicula;
     @FXML
@@ -53,9 +57,17 @@ public class VentaFormController {
     private Label lblMensaje;
     @FXML
     private TextField txtDni, txtNombre, txtEmail, txtApellidos, txtTelefono;
+    //CORREGIDO: se agrego el genero al formulario de venta; el combo usa textos
+    //igual que el formulario de clientes (Masculino / Femenino)
+    @FXML
+    private ComboBox<String> cbgenero;
 
     //se pueden elegir varias butacas en una misma venta
     private final List<Butaca> butacasSeleccionadas = new ArrayList<>();
+    //CORREGIDO: columnas de la sala. Antes el mapa mostraba el numero de la
+    //butaca dentro de su fila y volvia a empezar en 1 en cada fila; con las
+    //columnas se calcula el numero real, del 1 hasta la capacidad de la sala
+    private int columnasSala = 0;
     private boolean saved = false;
 
     private final IPeliculaDao peliculaDao = new PeliculaDaoImpl();
@@ -70,12 +82,15 @@ public class VentaFormController {
         cboPelicula.getItems().setAll(peliculaDao.listAll());
         cboPelicula.valueProperty().addListener((obs, viejo, nuevo) -> cargarFunciones());
         cboFuncion.valueProperty().addListener((obs, viejo, nuevo) -> cargarButacas());
+        //opciones de genero, las mismas que en el alta de cliente
+        cbgenero.getItems().addAll("Masculino", "Femenino");
         //paso 3: cuando el DNI tiene 8 numeros se busca al cliente
         txtDni.textProperty().addListener((obs, viejo, nuevo) -> {
             if (nuevo != null && nuevo.trim().length() == 8) {
                 buscarCliente(nuevo.trim());
             }
         });
+        actualizarEstadoSiguiente();
     }
 
     public boolean isSaved() {
@@ -103,6 +118,7 @@ public class VentaFormController {
         if (cboFuncion.getItems().isEmpty()) {
             lblMensaje.setText("Esa película no tiene funciones programadas.");
         }
+        actualizarEstadoSiguiente();
     }
 
     //paso 2: solo se pueden elegir butacas libres
@@ -115,16 +131,43 @@ public class VentaFormController {
             return;
         }
         lblPrecio.setText("Precio: S/ " + f.getPrecio() + " c/u  ·  " + f.getSala().getEtiqueta());
+        //ancho de la sala: las columnas guardadas al crearla
+        //(se usan solo para numerar las butacas, no para la grilla)
+        columnasSala = f.getSala().getColumnas();
 
         Set<Integer> ocupadas = new HashSet<>();
         for (Butaca b : butacaDao.listarOcupadas(f.getIdfuncion())) {
             ocupadas.add(b.getIdbutaca());
         }
 
-        for (Butaca b : butacaDao.listarPorSala(f.getSala().getIdsala())) {
-            Button boton = new Button(String.valueOf(b.getNumero()));
+        List<Butaca> butacas = butacaDao.listarPorSala(f.getSala().getIdsala());
+        //CORREGIDO: si la sala todavia no tiene butacas la grilla quedaba
+        //vacia sin explicar el motivo; ahora se avisa y no se puede seguir
+        if (butacas.isEmpty()) {
+            lblMensaje.setText("Esta sala todavía no tiene butacas. Pida al administrador que las genere.");
+            actualizarEstadoSiguiente();
+            return;
+        }
+        //si la sala es vieja y no guardo columnas, se deducen del numero mas
+        //alto para no romper la numeracion
+        if (columnasSala <= 0) {
+            for (Butaca b : butacas) {
+                if (b.getNumero() > columnasSala) {
+                    columnasSala = b.getNumero();
+                }
+            }
+        }
+        if (columnasSala <= 0) {
+            columnasSala = 1;
+        }
+        for (Butaca b : butacas) {
+            //CORREGIDO: el texto del boton es el numero global (1..capacidad)
+            //y no el numero de la butaca dentro de la fila
+            Button boton = new Button(String.valueOf(numeroVisible(b)));
             boton.getStyleClass().add("butaca");
-            boton.setPrefSize(36, 36);
+            //CORREGIDO: tamaño minimo en vez de fijo, para que un numero
+            //de 3 digitos (por ejemplo 100) no se corte
+            boton.setMinSize(36, 36);
             if (ocupadas.contains(b.getIdbutaca())) {
                 boton.getStyleClass().add("butaca-ocupada");
                 boton.setText("✕");
@@ -132,8 +175,10 @@ public class VentaFormController {
             } else {
                 boton.setOnAction(e -> seleccionarButaca(b, boton));
             }
+            //la posicion en la grilla sigue igual: columna y fila de la butaca
             gridButacas.add(boton, b.getNumero() - 1, b.getFila() - 1);
         }
+        actualizarEstadoSiguiente();
     }
 
     //se marca y se desmarca cada butaca, asi se pueden juntar varias
@@ -141,7 +186,8 @@ public class VentaFormController {
         if (butacasSeleccionadas.contains(b)) {
             butacasSeleccionadas.remove(b);
             boton.getStyleClass().remove("butaca-elegida");
-            boton.setText(String.valueOf(b.getNumero()));
+            //al desmarcar se vuelve a poner el numero global, no el de la fila
+            boton.setText(String.valueOf(numeroVisible(b)));
         } else {
             if (butacasSeleccionadas.size() >= MAX_BOLETOS) {
                 utilAlerts.mostrarAlerts("Límite de boletos",
@@ -153,6 +199,7 @@ public class VentaFormController {
             boton.getStyleClass().add("butaca-elegida");
         }
         actualizarButacas();
+        actualizarEstadoSiguiente();
     }
 
     private void actualizarButacas() {
@@ -171,28 +218,42 @@ public class VentaFormController {
     }
 
     private void buscarCliente(String dni) {
-        Cliente cliente = clienteDao.searchByDni(dni);
+        //CORREGIDO: la busqueda se hace desde un listener del DNI; si la base
+        //fallaba, la excepcion llegaba hasta JavaFX y rompia la ventana
+        Cliente cliente;
+        try {
+            cliente = clienteDao.searchByDni(dni);
+        } catch (RuntimeException e) {
+            System.out.println("Error al buscar el cliente: " + e.getMessage());
+            lblMensaje.setText("No se pudo buscar el DNI. Puede escribir los datos a mano.");
+            return;
+        }
         if (cliente != null) {
             txtNombre.setText(cliente.getNombre());
             txtApellidos.setText(cliente.getApellidos() != null ? cliente.getApellidos() : "");
             txtEmail.setText(cliente.getEmail() != null ? cliente.getEmail() : "");
+            cbgenero.setValue(cliente.getGenero());
             txtTelefono.setText(cliente.getTelefono() != null ? cliente.getTelefono() : "");
             lblMensaje.setText("Cliente encontrado: " + cliente.getNombre());
         } else {
             txtNombre.setText("");
             txtApellidos.setText("");
             txtEmail.setText("");
+            cbgenero.setValue(null);
             txtTelefono.setText("");
             lblMensaje.setText("Cliente nuevo: se registrará al vender.");
         }
     }
 
     private boolean validate() {
+        //CORREGIDO: el telefono no es obligatorio en la tabla cliente ni en el
+        //formulario de clientes; aqui si se exigia y un cliente ya registrado
+        //sin telefono no podia comprar. Ahora solo se piden los datos clave.
         if (cboFuncion.getValue() == null || butacasSeleccionadas.isEmpty()
                 || txtDni.getText().isBlank() || txtNombre.getText().isBlank()
-                || txtApellidos.getText().isBlank() || txtTelefono.getText().isBlank()) {
+                || txtApellidos.getText().isBlank()) {
             utilAlerts.mostrarAlerts("Datos incompletos",
-                    "Complete la función, las butacas, el DNI, los nombres, los apellidos y el teléfono.",
+                    "Complete la función, las butacas, el DNI, los nombres y los apellidos.",
                     "ERROR").showAndWait();
             return false;
         }
@@ -245,6 +306,8 @@ public class VentaFormController {
             cliente.setApellidos(txtApellidos.getText().trim());
             cliente.setEmail(txtEmail.getText().trim());
             cliente.setDni(txtDni.getText().trim());
+            //CORREGIDO: el genero elegido tambien se guarda en el cliente nuevo
+            cliente.setGenero(cbgenero.getValue());
             cliente.setTelefono(txtTelefono.getText().trim());
         }
 
@@ -280,7 +343,8 @@ public class VentaFormController {
 
         StringBuilder boletos = new StringBuilder();
         for (Butaca b : butacasSeleccionadas) {
-            boletos.append("  · Butaca ").append(letraFila(b.getFila())).append(b.getNumero())
+            //en el comprobante va el mismo numero que se ve en el mapa
+            boletos.append("  · Butaca ").append(numeroVisible(b))
                     .append("  -  S/ ").append(f.getPrecio()).append("\n");
         }
 
@@ -289,6 +353,7 @@ public class VentaFormController {
                         "Cliente: " + cliente.getNombre() + " " + cliente.getApellidos() + "\n" +
                         "Correo: " + cliente.getEmail() + "\n" +
                         "DNI: " + cliente.getDni() + "\n" +
+                        "Género: " + (cliente.getGenero() != null ? cliente.getGenero() : "-") + "\n" +
                         "Teléfono: " + cliente.getTelefono() + "\n" +
                         "Película: " + f.getPelicula().getTitulo() + "\n" +
                         "Sala: " + f.getSala().getEtiqueta() + "\n" +
@@ -303,9 +368,11 @@ public class VentaFormController {
         alert.showAndWait();
     }
 
-    //letra de la fila: fila 1 = A, fila 2 = B...
-    private String letraFila(int fila) {
-        return String.valueOf((char) ('A' + fila - 1));
+    //CORREGIDO: numero visible de la butaca. Se cuentan las butacas de las
+    //filas anteriores y se suma la posicion dentro de su fila. La butaca sigue
+    //guardada como fila + numero; el numero global solo se calcula al mostrar.
+    private int numeroVisible(Butaca b) {
+        return (b.getFila() - 1) * columnasSala + b.getNumero();
     }
 
     private String textoButacas() {
@@ -315,8 +382,48 @@ public class VentaFormController {
             if (i > 0) {
                 texto.append(", ");
             }
-            texto.append(letraFila(b.getFila())).append(b.getNumero());
+            //mismo numero global que el boton de la butaca
+            texto.append(numeroVisible(b));
         }
         return texto.toString();
+    }
+    //muestra una de las dos paginas del formulario
+    private void mostrarPaso(int paso) {
+        boolean enDos = (paso == 1);
+        panelPaso12.setVisible(enDos);
+        panelPaso12.setManaged(enDos);
+        panelPaso3.setVisible(!enDos);
+        panelPaso3.setManaged(!enDos);
+        //la ventana se ajusta al contenido nuevo
+        Stage stage = (Stage) cboPelicula.getScene().getWindow();
+        stage.sizeToScene();
+    }
+    //el boton SIGUIENTE solo se activa cuando ya hay funcion y butacas
+    private void actualizarEstadoSiguiente() {
+        boolean listo = cboFuncion.getValue() != null && !butacasSeleccionadas.isEmpty();
+        btnSiguiente.setDisable(!listo);
+    }
+
+    //paso 1 y 2 listos: se pasa a los datos del cliente
+    @FXML
+    private void handleSiguiente() {
+        if (cboFuncion.getValue() == null) {
+            utilAlerts.mostrarAlerts("Falta la función",
+                    "Elija la película y la función.", "WARNING").showAndWait();
+            return;
+        }
+        if (butacasSeleccionadas.isEmpty()) {
+            utilAlerts.mostrarAlerts("Faltan butacas",
+                    "Marque al menos una butaca libre.", "WARNING").showAndWait();
+            return;
+        }
+        lblMensaje.setText("");
+        mostrarPaso(2);
+    }
+
+    //regresa a elegir pelicula, funcion y butacas (se mantiene lo elegido)
+    @FXML
+    private void handleVolver() {
+        mostrarPaso(1);
     }
 }

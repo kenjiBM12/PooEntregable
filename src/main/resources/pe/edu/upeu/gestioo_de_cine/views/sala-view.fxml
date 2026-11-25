@@ -23,7 +23,7 @@
                 <VBox spacing="2.0">
                     <children>
                         <Label styleClass="titulo-vista" text="Salas"/>
-                        <Label styleClass="subtitulo-vista" text="Número, tipoSala, capacidad y estado de cada sala del cine."/>
+                        <Label styleClass="subtitulo-vista" text="Número, tipo, capacidad (filas x columnas) y estado de cada sala del cine."/>
                     </children>
                 </VBox>
                 <Region HBox.hgrow="ALWAYS"/>

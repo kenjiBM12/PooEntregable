@@ -11,6 +11,9 @@ public class Sala {
     private final StringProperty tipoSala = new SimpleStringProperty(this, "tipo");
     private final IntegerProperty capacidad = new SimpleIntegerProperty(this, "capacidad");
     private final StringProperty estado = new SimpleStringProperty(this, "estado");
+    //cuadricula de la sala: filas x columnas define las butacas que se generan
+    private final IntegerProperty filas = new SimpleIntegerProperty(this, "filas");
+    private final IntegerProperty columnas = new SimpleIntegerProperty(this, "columnas");
 
 
     public Sala() {
@@ -45,6 +48,35 @@ public class Sala {
 
     public final IntegerProperty capacidadProperty() {
         return capacidad;
+    }
+
+    public final int getFilas() {
+        return filas.get();
+    }
+
+    public final void setFilas(int value) {
+        filas.set(value);
+    }
+
+    public final IntegerProperty filasProperty() {
+        return filas;
+    }
+
+    public final int getColumnas() {
+        return columnas.get();
+    }
+
+    public final void setColumnas(int value) {
+        columnas.set(value);
+    }
+
+    public final IntegerProperty columnasProperty() {
+        return columnas;
+    }
+
+    //cuadricula que se escribe en el formulario: 10 x 12 por ejemplo
+    public String getCuadricula() {
+        return getFilas() + " x " + getColumnas();
     }
 
     public final String getTipoSala() {

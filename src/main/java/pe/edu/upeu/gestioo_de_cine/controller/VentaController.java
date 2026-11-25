@@ -110,10 +110,11 @@ public class VentaController {
                 cellData -> cellData.getValue().clienteProperty());
         ColDni.setCellValueFactory(
                 cellData -> cellData.getValue().dniClienteProperty());
+        //CORREGIDO: la columna Butaca muestra el numero global (1..capacidad),
+        //igual que el mapa de butacas y el comprobante, no "A1", "B2"...
         ColButaca.setCellValueFactory(cellData -> new SimpleStringProperty(
                 cellData.getValue().getButaca() != null
-                        ? letraFila(cellData.getValue().getButaca().getFila())
-                        + cellData.getValue().getButaca().getNumero() : ""));
+                        ? String.valueOf(numeroVisible(cellData.getValue())) : ""));
         ColEmpleado.setCellValueFactory(
                 cellData -> cellData.getValue().empleadoProperty());
         ColTotal.setCellValueFactory(
@@ -329,8 +330,21 @@ public class VentaController {
         }
     }
 
-    private String letraFila(int fila) {
-        return String.valueOf((char) ('A' + fila - 1));
+    //CORREGIDO: mismo calculo que en el mapa de butacas. Se usan las columnas
+    //de la sala de la funcion; si la sala es vieja y no las tiene, se deja el
+    //numero que esta guardado para no perder el dato.
+    private int numeroVisible(Venta v) {
+        if (v.getButaca() == null) {
+            return 0;
+        }
+        int columnas = 0;
+        if (v.getFuncion() != null && v.getFuncion().getSala() != null) {
+            columnas = v.getFuncion().getSala().getColumnas();
+        }
+        if (columnas <= 0) {
+            return v.getButaca().getNumero();
+        }
+        return (v.getButaca().getFila() - 1) * columnas + v.getButaca().getNumero();
     }
 
     private void showForm() {

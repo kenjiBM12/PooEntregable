@@ -28,7 +28,7 @@ public class ConexionDB {
                     directory.mkdirs();
                 }
 
-                //la bd se guardara C:\Users\Nombre\SistemaCineUPeU\gestionCine.db
+                //la bd se guardara C:\\Users\\Nombre\\SistemaCineUPeU\\gestionCine.db
                 File archivo = new File(directory, ARCHIVO_BD);
 
                 //3. no se copia ninguna base antigua: si el archivo no existe,
@@ -42,6 +42,12 @@ public class ConexionDB {
                 //las llaves foraneas de SQLite vienen apagadas por defecto
                 try (Statement stmt = connection.createStatement()) {
                     stmt.execute("PRAGMA foreign_keys = ON");
+                    //CORREGIDO: cuando otra ventana del sistema (o una copia vieja
+                    //del programa) tiene la base abierta, SQLite responde enseguida
+                    //"database is locked" y no dejaba guardar ni editar NADA.
+                    //Con busy_timeout la conexion espera unos segundos antes de
+                    //rendirse, que es lo que pasa cuando dos ventanas escriben a la vez.
+                    stmt.execute("PRAGMA busy_timeout = 8000");
                 }
 
                 //crear las tablas en la bd
@@ -67,12 +73,15 @@ public class ConexionDB {
                 "categoria TEXT, " +
                 "clasificacion TEXT);";
 
+        //filas y columnas son la cuadricula de la sala: de ahi salen sus butacas
         String sqlSala = "CREATE TABLE IF NOT EXISTS sala (" +
                 "idsala INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "numero INTEGER NOT NULL UNIQUE, " +
                 "tipo_sala TEXT NOT NULL, " +
                 "capacidad INTEGER NOT NULL, " +
-                "estado TEXT NOT NULL DEFAULT 'ACTIVA');";
+                "estado TEXT NOT NULL DEFAULT 'ACTIVA', " +
+                "filas INTEGER NOT NULL DEFAULT 0, " +
+                "columnas INTEGER NOT NULL DEFAULT 0);";
 
         String sqlCliente = "CREATE TABLE IF NOT EXISTS cliente (" +
                 "idcliente INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -141,7 +150,11 @@ public class ConexionDB {
             stmt.execute(sqlUsuario);
             stmt.execute(sqlIndices);
 
-            //4. INSERTAR USUARIO ADMIN POR DEFECTO (si la tabla esta vacia)
+            //4. bases creadas antes de la cuadricula: se agregan las columnas que falten
+            agregarColumna(stmt, "sala", "filas", "INTEGER NOT NULL DEFAULT 0");
+            agregarColumna(stmt, "sala", "columnas", "INTEGER NOT NULL DEFAULT 0");
+
+            //5. INSERTAR USUARIO ADMIN POR DEFECTO (si la tabla esta vacia)
             //esto es vital para poder entrar al sistema la primera vez
             try (ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM usuario")) {
                 if (rs.next() && rs.getInt(1) == 0) {
@@ -153,6 +166,29 @@ public class ConexionDB {
 
         } catch (SQLException e) {
             System.out.println("Error al inicializar tablas: " + e.getMessage());
+        }
+    }
+
+    //SQLite no tiene ADD COLUMN IF NOT EXISTS: se revisa la tabla antes
+    private static void agregarColumna(Statement stmt, String tabla, String columna, String definicion) {
+        boolean existe = false;
+        try (ResultSet rs = stmt.executeQuery("PRAGMA table_info(" + tabla + ")")) {
+            while (rs.next()) {
+                if (columna.equalsIgnoreCase(rs.getString("name"))) {
+                    existe = true;
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error al revisar la tabla " + tabla + ": " + e.getMessage());
+            return;
+        }
+        if (!existe) {
+            try {
+                stmt.execute("ALTER TABLE " + tabla + " ADD COLUMN " + columna + " " + definicion);
+                System.out.println("Columna " + columna + " agregada a " + tabla);
+            } catch (SQLException e) {
+                System.out.println("Error al agregar la columna " + columna + ": " + e.getMessage());
+            }
         }
     }
 

@@ -37,7 +37,16 @@ public class LoginController {
             return;
         }
 
-        Usuario usuario = usuarioDao.login(nombreUsuario, clave);
+        //CORREGIDO: si la base de datos falla, la excepcion salia del evento
+        //y la ventana de login quedaba trabada sin ningun aviso al usuario
+        Usuario usuario;
+        try {
+            usuario = usuarioDao.login(nombreUsuario, clave);
+        } catch (RuntimeException e) {
+            System.out.println("Error al validar el usuario: " + e.getMessage());
+            lblMensaje.setText("No se pudo conectar con la base de datos.");
+            return;
+        }
         if (usuario == null) {
             lblMensaje.setText("Usuario o contraseña incorrectos.");
             txtClave.clear();

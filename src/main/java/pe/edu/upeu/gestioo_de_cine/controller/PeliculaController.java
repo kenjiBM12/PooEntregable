@@ -131,17 +131,35 @@ public class PeliculaController {
         Pelicula selectId = tablePelicula.getSelectionModel().getSelectedItem();
         if (selectId != null){
             //se cuenta antes de confirmar para poder avisar que se borrara mas de una cosa
-            int funciones = peliculaDao.contarFunciones(selectId.getidpelicula());
-            int ventas = peliculaDao.contarVentas(selectId.getidpelicula());
+            //CORREGIDO: estos conteos consultan la base; si fallaban la excepcion
+            //salia sin aviso y el boton eliminar parecia no hacer nada
+            int funciones;
+            int ventas;
+            try {
+                funciones = peliculaDao.contarFunciones(selectId.getidpelicula());
+                ventas = peliculaDao.contarVentas(selectId.getidpelicula());
+            } catch (RuntimeException e) {
+                System.out.println("Error al revisar la pelicula: " + e.getMessage());
+                utilAlert.mostrarAlerts("Error",
+                        "No se pudo revisar la pelicula: " + e.getMessage(),
+                        "ERROR").showAndWait();
+                return;
+            }
+            //CORREGIDO: antes se avisaba que se borrarian las ventas y se perdia
+            //el historial. Ahora, si hay boletos vendidos, no se elimina nada.
+            if (ventas > 0){
+                utilAlert.mostrarAlerts("No se puede eliminar",
+                        "La pelicula \"" + selectId.getTitulo() + "\" tiene "
+                                + ventas + " boleto(s) vendido(s).\n"
+                                + "No se elimina para conservar el historial de ventas.",
+                        "WARNING").showAndWait();
+                return;
+            }
             String mensaje;
             if (funciones > 0){
                 mensaje = "La pelicula \"" + selectId.getTitulo() + "\" tiene "
                         + funciones + " funcion(es) programada(s)\n"
-                        + "y se van a eliminar tambien.";
-                if (ventas > 0){
-                    mensaje = mensaje + "\nTambien se anularan " + ventas + " boleto(s) vendido(s).";
-                }
-                mensaje = mensaje + "\n\nEstas seguro de continuar?";
+                        + "y se van a eliminar tambien.\n\nEstas seguro de continuar?";
             } else {
                 mensaje = "Estas seguro de eliminar la pelicula: " + selectId.getTitulo() + "?";
             }
@@ -180,6 +198,15 @@ public class PeliculaController {
         Pelicula selectClient = tablePelicula.getSelectionModel().getSelectedItem();
         if (selectClient !=null){
            Pelicula peliculaFull = peliculaDao.searchById(selectClient.getidpelicula());
+            //CORREGIDO: si la pelicula ya no existe se abria el formulario como
+            //si fuera nueva; ahora se avisa y se recarga la tabla
+            if (peliculaFull == null) {
+                utilAlert.mostrarAlerts("Pelicula no encontrada",
+                        "La pelicula ya no existe en la base de datos.",
+                        "WARNING").showAndWait();
+                cargarDatos();
+                return;
+            }
             showForm(peliculaFull);
         }else{
             Alert alert = utilAlert.mostrarAlerts("Seleccion requerida",

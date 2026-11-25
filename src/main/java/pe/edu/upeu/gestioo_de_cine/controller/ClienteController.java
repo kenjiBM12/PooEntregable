@@ -132,11 +132,19 @@ public class ClienteController {
                         "CONFIRMATION");
                 Optional<ButtonType> result = confirm.showAndWait();
                 if (result.isPresent() && result.get() == ButtonType.OK) {
-                    if (clienteDao.delete(selectId)) {
-                        cargarDatos();
-                    } else {
-                        utilAlert.mostrarAlerts("Error",
-                                "No se pudo eliminar el cliente", "ERROR").showAndWait();
+                    //CORREGIDO: si la base rechaza el borrado la excepcion salia
+                    //sin aviso; ahora se captura y se muestra el motivo
+                    try {
+                        if (clienteDao.delete(selectId)) {
+                            cargarDatos();
+                        } else {
+                            utilAlert.mostrarAlerts("Error",
+                                    "No se pudo eliminar el cliente", "ERROR").showAndWait();
+                        }
+                    } catch (RuntimeException e) {
+                        System.out.println("Error al eliminar cliente: " + e.getMessage());
+                        utilAlert.mostrarAlerts("No se pudo eliminar",
+                                e.getMessage(), "ERROR").showAndWait();
                     }
                 }
             } else {
@@ -158,12 +166,33 @@ public class ClienteController {
             Cliente selectClient = tableCliente.getSelectionModel().getSelectedItem();
             if (selectClient != null) {
                 Cliente clientFull = clienteDao.searchById(selectClient.getIdcliente());
+                //CORREGIDO: si el cliente ya no existe se abria el formulario
+                //como si fuera nuevo; ahora se avisa y se recarga la tabla
+                if (clientFull == null) {
+                    utilAlert.mostrarAlerts("Cliente no encontrado",
+                            "El cliente ya no existe en la base de datos.",
+                            "WARNING").showAndWait();
+                    cargarDatos();
+                    return;
+                }
                 showForm(clientFull);
             } else {
                 Alert alert = utilAlert.mostrarAlerts("Seleccion requerida",
                         "Seleccione un cliente de la tabla para editar.", "WARNING");
                 alert.showAndWait();
             }
+        }
+
+        //arma el texto del aviso: si SQLite responde "database is locked" el problema
+        //no es el DNI sino otra ventana del programa que tiene la base abierta
+        private String mensajeError(RuntimeException e, String mensajeNormal) {
+            String detalle = e.getMessage() != null ? e.getMessage() : "";
+            String minuscula = detalle.toLowerCase();
+            if (minuscula.contains("locked") || minuscula.contains("busy")) {
+                return "Otra ventana del sistema tiene la base de datos abierta.\n"
+                        + "Cierre todas las ventanas del programa y vuelva a intentarlo.";
+            }
+            return mensajeNormal + "\n" + detalle;
         }
 
         private void showForm(Cliente c) {
@@ -186,8 +215,9 @@ public class ClienteController {
                             result = clienteDao.insert(clienteProcesado);
                         } catch (RuntimeException e) {
                             //por ejemplo: el DNI ya esta registrado en otro cliente
+                            //o la base esta tomada por otra ventana del sistema
                             utilAlert.mostrarAlerts("No se pudo guardar",
-                                    "El cliente no se registró. Revise si el DNI ya existe.",
+                                    mensajeError(e, "El cliente no se registró. Revise si el DNI ya existe."),
                                     "ERROR").showAndWait();
                             return;
                         }
@@ -205,8 +235,9 @@ public class ClienteController {
                             result = clienteDao.update(clienteProcesado);
                         } catch (RuntimeException e) {
                             //por ejemplo: el DNI ya esta registrado en otro cliente
+                            //o la base esta tomada por otra ventana del sistema
                             utilAlert.mostrarAlerts("No se pudo actualizar",
-                                    "El cliente no se actualizó. Revise si el DNI ya existe.",
+                                    mensajeError(e, "El cliente no se actualizó. Revise si el DNI ya existe."),
                                     "ERROR").showAndWait();
                             return;
                         }

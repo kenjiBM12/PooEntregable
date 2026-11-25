@@ -32,6 +32,7 @@ public class VentaDaoImpl implements IVentaDao {
             " p.titulo AS nombre_pelicula,p.numero AS numero_pelicula, " +
             " p.duracion,p.categoria,p.clasificacion, " +
             " s.numero AS numero_sala,s.tipo_sala AS tipo,s.capacidad,s.estado AS estado_sala, " +
+            " s.filas AS filas_sala,s.columnas AS columnas_sala, " +
             " b.fila AS butaca_fila,b.numero AS butaca_numero " +
             " FROM venta v " +
             " LEFT JOIN cliente c ON v.id_cliente = c.idcliente " +
@@ -375,6 +376,8 @@ public class VentaDaoImpl implements IVentaDao {
 
         s.setTipoSala(rs.getString("tipo"));
         s.setCapacidad(rs.getInt("capacidad"));
+        s.setFilas(rs.getInt("filas_sala"));
+        s.setColumnas(rs.getInt("columnas_sala"));
         s.setEstado(rs.getString("estado_sala"));
 
         Funcion f = new Funcion();

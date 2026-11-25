@@ -29,7 +29,7 @@
                 </VBox>
                 <Region HBox.hgrow="ALWAYS"/>
                 <Button mnemonicParsing="false" onAction="#handleGenerar" styleClass="button-login"
-                        text="+ GENERAR BUTACAS"/>
+                        text="+ ADMINISTRAR BUTACAS"/>
             </children>
         </HBox>
 

@@ -3,6 +3,11 @@
 Curso: POO — UPeU, campus Tarapoto. Proyecto JavaFX + FXML + DAO + SQLite.
 Trabajo hecho sobre la rama `main`, **sin commit, sin push, sin cambiar de rama**.
 
+> **ACTUALIZACIÓN 25/11/2026**: las correcciones de esta sesión están al final, en el
+> punto 9. Lo más importante: la sala ahora se guarda con sus butacas en una sola
+> transacción, la cuadrícula se sincroniza al editarla y una película con ventas ya
+> **no** se puede eliminar (antes el DAO borraba esas ventas).
+
 > **LEA ESTO PRIMERO**
 > El sistema ahora guarda el **código de compra** en la tabla `venta`. Ese dato necesita
 > una columna nueva en tu base de datos. **Antes de abrir la pantalla "Venta de entradas"**
@@ -422,3 +427,124 @@ Para volver al estado anterior:
    `C:/sqlite/db/gestionCine.db`. Si algún día aplicas `sql/migracion.sql`, guarda antes una copia
    del `.db` (el script solo **agrega** una columna: no borra datos).
 4. No se hizo commit ni push: `git status` sigue mostrando los archivos modificados en `main`.
+
+---
+
+## 9. Actualización 25/11/2026 — salas/butacas, borrado seguro y edición
+
+### 9.1 Por qué "no se podía editar nada"
+
+Al probar un `BEGIN IMMEDIATE` sobre una **copia** de la base, SQLite respondió
+`SQLITE_BUSY: database is locked`. En la máquina siguen abiertas **7 instancias de
+`SistemaCineUPeU-1.0.0.exe`** (del 23/11) y existe `gestionCine.db-journal` (del 24/11,
+una escritura que no terminó). Esas ventanas viejas mantienen la base tomada. Se agregó
+`PRAGMA busy_timeout = 8000` en `ConexionDB` para esperar unos segundos en vez de fallar
+enseguida, pero la solución definitiva es cerrar esos procesos:
+
+```
+taskkill /IM SistemaCineUPeU-1.0.0.exe /F
+```
+
+No se cerraron desde aquí porque son ventanas visibles del usuario. Tampoco se borró el
+`-journal`: SQLite lo usa para recuperar la última escritura.
+
+> **Corrección (ver sección 10):** cerrar esas 7 ventanas **no** liberó la base. El bloqueo
+> real lo tenía **DB Browser for SQLite** con la base abierta; al cerrarlo todo volvió a
+> funcionar. El `busy_timeout` sí sirve para los choques normales entre ventanas del sistema.
+
+### 9.2 Archivos y métodos corregidos
+
+| Archivo | Método | Qué se corrigió |
+|---|---|---|
+| `implementacion/SalaDaoImpl.java` | `insert` | La sala, su capacidad (filas x columnas) y **todas sus butacas** se guardan en una sola transacción, con `getGeneratedKeys` y `rollback` si algo falla. |
+| `implementacion/SalaDaoImpl.java` | `update` | Al cambiar filas/columnas actualiza la capacidad, quita las butacas que sobran y agrega las que faltan, en una transacción. Si una butaca que se quitaría tiene ventas, rechaza el cambio. |
+| `implementacion/SalaDaoImpl.java` | `insert`/`update` | Valida filas y columnas > 0, limita a 100 x 100 (10 000 butacas) y da un mensaje claro si el número de sala ya existe. |
+| `implementacion/PeliculaDaoImpl.java` | `delete` | **Ya no borra ventas.** Si la película tiene boletos vendidos, lanza el aviso y no borra nada. Si solo tiene funciones sin ventas, las elimina junto con la película en una transacción. |
+| `implementacion/FuncionDaoImpl.java` | `listAll` | Ya no cierra la conexión compartida (solo `PreparedStatement` y `ResultSet`) y lanza `RuntimeException` en vez de devolver una lista vacía al ocultar el error. |
+| `implementacion/FuncionDaoImpl.java` | `delete` | El mensaje ya no dice "anule las ventas" (anular no borra la fila); ahora explica que se conserva el historial. |
+| `controller/ButacaFormController.java` | `validate`/`handleSave` | Permite **editar filas y columnas** desde la pantalla de butacas, actualiza la capacidad y la cuadrícula de la sala, y muestra el motivo si el cambio afecta butacas vendidas. |
+| `controller/ButacaController.java` | `handleGenerar`/`cargarButacas` | El botón ya no bloquea el formulario cuando la sala está completa; se puede corregir la cuadrícula. El mapa relee la sala para usar las columnas actuales. |
+| `controller/SalaController.java` | `handleNew`/`handleEdit`/`handleDelete` | Se agregó la validación de rol ("Sin permiso") y el mensaje de guardado indica que se generaron/ajustaron las butacas. |
+| `controller/PeliculaController.java` | `handleDelete` | Antes avisaba que borraría los boletos; ahora bloquea el borrado y explica que se conserva el historial. |
+| `views/sala-form.fxml`, `views/butaca-form.fxml`, `views/butaca-view.fxml` | textos | Se explicó que las butacas se generan/ajustan automáticamente y el botón pasó a "ADMINISTRAR BUTACAS". |
+
+No se renombró ningún `fx:id`, `onAction` ni método existente. `ConexionDB` mantiene la ruta
+`%USERPROFILE%\SistemaCineUPeU\gestionCine.db`, que en esta máquina es
+`C:\Users\ajpev\SistemaCineUPeU\gestionCine.db` (Windows no distingue mayúsculas en la ruta).
+
+### 9.3 Verificaciones de esta sesión
+
+| Verificación | Resultado |
+|---|---|
+| Esquema real leído sobre una copia (7 tablas) | **Ejecutada y exitosa**: `sala` sin `nombre`, con `filas`/`columnas`; `funcion.fecha NOT NULL`; `venta.codigo_compra` ya existe; 0 ventas. |
+| `mvnw compile` | **Ejecutada y exitosa** (`EXIT=0`). |
+| Los 17 FXML son XML válido | **Ejecutada y exitosa** (17/17). |
+| `onAction` y `fx:id` contra los controladores | **Ejecutada**: 0 métodos faltantes; `home-view` no tiene controlador (es solo diseño) y `btnCancelar1` es un `fx:id` sin campo, sin uso. |
+| Pruebas de DAO sobre una **copia** de la base | **Ejecutada y exitosa — 14/14**: alta de sala 2x3 con 6 butacas, número repetido rechazado, edición a 2x2, cambio rechazado por ventas, película con ventas no se borra, película sin ventas borra sus funciones, `listAll`/`searchById` de funciones siguen funcionando. |
+| Interfaz JavaFX (abrir, hacer clic, editar/eliminar de verdad) | **No se pudo ejecutar**: requiere clics y, además, la base real sigue tomada por los 7 procesos del `.exe`. |
+
+### 9.4 Pendientes que se mantienen
+
+1. Cerrar las 7 instancias del `.exe` y ejecutar el sistema desde IntelliJ o `mvnw javafx:run` (el `.exe` del 23/11 no tiene estas correcciones).
+2. Al vender a un cliente que ya existe solo se reutiliza su `id`; sus datos (teléfono, correo) no se actualizan.
+3. La tabla `venta` no tiene llave foránea (SQLite no permite agregarla con `ALTER TABLE`); la relación se controla en los DAO.
+4. La contraseña sigue en texto plano (`admin/admin123`). No se cambió porque no se pidió.
+5. `ButacaDaoImpl.generarButacas` quedó disponible pero la pantalla ya no la usa: ahora la cuadrícula se sincroniza con `SalaDaoImpl.update`.
+6. No se ejecutó ningún cambio de esquema sobre la base real.
+
+---
+
+## 10. Aviso "El cliente no se actualizó" (25/11/2026)
+
+### 10.1 Qué pasaba realmente
+
+El aviso de la pantalla de Clientes no era un problema del `UPDATE`. Se comprobó así:
+
+| Prueba | Resultado |
+|---|---|
+| `UPDATE cliente SET ... WHERE idcliente=?` con los mismos datos, sobre una **copia** de la base | **Ejecutada y exitosa**: las 2 filas se actualizan (`filas=1`). |
+| `BEGIN IMMEDIATE` + `ROLLBACK` sobre la base **real** (no cambia datos) | **Ejecutada y falló**: `[SQLITE_BUSY] The database file is locked (database is locked)`. |
+| `SELECT COUNT(*) FROM cliente` sobre la base real | **Ejecutada y exitosa**: lectura sí, escritura no. |
+
+Es decir: la base se puede **leer** pero no **escribir**. El `busy_timeout = 8000` hace que
+el sistema espere 8 segundos antes de rendirse; al agotarse, el `catch` mostraba el texto
+fijo "Revise si el DNI ya existe", que no era la causa.
+
+Al principio se culpó a las 7 instancias de `SistemaCineUPeU-1.0.0.exe` del 23/11, pero al
+cerrarlas todas el bloqueo **continuó**. Se consultó la API `Restart Manager` de Windows
+(«qué proceso tiene abierto este archivo») y el dueño real era:
+
+```
+PID 2312 | DB Browser for SQLite | DB Browser for SQLite   (gestionCine.db y gestionCine.db-journal)
+```
+
+DB Browser tenía la base abierta con una edición sin confirmar; eso mantenía el
+`gestionCine.db-journal` del 24/11 17:44 y un bloqueo de escritura (RESERVED). Al cerrarlo,
+SQLite deshizo ese `-journal`, el archivo se liberó y las escrituras volvieron a funcionar.
+Lección: si vuelve a salir "database is locked", revisar si DB Browser (o cualquier otro
+programa) tiene abierta la base.
+
+### 10.2 Cambio hecho
+
+`controller/ClienteController.java`:
+
+| Método | Qué se cambió |
+|---|---|
+| `showForm` (`catch` de `insert` y de `update`) | Ahora llama a `mensajeError(...)` en lugar de usar el texto fijo. |
+| `mensajeError` (nuevo) | Si el error de SQLite dice `locked`/`busy`, avisa "Otra ventana del sistema tiene la base de datos abierta. Cierre todas las ventanas del programa y vuelva a intentarlo". En cualquier otro caso muestra el mensaje de siempre **más** el detalle real de SQLite (por ejemplo el DNI repetido). |
+
+No se tocaron DAO, FXML, ni la base real. Con las ventanas viejas cerradas el guardado
+funciona como antes; el cambio solo evita que un bloqueo se confunda con un DNI repetido.
+
+### 10.3 Verificación
+
+| Verificación | Resultado |
+|---|---|
+| `mvnw compile` | **Ejecutada y exitosa** (`EXIT=0`). |
+| `UPDATE` de cliente contra una copia de la base | **Ejecutada y exitosa**: las 2 filas, `filas=1`. |
+| `BEGIN IMMEDIATE` sobre la base real antes de liberarla | **Ejecutada y falló**: `SQLITE_BUSY`. |
+| Cerrar las 7 instancias del `.exe` | **Ejecutada y exitosa** (PIDs 7260, 3744, 17064, 16648, 2824, 12600, 18312), pero el bloqueo siguió. |
+| Identificar el dueño del archivo (Restart Manager) | **Ejecutada y exitosa**: DB Browser for SQLite, PID 2312. |
+| `BEGIN IMMEDIATE` sobre la base real después de cerrar DB Browser | **Ejecutada y exitosa**: ya no hay bloqueo y el `-journal` desapareció. |
+| `ClienteDaoImpl.update` contra la base **real** (los 2 clientes, reescribiendo sus mismos datos) | **Ejecutada y exitosa**: `update=true` en ambos, sin excepción y sin dejar `-journal`. |
+| Guardar desde la interfaz (hacer clic en el formulario) | **No se pudo ejecutar desde aquí**: falta el clic; conviene repetir la prueba en la ventana del sistema. |

@@ -21,6 +21,7 @@ import pe.edu.upeu.gestioo_de_cine.HelloApplication;
 import pe.edu.upeu.gestioo_de_cine.implementacion.SalaDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.interfaces.ISalaDao;
 import pe.edu.upeu.gestioo_de_cine.modelo.Sala;
+import pe.edu.upeu.gestioo_de_cine.utils.Sesion;
 import pe.edu.upeu.gestioo_de_cine.utils.UtilAlerts;
 
 public class SalaController {
@@ -116,8 +117,19 @@ public class SalaController {
         return valor != null && valor.toLowerCase().contains(texto);
     }
 
+    //el admin puede todo; el empleado solo trabaja en ventas
+    private boolean sinPermiso() {
+        if (Sesion.esAdmin()) {
+            return false;
+        }
+        utilAlert.mostrarAlerts("Sin permiso",
+                "Solo el administrador puede administrar salas.", "WARNING").showAndWait();
+        return true;
+    }
+
     @FXML
     private void handleDelete() {
+        if (sinPermiso()) return;
         Sala salaSeleccionada =
                 tableSala.getSelectionModel().getSelectedItem();
 
@@ -166,11 +178,13 @@ public class SalaController {
 
     @FXML
     private void handleNew() {
+        if (sinPermiso()) return;
         showForm(null);
     }
 
     @FXML
     private void handleEdit() {
+        if (sinPermiso()) return;
         Sala salaSeleccionada =
                 tableSala.getSelectionModel().getSelectedItem();
 
@@ -183,8 +197,28 @@ public class SalaController {
             return;
         }
 
-        Sala salaCompleta =
-                salaDao.searchById(salaSeleccionada.getIdsala());
+        //CORREGIDO: si la busqueda fallaba (por ejemplo la base estaba ocupada)
+        //la excepcion se perdia y el boton EDITAR parecia no hacer nada
+        Sala salaCompleta;
+        try {
+            salaCompleta = salaDao.searchById(salaSeleccionada.getIdsala());
+        } catch (RuntimeException e) {
+            System.out.println("Error al buscar la sala: " + e.getMessage());
+            utilAlert.mostrarAlerts("Error al abrir la sala",
+                    "No se pudo leer la sala de la base de datos.",
+                    "ERROR").showAndWait();
+            return;
+        }
+
+        //CORREGIDO: si la sala ya no existe se abria el formulario como si
+        //fuera nueva y al guardar se creaba otra sala; ahora se avisa
+        if (salaCompleta == null) {
+            utilAlert.mostrarAlerts("Sala no encontrada",
+                    "La sala ya no existe en la base de datos.",
+                    "WARNING").showAndWait();
+            cargarDatos();
+            return;
+        }
 
         showForm(salaCompleta);
     }
@@ -222,9 +256,14 @@ public class SalaController {
                     }
 
                     if (resultado) {
+                        //CORREGIDO: se avisa que tambien se genero o ajusto la
+                        //cuadricula, porque el DAO la guarda en la misma transaccion
+                        String mensaje = salaEditar == null
+                                ? "Sala creada con sus " + salaProcesada.getCapacidad() + " butacas."
+                                : "Sala y cuadricula de butacas actualizadas.";
                         utilAlert.mostrarAlerts(
                                 "Correcto",
-                                "Los datos de la sala se guardaron.",
+                                mensaje,
                                 "CONFIRMATION"
                         ).showAndWait();
                     } else {

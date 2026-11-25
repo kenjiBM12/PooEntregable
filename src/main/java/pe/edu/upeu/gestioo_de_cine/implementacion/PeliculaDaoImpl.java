@@ -25,9 +25,9 @@ public class PeliculaDaoImpl implements IPeliculaDao {
             st.setString(3, p.getDuracion());
             st.setString(4, p.getCategoria());
             st.setString(5, p.getClasificacion());
-            //true solo si se guardo una fila
-            st.executeUpdate();
-            flag = true;
+            //CORREGIDO: antes se devolvia true aunque no se guardara ninguna
+            //fila; ahora se revisa el resultado real del INSERT
+            flag = st.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error al insertar pelicula:" + e.getMessage(), e);
         }
@@ -48,8 +48,9 @@ public class PeliculaDaoImpl implements IPeliculaDao {
             st.setString(4, p.getCategoria());
             st.setString(5, p.getClasificacion());
             st.setInt(6, p.getidpelicula());
-            st.executeUpdate();
-            flag=true;
+            //CORREGIDO: si el id no existe el UPDATE no cambia nada y antes se
+            //informaba "guardado"; ahora solo es true si se modifico una fila
+            flag = st.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error al actualizar película: " + e.getMessage(), e);
         }
@@ -122,26 +123,38 @@ public class PeliculaDaoImpl implements IPeliculaDao {
     public boolean delete(Pelicula c) {
         boolean flag = false;
         Connection cn = ConexionDB.getConnection();
+
+        //CORREGIDO: antes se borraban las ventas de la pelicula y se perDIA el
+        //historial. Ahora, si tiene boletos vendidos, el borrado se rechaza.
+        String queryVentas = "SELECT COUNT(*) FROM venta WHERE id_funcion IN "
+                + "(SELECT idfuncion FROM funcion WHERE id_pelicula=?)";
+        try (PreparedStatement st = cn.prepareStatement(queryVentas)) {
+            st.setInt(1, c.getidpelicula());
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next() && rs.getInt(1) > 0) {
+                    throw new RuntimeException("La pelicula \"" + c.getTitulo() + "\" tiene "
+                            + rs.getInt(1) + " boleto(s) vendido(s) y no se puede eliminar.\n"
+                            + "Se conserva el historial de ventas.");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al revisar las ventas de la pelicula: "
+                    + e.getMessage(), e);
+        }
+
         try {
-            //todo el borrado va en una sola transaccion: si algo falla no queda nada a medias
+            //si no hay ventas, sus funciones se borran junto con la pelicula
+            //en una sola transaccion: si algo falla no queda nada a medias
             cn.setAutoCommit(false);
 
-            //1. se borran las ventas de las funciones de esta pelicula
-            String queryVentas = "DELETE FROM venta WHERE id_funcion IN "
-                    + "(SELECT idfuncion FROM funcion WHERE id_pelicula=?)";
-            try (PreparedStatement st = cn.prepareStatement(queryVentas)) {
-                st.setInt(1, c.getidpelicula());
-                st.executeUpdate();
-            }
-
-            //2. se borran las funciones de la pelicula
+            //1. se borran las funciones de la pelicula
             String queryFunciones = "DELETE FROM funcion WHERE id_pelicula=?";
             try (PreparedStatement st = cn.prepareStatement(queryFunciones)) {
                 st.setInt(1, c.getidpelicula());
                 st.executeUpdate();
             }
 
-            //3. recien ahora se puede borrar la pelicula
+            //2. recien ahora se puede borrar la pelicula
             String query = "DELETE FROM pelicula WHERE idpelicula=?";
             try (PreparedStatement st = cn.prepareStatement(query)) {
                 st.setInt(1, c.getidpelicula());

@@ -169,6 +169,15 @@ public class FuncionController {
         Funcion selectFuncion = tableFuncion.getSelectionModel().getSelectedItem();
         if (selectFuncion != null) {
             Funcion funcionFull = funcionDao.searchById(selectFuncion.getIdfuncion());
+            //CORREGIDO: si la funcion ya no existe se abria el formulario como
+            //si fuera nueva; ahora se avisa y se recarga la tabla
+            if (funcionFull == null) {
+                utilAlert.mostrarAlerts("Funcion no encontrada",
+                        "La función ya no existe en la base de datos.",
+                        "WARNING").showAndWait();
+                cargarDatos();
+                return;
+            }
             showForm(funcionFull);
         } else {
             utilAlert.mostrarAlerts("Seleccion requerida",

@@ -5,9 +5,9 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-import pe.edu.upeu.gestioo_de_cine.implementacion.ButacaDaoImpl;
-import pe.edu.upeu.gestioo_de_cine.interfaces.IButacaDao;
-import pe.edu.upeu.gestioo_de_cine.modelo.Butaca;
+import pe.edu.upeu.gestioo_de_cine.implementacion.SalaDaoImpl;
+import pe.edu.upeu.gestioo_de_cine.interfaces.ISalaDao;
+import pe.edu.upeu.gestioo_de_cine.modelo.Sala;
 import pe.edu.upeu.gestioo_de_cine.utils.UtilAlerts;
 
 public class ButacaFormController {
@@ -23,18 +23,32 @@ public class ButacaFormController {
 
     private int idSala;
     private int capacidad;
+    //cuadricula con la que se creo la sala (0 si es una sala vieja sin datos)
+    private int filasSala;
+    private int columnasSala;
     private boolean saved = false;
 
-    private final IButacaDao butacaDao = new ButacaDaoImpl();
+    //la cuadricula se guarda en la sala: se reutiliza su DAO
+    private final ISalaDao salaDao = new SalaDaoImpl();
 
     public boolean isSaved() {
         return saved;
     }
 
-    public void setSala(int idSala, String nombre, int capacidad) {
+    public void setSala(int idSala, String nombre, int capacidad, int filas, int columnas) {
         this.idSala = idSala;
         this.capacidad = capacidad;
-        lblSala.setText("Sala: " + nombre + "  ·  Capacidad: " + capacidad);
+        this.filasSala = filas;
+        this.columnasSala = columnas;
+        lblSala.setText("Sala: " + nombre + "  ·  Capacidad actual: " + capacidad
+                + "  ·  Cuadricula actual: " + filas + " x " + columnas);
+        //se empieza con la cuadricula que tiene la sala
+        if (filas > 0) {
+            txtFilas.setText(String.valueOf(filas));
+        }
+        if (columnas > 0) {
+            txtColumnas.setText(String.valueOf(columnas));
+        }
     }
 
     private boolean validate() {
@@ -52,16 +66,17 @@ public class ButacaFormController {
                         "Las filas y las columnas deben ser mayores que cero.", "WARNING").showAndWait();
                 return false;
             }
-            //se multiplica con long para que el calculo no se desborde
-            long total = (long) filas * (long) columnas;
-            if (capacidad > 0 && total > capacidad) {
-                utilAlerts.mostrarAlerts("Capacidad excedida",
-                        "La sala solo tiene capacidad para " + capacidad + " butacas.", "WARNING").showAndWait();
+            //CORREGIDO: antes este formulario no dejaba cambiar la cuadricula
+            //de la sala. Ahora si se permite, con el mismo limite del formulario
+            //de salas, para no generar una cantidad enorme de butacas.
+            if (filas > 100 || columnas > 100) {
+                utilAlerts.mostrarAlerts("Cuadricula muy grande",
+                        "Las filas y las columnas no pueden pasar de 100.", "WARNING").showAndWait();
                 return false;
             }
         } catch (NumberFormatException e) {
             utilAlerts.mostrarAlerts("Datos invalidos",
-                    "Ingrese números enteros en filas y columnas.", "WARNING").showAndWait();
+                    "Ingrese numeros enteros en filas y columnas.", "WARNING").showAndWait();
             return false;
         }
         return true;
@@ -84,20 +99,41 @@ public class ButacaFormController {
         }
         int filas = Integer.parseInt(txtFilas.getText().trim());
         int columnas = Integer.parseInt(txtColumnas.getText().trim());
-        int creadas;
+
+        Sala sala;
         try {
-            //el DAO genera todas las butacas en una sola transaccion:
-            //si una falla se deshace todo y la sala no queda a medias
-            creadas = butacaDao.generarButacas(idSala, filas, columnas, capacidad);
+            //se lee la sala completa para no perder numero, tipo ni estado
+            sala = salaDao.searchById(idSala);
         } catch (RuntimeException e) {
-            System.out.println("Error al generar butacas:" + e.getMessage());
+            System.out.println("Error al leer la sala: " + e.getMessage());
             utilAlerts.mostrarAlerts("Error",
-                    "No se generaron las butacas: " + e.getMessage(), "ERROR").showAndWait();
+                    "No se pudo leer la sala: " + e.getMessage(), "ERROR").showAndWait();
             return;
         }
-        if (creadas == 0) {
-            utilAlerts.mostrarAlerts("Sin cambios",
-                    "La sala ya tenía esas butacas registradas.", "WARNING").showAndWait();
+        if (sala == null) {
+            utilAlerts.mostrarAlerts("Sala no encontrada",
+                    "La sala ya no existe en la base de datos.", "WARNING").showAndWait();
+            return;
+        }
+
+        sala.setFilas(filas);
+        sala.setColumnas(columnas);
+        //la capacidad de la sala se actualiza sola: filas x columnas
+        sala.setCapacidad(filas * columnas);
+
+        try {
+            //el DAO hace todo en una transaccion: quita las butacas que sobran,
+            //agrega las que faltan y actualiza la sala. Si una butaca que se
+            //quitaria ya tiene ventas, lanza el aviso y no cambia nada.
+            if (!salaDao.update(sala)) {
+                utilAlerts.mostrarAlerts("Sin cambios",
+                        "No se pudo actualizar la sala.", "WARNING").showAndWait();
+                return;
+            }
+        } catch (RuntimeException e) {
+            System.out.println("Error al cambiar la cuadricula: " + e.getMessage());
+            utilAlerts.mostrarAlerts("No se pudo cambiar la cuadricula",
+                    e.getMessage(), "ERROR").showAndWait();
             return;
         }
         saved = true;

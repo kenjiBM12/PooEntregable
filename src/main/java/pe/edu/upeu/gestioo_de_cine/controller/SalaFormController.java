@@ -18,8 +18,13 @@ public class SalaFormController {
 
     @FXML
     private TextField txtNumero;
+    //la cuadricula de la sala: de aqui salen las butacas numeradas 1, 2, 3...
     @FXML
-    private TextField txtCapacidad;
+    private TextField txtFilas;
+    @FXML
+    private TextField txtColumnas;
+    @FXML
+    private Label lblCapacidad;
 
     @FXML
     private ComboBox<String> cbTipoSala, cbEstado;
@@ -32,6 +37,10 @@ public class SalaFormController {
         cbTipoSala.getItems().addAll("2D", "3D", "XD", "VIP");
         cbEstado.getItems().addAll("Activa", "Inactiva");
 
+        //la capacidad se muestra sola mientras se escriben filas y columnas
+        txtFilas.textProperty().addListener((obs, viejo, nuevo) -> actualizarCapacidad());
+        txtColumnas.textProperty().addListener((obs, viejo, nuevo) -> actualizarCapacidad());
+        actualizarCapacidad();
     }
 
     public boolean isSaved() {
@@ -42,9 +51,25 @@ public class SalaFormController {
         return sala;
     }
 
+    //capacidad de la sala = filas x columnas
+    private void actualizarCapacidad() {
+        long total = 0;
+        try {
+            long filas = Long.parseLong(txtFilas.getText().trim());
+            long columnas = Long.parseLong(txtColumnas.getText().trim());
+            if (filas > 0 && columnas > 0) {
+                total = filas * columnas;
+            }
+        } catch (NumberFormatException e) {
+            total = 0;
+        }
+        lblCapacidad.setText("Capacidad: " + total + " butacas");
+    }
+
     private boolean validate() {
         if (txtNumero.getText().isBlank()
-                || txtCapacidad.getText().isBlank()
+                || txtFilas.getText().isBlank()
+                || txtColumnas.getText().isBlank()
                 || cbEstado.getValue() == null
                 || cbTipoSala.getValue() == null) {
             Alert alert = utilAlerts.mostrarAlerts(
@@ -57,24 +82,38 @@ public class SalaFormController {
         }
 
         int numero;
-        int capacidad;
+        int filas;
+        int columnas;
 
         try {
             numero = Integer.parseInt(txtNumero.getText().trim());
-            capacidad = Integer.parseInt(txtCapacidad.getText().trim());
+            filas = Integer.parseInt(txtFilas.getText().trim());
+            columnas = Integer.parseInt(txtColumnas.getText().trim());
         } catch (NumberFormatException e) {
             utilAlerts.mostrarAlerts(
                     "Número inválido",
-                    "Ingresa números enteros válidos en número y capacidad.",
+                    "Ingresa números enteros válidos en número, filas y columnas.",
                     "WARNING"
             ).showAndWait();
             return false;
         }
 
-        if (numero <= 0 || capacidad <= 0) {
+        if (numero <= 0 || filas <= 0 || columnas <= 0) {
             utilAlerts.mostrarAlerts(
                     "Datos inválidos",
-                    "El número de sala y la capacidad deben ser mayores que cero.",
+                    "El número de sala, las filas y las columnas deben ser mayores que cero.",
+                    "WARNING"
+            ).showAndWait();
+            return false;
+        }
+
+        //CORREGIDO: filas x columnas se multiplica como int y con valores muy
+        //grandes la capacidad se desbordaba (podia quedar negativa en la base).
+        //Se limita la cuadricula a un tamaño razonable para un cine.
+        if (filas > 100 || columnas > 100) {
+            utilAlerts.mostrarAlerts(
+                    "Cuadricula muy grande",
+                    "Las filas y las columnas no pueden pasar de 100.",
                     "WARNING"
             ).showAndWait();
             return false;
@@ -103,9 +142,15 @@ public class SalaFormController {
             sala = new Sala();
         }
 
+        int filas = Integer.parseInt(txtFilas.getText().trim());
+        int columnas = Integer.parseInt(txtColumnas.getText().trim());
+
         sala.setNumero(Integer.parseInt(txtNumero.getText().trim()));
         sala.setTipoSala(cbTipoSala.getValue());
-        sala.setCapacidad(Integer.parseInt(txtCapacidad.getText().trim()));
+        sala.setFilas(filas);
+        sala.setColumnas(columnas);
+        //la capacidad sale de la cuadricula, no se escribe a mano
+        sala.setCapacidad(filas * columnas);
         sala.setEstado(cbEstado.getValue().trim());
 
         saved = true;
@@ -118,12 +163,19 @@ public class SalaFormController {
         if (sala != null) {
             lblTitulo.setText("Editar Sala");
             txtNumero.setText(String.valueOf(sala.getNumero()));
-            txtCapacidad.setText(String.valueOf(sala.getCapacidad()));
+            //las salas viejas no tienen cuadricula guardada
+            if (sala.getFilas() > 0) {
+                txtFilas.setText(String.valueOf(sala.getFilas()));
+            }
+            if (sala.getColumnas() > 0) {
+                txtColumnas.setText(String.valueOf(sala.getColumnas()));
+            }
             cbEstado.setValue(sala.getEstado());
 
             if (sala.getTipoSala() != null) {
                 cbTipoSala.setValue(sala.getTipoSala());
             }
+            actualizarCapacidad();
         }
     }
 }

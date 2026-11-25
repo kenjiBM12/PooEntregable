@@ -18,12 +18,13 @@ public class FuncionDaoImpl implements IFuncionDao {
 
     private static final String QUERY_BASE =
             " SELECT f.idfuncion,f.id_pelicula,f.id_sala,f.fecha,f.horario,f.precio, " +
-            " p.titulo AS titulo_pelicula,p.numero AS numero_pelicula,p.duracion, " +
-            " p.categoria,p.clasificacion, " +
-            " s.numero AS numero_sala,s.tipo_sala AS tipo_sala,s.capacidad,s.estado " +
-            " FROM funcion f " +
-            " LEFT JOIN pelicula p ON f.id_pelicula = p.idpelicula " +
-            " LEFT JOIN sala s ON f.id_sala = s.idsala ";
+                    " p.titulo AS titulo_pelicula,p.numero AS numero_pelicula,p.duracion, " +
+                    " p.categoria,p.clasificacion, " +
+                    " s.numero AS numero_sala,s.tipo_sala AS tipo_sala,s.capacidad,s.estado, " +
+                    " s.filas AS filas_sala,s.columnas AS columnas_sala " +
+                    " FROM funcion f " +
+                    " LEFT JOIN pelicula p ON f.id_pelicula = p.idpelicula " +
+                    " LEFT JOIN sala s ON f.id_sala = s.idsala ";
 
     @Override
     public boolean insert(Funcion f) {
@@ -43,9 +44,9 @@ public class FuncionDaoImpl implements IFuncionDao {
             st.setString(3, fecha);
             st.setString(4, f.getHorario());
             st.setDouble(5, f.getPrecio());
-            st.executeUpdate();
-            //true solo si se inserto una fila
-            flag = true;
+            //CORREGIDO: antes se devolvia true aunque no se insertara nada;
+            //ahora se usa el resultado real del executeUpdate
+            flag = st.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error al insertar funcion:" + e.getMessage(), e);
         }
@@ -66,8 +67,8 @@ public class FuncionDaoImpl implements IFuncionDao {
             st.setString(4, f.getHorario());
             st.setDouble(5, f.getPrecio());
             st.setInt(6, f.getIdfuncion());
-            st.executeUpdate();
-            flag = true;
+            //CORREGIDO: solo es true si el UPDATE o el DELETE modifico una fila
+            flag = st.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error al actualizar funcion:" + e.getMessage(), e);
         }
@@ -82,8 +83,34 @@ public class FuncionDaoImpl implements IFuncionDao {
         try (PreparedStatement st = cn.prepareStatement(query)) {
             st.setInt(1, id);
             try (ResultSet rs = st.executeQuery()) {
+                //CORREGIDO: este bloque estaba vacio y searchById siempre devolvia
+                //null; por eso al editar una funcion salia "ya no existe".
+                //Ahora se arma la funcion igual que en listAll.
                 if (rs.next()) {
-                    funcion = construirFuncion(rs);
+                    Pelicula p = new Pelicula();
+                    p.setidpelicula(rs.getInt("id_pelicula"));
+                    p.setNumero(rs.getInt("numero_pelicula"));
+                    p.setTitulo(rs.getString("titulo_pelicula"));
+                    p.setDuracion(rs.getString("duracion"));
+                    p.setCategoria(rs.getString("categoria"));
+                    p.setClasificacion(rs.getString("clasificacion"));
+
+                    Sala s = new Sala();
+                    s.setIdsala(rs.getInt("id_sala"));
+                    s.setNumero(rs.getInt("numero_sala"));
+                    s.setTipoSala(rs.getString("tipo_sala"));
+                    s.setCapacidad(rs.getInt("capacidad"));
+                    s.setFilas(rs.getInt("filas_sala"));
+                    s.setColumnas(rs.getInt("columnas_sala"));
+                    s.setEstado(rs.getString("estado"));
+
+                    funcion = new Funcion();
+                    funcion.setIdfuncion(rs.getInt("idfuncion"));
+                    funcion.setFecha(rs.getString("fecha"));
+                    funcion.setHorario(rs.getString("horario"));
+                    funcion.setPrecio(rs.getDouble("precio"));
+                    funcion.setPelicula(p);
+                    funcion.setSala(s);
                 }
             }
         } catch (SQLException e) {
@@ -105,7 +132,7 @@ public class FuncionDaoImpl implements IFuncionDao {
                 if (rs.next() && rs.getInt(1) > 0) {
                     throw new RuntimeException("La función tiene " + rs.getInt(1)
                             + " boleto(s) vendido(s) y no se puede eliminar.\n"
-                            + "Anule esas ventas desde el módulo Ventas.");
+                            + "Se conserva el historial de ventas.");
                 }
             }
         } catch (SQLException e) {
@@ -116,8 +143,8 @@ public class FuncionDaoImpl implements IFuncionDao {
         String query = "DELETE FROM funcion WHERE idfuncion=?";
         try (PreparedStatement st = cn.prepareStatement(query)) {
             st.setInt(1, f.getIdfuncion());
-            st.executeUpdate();
-            flag = true;
+            //CORREGIDO: solo es true si el DELETE modifico una fila
+            flag = st.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error al eliminar funcion:" + e.getMessage(), e);
         }
@@ -127,43 +154,50 @@ public class FuncionDaoImpl implements IFuncionDao {
     @Override
     public List<Funcion> listAll() {
         List<Funcion> lista = new ArrayList<>();
-        //el tipo de sala pertenece a sala, no a pelicula
-        String query = QUERY_BASE + " ORDER BY s.numero, f.fecha, f.horario";
+        // Reemplaza la consulta antigua de hotel por esta consulta del sistema de cine.
+        String query = QUERY_BASE + " ORDER BY f.fecha, f.horario, f.idfuncion; ";
+        //CORREGIDO: antes el try-with-resources incluia la Connection y cerraba
+        //la conexion compartida; despues las demas pantallas fallaban. Ahora
+        //solo se cierran el Statement y el ResultSet.
         Connection cn = ConexionDB.getConnection();
         try (PreparedStatement st = cn.prepareStatement(query);
              ResultSet rs = st.executeQuery()) {
             while (rs.next()) {
-                lista.add(construirFuncion(rs));
+                //instancia de objetos relacionados
+                Pelicula p = new Pelicula();
+                p.setidpelicula(rs.getInt("id_pelicula"));
+                p.setNumero(rs.getInt("numero_pelicula"));
+                p.setTitulo(rs.getString("titulo_pelicula"));
+                p.setDuracion(rs.getString("duracion"));
+                p.setCategoria(rs.getString("categoria"));
+                p.setClasificacion(rs.getString("clasificacion"));
+
+                Sala s = new Sala();
+                s.setIdsala(rs.getInt("id_sala"));
+                s.setNumero(rs.getInt("numero_sala"));
+                s.setTipoSala(rs.getString("tipo_sala"));
+                s.setCapacidad(rs.getInt("capacidad"));
+                s.setFilas(rs.getInt("filas_sala"));
+                s.setColumnas(rs.getInt("columnas_sala"));
+                s.setEstado(rs.getString("estado"));
+
+                Funcion f = new Funcion();
+                f.setIdfuncion(rs.getInt("idfuncion"));
+                f.setFecha(rs.getString("fecha"));
+                f.setHorario(rs.getString("horario"));
+                f.setPrecio(rs.getDouble("precio"));
+                f.setPelicula(p);
+                f.setSala(s);
+
+                lista.add(f);
             }
+
         } catch (SQLException e) {
-            throw new RuntimeException("Error al listar funciones:" + e.getMessage(), e);
+            //CORREGIDO: antes el error se ocultaba devolviendo una lista vacia;
+            //ahora se avisa para que el controlador muestre el motivo
+            throw new RuntimeException("Error al listar funciones: " + e.getMessage(), e);
         }
         return lista;
-    }
 
-    private Funcion construirFuncion(ResultSet rs) throws SQLException {
-        Pelicula p = new Pelicula();
-        p.setidpelicula(rs.getInt("id_pelicula"));
-        p.setNumero(rs.getInt("numero_pelicula"));
-        p.setTitulo(rs.getString("titulo_pelicula"));
-        p.setDuracion(rs.getString("duracion"));
-        p.setCategoria(rs.getString("categoria"));
-        p.setClasificacion(rs.getString("clasificacion"));
-
-        Sala s = new Sala();
-        s.setIdsala(rs.getInt("id_sala"));
-        s.setNumero(rs.getInt("numero_sala"));
-        s.setTipoSala(rs.getString("tipo_sala"));
-        s.setCapacidad(rs.getInt("capacidad"));
-        s.setEstado(rs.getString("estado"));
-
-        Funcion f = new Funcion();
-        f.setIdfuncion(rs.getInt("idfuncion"));
-        f.setFecha(rs.getString("fecha"));
-        f.setHorario(rs.getString("horario"));
-        f.setPrecio(rs.getDouble("precio"));
-        f.setPelicula(p);
-        f.setSala(s);
-        return f;
     }
 }

@@ -39,15 +39,26 @@
                 <ComboBox promptText="Elige tipo de sala" fx:id="cbTipoSala" maxWidth="Infinity" GridPane.columnIndex="1"
                           GridPane.rowIndex="1"/>
 
-                <Label styleClass="etiqueta" text="Capacidad" GridPane.rowIndex="2"/>
-                <TextField fx:id="txtCapacidad" promptText="Butacas, ejemplo: 120"
+                <!-- filas x columnas define cuantas butacas tiene la sala -->
+                <Label styleClass="etiqueta" text="Filas" GridPane.rowIndex="2"/>
+                <TextField fx:id="txtFilas" promptText="Ejemplo: 10"
                            GridPane.columnIndex="1" GridPane.rowIndex="2"/>
 
-                <Label styleClass="etiqueta" text="Estado" GridPane.rowIndex="3"/>
+                <Label styleClass="etiqueta" text="Columnas" GridPane.rowIndex="3"/>
+                <TextField fx:id="txtColumnas" promptText="Butacas por fila, ejemplo: 12"
+                           GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+                <Label fx:id="lblCapacidad" styleClass="leyenda" text="Capacidad: 0 butacas"
+                       GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+
+                <Label styleClass="etiqueta" text="Estado" GridPane.rowIndex="5"/>
                 <ComboBox promptText="Elige una opcion" fx:id="cbEstado" maxWidth="Infinity" GridPane.columnIndex="1"
-                          GridPane.rowIndex="3"/>
+                          GridPane.rowIndex="5"/>
             </children>
         </GridPane>
+
+        <Label styleClass="leyenda" wrapText="true"
+               text="Las butacas se numeran del 1 hasta filas x columnas. Al crear la sala se generan automaticamente; si cambia la cuadricula, se ajustan (no se quitan butacas con ventas)."/>
 
         <HBox alignment="CENTER_RIGHT" spacing="10.0">
             <children>
