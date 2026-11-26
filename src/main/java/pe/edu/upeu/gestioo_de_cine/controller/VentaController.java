@@ -61,6 +61,9 @@ public class VentaController {
     private TableColumn<Venta, Double> ColTotal;
     @FXML
     private TableColumn<Venta, String> ColFecha;
+    //fecha en que se cobro el boleto: la misma que usa el cierre de caja
+    @FXML
+    private TableColumn<Venta, String> ColFechaVenta;
     @FXML
     private TableColumn<Venta, String> ColEstado;
     //MEJORA 6: columna que muestra quien anulo y por que
@@ -130,6 +133,10 @@ public class VentaController {
                 cellData.getValue().getFuncion() != null
                         && cellData.getValue().getFuncion().getFecha() != null
                         ? cellData.getValue().getFuncion().getFecha() : ""));
+        //la fecha de venta se guarda como LocalDate, por eso se pasa a texto
+        ColFechaVenta.setCellValueFactory(cellData -> new SimpleStringProperty(
+                cellData.getValue().getFechaVenta() != null
+                        ? cellData.getValue().getFechaVenta().toString() : ""));
         ColEstado.setCellFactory(columna -> new TableCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {

@@ -62,7 +62,9 @@
                 <TableColumn fx:id="ColDni" prefWidth="80.0" text="DNI"/>
                 <TableColumn fx:id="ColPelicula" prefWidth="150.0" text="Película"/>
                 <TableColumn fx:id="ColSala" prefWidth="100.0" text="Sala"/>
-                <TableColumn fx:id="ColFecha" prefWidth="90.0" text="Fecha"/>
+                <TableColumn fx:id="ColFecha" prefWidth="90.0" text="Fecha función"/>
+                <!-- la fecha en que se cobro el boleto: es la que usa el cierre de caja -->
+                <TableColumn fx:id="ColFechaVenta" prefWidth="95.0" text="Fecha venta"/>
                 <TableColumn fx:id="ColHorario" prefWidth="70.0" text="Hora"/>
                 <TableColumn fx:id="ColButaca" prefWidth="65.0" text="Butaca"/>
                 <TableColumn fx:id="ColEmpleado" prefWidth="110.0" text="Empleado"/>
