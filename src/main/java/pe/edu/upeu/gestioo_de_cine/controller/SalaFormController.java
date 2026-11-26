@@ -36,6 +36,9 @@ public class SalaFormController {
     public void initialize() {
         cbTipoSala.getItems().addAll("2D", "3D", "XD", "VIP");
         cbEstado.getItems().addAll("Activa", "Inactiva");
+        //MEJORA 6: una sala nueva se crea ACTIVA por defecto. Si se deja en
+        //Inactiva, sus funciones no se pueden vender y parecia que faltaban.
+        cbEstado.setValue("Activa");
 
         //la capacidad se muestra sola mientras se escriben filas y columnas
         txtFilas.textProperty().addListener((obs, viejo, nuevo) -> actualizarCapacidad());

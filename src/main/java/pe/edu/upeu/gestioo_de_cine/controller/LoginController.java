@@ -56,15 +56,19 @@ public class LoginController {
             return;
         }
 
-        //MEJORA 9: se registra el ingreso correcto antes de abrir la ventana
+        //MEJORA 9: se registra el ingreso correcto antes de abrir la ventana.
+        //CORREGIDO: la sesion se inicia ANTES de escribir en la bitacora. Antes
+        //se llamaba primero a Bitacora y Sesion todavia estaba vacia, asi que
+        //la auditoria guardaba "sistema" en lugar del usuario que acababa de
+        //entrar. Ahora Bitacora ya encuentra al usuario en Sesion.
+        Sesion.iniciar(usuario);
         Bitacora.registrar("LOGIN", "Ingreso del usuario " + usuario.getUsuario());
         abrirPrincipal(usuario);
     }
 
     private void abrirPrincipal(Usuario usuario) {
         try {
-            //se guarda el usuario conectado para mostrarlo en el menu
-            Sesion.iniciar(usuario);
+            //la sesion ya quedo iniciada en handleLogin, antes de la auditoria
             FXMLLoader loader = new FXMLLoader(HelloApplication.class
                     .getResource("/pe/edu/upeu/gestioo_de_cine/views/main-view.fxml"));
             Parent root = loader.load();

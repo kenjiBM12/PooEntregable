@@ -10,6 +10,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.util.StringConverter;
 import pe.edu.upeu.gestioo_de_cine.implementacion.ButacaDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.implementacion.ClienteDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.implementacion.FuncionDaoImpl;
@@ -90,6 +91,32 @@ public class VentaFormController {
         cboPelicula.getItems().setAll(peliculaDao.listAll());
         cboPelicula.valueProperty().addListener((obs, viejo, nuevo) -> cargarFunciones());
         cboFuncion.valueProperty().addListener((obs, viejo, nuevo) -> cargarButacas());
+        //CORREGIDO: el combo de funciones muestra TODAS las funciones de la
+        //pelicula. Antes se escondian las que ya habian empezado o las de una
+        //sala inactiva, y si eran las unicas el combo quedaba vacio y parecia
+        //que la pelicula no tenia funciones. Ahora se ven marcadas y el
+        //sistema impide venderlas con un aviso claro.
+        cboFuncion.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(Funcion f) {
+                if (f == null) {
+                    return "";
+                }
+                String texto = f.toString();
+                if (yaPaso(f)) {
+                    texto = texto + "   (ya empezó)";
+                }
+                if (salaInactiva(f)) {
+                    texto = texto + "   (sala inactiva)";
+                }
+                return texto;
+            }
+
+            @Override
+            public Funcion fromString(String texto) {
+                return null;
+            }
+        });
         //opciones de genero, las mismas que en el alta de cliente
         cbgenero.getItems().addAll("Masculino", "Femenino");
         //MEJORA 6: formas de pago simples para el cierre de caja
@@ -120,16 +147,10 @@ public class VentaFormController {
             return;
         }
         for (Funcion f : funcionDao.listAll()) {
-            //MEJORA 5b: no se ofrecen funciones que ya empezaron
-            if (yaPaso(f)) {
-                continue;
-            }
-            //MEJORA 6: las funciones de una sala inactiva (mantenimiento) no
-            //se ofrecen para vender
-            if (f.getSala() != null && "INACTIVA".equalsIgnoreCase(
-                    f.getSala().getEstado() != null ? f.getSala().getEstado().trim() : "")) {
-                continue;
-            }
+            //CORREGIDO: se agregan todas las funciones de la pelicula, sin
+            //filtrar por fecha ni por estado de la sala. El filtro se aplica
+            //al elegir la funcion (puedeVenderse), asi el usuario ve que
+            //existen funciones y entiende por que no puede vender esa.
             if (f.getPelicula() != null
                     && String.valueOf(f.getPelicula().getidpelicula())
                     .equals(String.valueOf(pelicula.getidpelicula()))) {
@@ -137,8 +158,8 @@ public class VentaFormController {
             }
         }
         if (cboFuncion.getItems().isEmpty()) {
-            lblMensaje.setText("Esa película no tiene funciones disponibles "
-                    + "(las que ya empezaron no se venden).");
+            lblMensaje.setText("Esa película todavía no tiene funciones. "
+                    + "Cree una en el menú Funciones.");
         }
         actualizarEstadoSiguiente();
     }
@@ -178,8 +199,18 @@ public class VentaFormController {
         gridButacas.getChildren().clear();
         butacasSeleccionadas.clear();
         lblButaca.setText("Butaca: -");
+        //se limpia el aviso anterior: al cambiar de funcion el mensaje viejo
+        //(por ejemplo "esa funcion ya empezo") ya no corresponde
+        lblMensaje.setText("");
         Funcion f = cboFuncion.getValue();
         if (f == null || f.getSala() == null) {
+            return;
+        }
+        //CORREGIDO: si la funcion ya empezo o su sala esta inactiva se avisa
+        //aqui mismo, en vez de dejar el mapa de butacas vacio sin motivo
+        if (!puedeVenderse(f)) {
+            lblMensaje.setText(mensajeNoVendible(f));
+            actualizarEstadoSiguiente();
             return;
         }
         lblPrecio.setText("Precio: S/ " + f.getPrecio() + " c/u  ·  " + f.getSala().getEtiqueta());
@@ -307,6 +338,13 @@ public class VentaFormController {
             utilAlerts.mostrarAlerts("Datos incompletos",
                     "Complete la función, las butacas, el DNI, los nombres y los apellidos.",
                     "ERROR").showAndWait();
+            return false;
+        }
+        //CORREGIDO: aunque la funcion se vea en el combo, no se puede vender
+        //si ya empezo o si su sala esta inactiva
+        if (!puedeVenderse(cboFuncion.getValue())) {
+            utilAlerts.mostrarAlerts("Función no disponible",
+                    mensajeNoVendible(cboFuncion.getValue()), "WARNING").showAndWait();
             return false;
         }
         String dni = txtDni.getText().trim();
@@ -503,10 +541,36 @@ public class VentaFormController {
         Stage stage = (Stage) cboPelicula.getScene().getWindow();
         stage.sizeToScene();
     }
-    //el boton SIGUIENTE solo se activa cuando ya hay funcion y butacas
+    //el boton SIGUIENTE solo se activa cuando hay una funcion vendible y butacas
     private void actualizarEstadoSiguiente() {
-        boolean listo = cboFuncion.getValue() != null && !butacasSeleccionadas.isEmpty();
+        boolean listo = puedeVenderse(cboFuncion.getValue())
+                && !butacasSeleccionadas.isEmpty();
         btnSiguiente.setDisable(!listo);
+    }
+
+    /**
+     * MEJORA 5b y MEJORA 6: una funcion se puede vender solo si todavia no
+     * empezo y si su sala no esta inactiva.
+     */
+    private boolean puedeVenderse(Funcion f) {
+        return f != null && !yaPaso(f) && !salaInactiva(f);
+    }
+
+    //MEJORA 6: la sala esta en mantenimiento (estado INACTIVA)
+    private boolean salaInactiva(Funcion f) {
+        if (f == null || f.getSala() == null || f.getSala().getEstado() == null) {
+            return false;
+        }
+        return "INACTIVA".equalsIgnoreCase(f.getSala().getEstado().trim());
+    }
+
+    //explica por que una funcion aparece en la lista pero no se puede vender
+    private String mensajeNoVendible(Funcion f) {
+        if (salaInactiva(f)) {
+            return "La " + f.getSala().getEtiqueta() + " está inactiva. "
+                    + "Actívela en el menú Salas para vender entradas.";
+        }
+        return "Esa función ya empezó: elija otra función u otra fecha.";
     }
 
     //paso 1 y 2 listos: se pasa a los datos del cliente

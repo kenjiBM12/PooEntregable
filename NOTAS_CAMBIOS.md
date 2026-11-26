@@ -797,3 +797,46 @@ Quedan anotadas para otra etapa; ninguna se agregó en esta entrega:
 8. **Filtro por empleado** en la pantalla de ventas y en el cierre de caja.
 9. **Respaldo automático al cerrar** el programa (hoy se hace al abrir).
 10. **Modo demostración** con datos de ejemplo para probar sin la base real.
+
+---
+
+## 15. Corrección de auditoría del login y del combo de funciones (26/11/2026)
+
+### 15.1 La auditoría ya guarda el usuario real del login
+
+- `controller/LoginController.java`: la sesión se inicia con
+  `Sesion.iniciar(usuario)` **antes** de llamar a `Bitacora.registrar("LOGIN", ...)`.
+  Antes se escribía primero en la bitácora y `Sesion` todavía estaba vacía, así
+  que `Bitacora` guardaba el usuario `"sistema"` en un ingreso correcto.
+- `abrirPrincipal(...)` ya no vuelve a iniciar la sesión: solo se comenta que
+  quedó iniciada en `handleLogin`.
+- El intento fallido sigue registrándose como `"sistema"` (todavía no hay
+  usuario válido) y en el detalle queda el nombre escrito, que es lo útil.
+
+### 15.2 En Ventas aparecen todas las funciones de la película
+
+Antes `VentaFormController.cargarFunciones()` **escondía** las funciones que ya
+habían empezado y las de salas inactivas. Si eran las únicas, el combo de
+funciones quedaba vacío y parecía que la película no tenía funciones.
+
+Ahora:
+
+- El combo lista **todas** las funciones de la película elegida.
+- El texto de cada función avisa cuando corresponde: `(ya empezó)` o
+  `(sala inactiva)`, con un `StringConverter` en `cboFuncion`.
+- Al elegir una función no vendible se muestra el motivo en el mensaje del
+  formulario, el botón SIGUIENTE queda deshabilitado y `validate()`/`handleVender`
+  la rechazan con un aviso claro.
+- Si la película no tiene ninguna función, el mensaje dice
+  "Esa película todavía no tiene funciones. Cree una en el menú Funciones."
+- `SalaFormController`: una sala nueva se crea con estado **Activa** por defecto
+  (antes el combo quedaba sin elegir y una sala podía quedar Inactiva sin querer).
+
+### 15.3 Verificación
+
+| Prueba | Resultado |
+|---|---|
+| `mvnw compile` | **Ejecutada y exitosa** (`COMPILE_EXIT=0`) |
+| `mvnw test` | **Ejecutada y exitosa** (`TEST_EXIT=0`): `DuracionTest` 5 y `SeguridadTest` 3, 0 fallos |
+| Registrar login con sesión iniciada | Revisado por código: `Sesion.iniciar` va antes de `Bitacora.registrar`, así que el `usuario` guardado es el real |
+| Interfaz (abrir Venta y desplegar funciones) | **No ejecutada** con clics reales: requiere abrir la ventana en la PC |
