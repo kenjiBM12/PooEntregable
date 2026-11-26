@@ -917,10 +917,12 @@ sistema de cine (priorizadas)», en el orden en que estaban planteadas.
 8. **Ventas y cierre por empleado** (`VentaController`, `venta-view.fxml`):
    combo de empleados alimentado con `venta.id_usuario` + JOIN a `usuario`
    (campo `empleado` del modelo ya existente).
-9. **Comprobante reimprimible en HTML** (`utils/Comprobante`,
+9. **Comprobante reimprimible** (`utils/Comprobante`,
    `IVentaDao.listarPorCodigo`, botón **REIMPRIMIR**): reconstruye la compra
-   desde la base, genera `.txt` y un `.html` con estilos, listo para imprimir
-   desde el navegador. La venta nueva también deja el HTML.
+   desde la base y la guarda como `.txt` en
+   `SistemaCineUPeU/comprobantes`, listo para abrir con el Bloc de notas e
+   imprimir. La venta nueva también deja el archivo. Solo usa `File`/`Files`,
+   como se vio en el curso (sin HTML).
 
 ### 16.3 Nivel 3 — calidad y experiencia
 
@@ -949,7 +951,7 @@ sistema de cine (priorizadas)», en el orden en que estaban planteadas.
 | Prueba | Resultado |
 |---|---|
 | `mvnw compile` | **exit 0** |
-| `mvnw test` | **exit 0**: 30 pruebas (`IntegracionDaoTest` 9, `ValidacionesTest` 6, `SeguridadPbkdf2Test` 4, `SeguridadTest` 3, `DuracionTest` 5, `FuncionTest` 3), 0 fallos |
+| `mvnw test` | **exit 0**: 32 pruebas (`IntegracionDaoTest` 9, `ValidacionesTest` 6, `SeguridadPbkdf2Test` 4, `SeguridadTest` 3, `DuracionTest` 5, `FuncionTest` 3, `ComprobanteTest` 2), 0 fallos |
 | Migración sobre copia de la base real | `Esquema migrado de la version 2 a la 3` en `target/tmp/hogar_ui` |
 | Carga de las 20 vistas FXML sobre la copia | **20 de 20 OK** |
 | Modo demostración en carpeta temporal | 2 películas, 2 salas, 64 butacas, 3 funciones, 3 ventas, 2 clientes, `user_version = 3`, login `admin` OK |

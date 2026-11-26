@@ -440,8 +440,8 @@ public class VentaController {
 
     /**
      * MEJORA 9: reimprime el comprobante de la compra del boleto elegido.
-     * Se vuelve a armar desde la base (no del archivo), se guarda el HTML y
-     * se muestra la ruta para abrirlo e imprimirlo desde el navegador.
+     * Se vuelve a armar desde la base (no del archivo), se guarda como .txt y
+     * se muestra la ruta para abrirlo e imprimirlo desde el Bloc de notas.
      */
     @FXML
     private void handleReimprimir() {
@@ -462,12 +462,12 @@ public class VentaController {
                 return;
             }
             String texto = Comprobante.texto(boletos);
-            java.io.File html = Comprobante.generarHtml(codigo, texto);
+            java.io.File archivo = Comprobante.guardar(codigo, texto);
             Bitacora.registrar("COMPROBANTE", "Comprobante reimpreso: " + codigo);
             utilAlert.mostrarAlerts("Comprobante generado",
-                    texto + (html != null
-                            ? "\n\nArchivo para imprimir:\n" + html.getAbsolutePath()
-                            : "\n\nNo se pudo guardar el archivo HTML."),
+                    texto + (archivo != null
+                            ? "\n\nArchivo para imprimir:\n" + archivo.getAbsolutePath()
+                            : "\n\nNo se pudo guardar el archivo del comprobante."),
                     "INFORMATION").showAndWait();
         } catch (RuntimeException e) {
             System.out.println("Error al reimprimir el comprobante: " + e.getMessage());

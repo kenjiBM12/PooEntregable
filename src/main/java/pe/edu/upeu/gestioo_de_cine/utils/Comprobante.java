@@ -8,12 +8,12 @@ import java.nio.file.Files;
 import java.util.List;
 
 /**
- * MEJORA 9: comprobante de venta reimprimible en HTML.
+ * MEJORA 9: comprobante de venta reimprimible.
  *
- * El comprobante .txt se sigue guardando como respaldo, pero ademas se genera
- * un HTML con los datos de la compra: se abre en cualquier navegador y se
- * imprime sin instalar nada. El codigo de compra es el nombre del archivo, asi
- * que reimprimir es simplemente volver a generarlo.
+ * El comprobante se guarda como archivo de texto (.txt) con los datos de la
+ * compra: se abre con el Bloc de notas, se imprime o se envia al cliente.
+ * Se usa solo lo visto en el curso (File, Files y texto), sin HTML.
+ * Reimprimir es simplemente volver a generarlo desde la base.
  */
 public class Comprobante {
 
@@ -66,41 +66,19 @@ public class Comprobante {
     }
 
     /**
-     * Escribe el comprobante en HTML y devuelve el archivo generado.
+     * Escribe el comprobante como archivo .txt y devuelve el archivo generado.
      * Si no se puede escribir devuelve null (el llamador avisa y sigue).
      */
-    public static File generarHtml(String codigo, String textoComprobante) {
-        String nombre = "comprobante_" + limpiar(codigo) + ".html";
+    public static File guardar(String codigo, String textoComprobante) {
+        String nombre = "comprobante_" + limpiar(codigo) + ".txt";
         File archivo = new File(carpeta(), nombre);
         try {
-            Files.writeString(archivo.toPath(), html(codigo, textoComprobante),
-                    StandardCharsets.UTF_8);
+            Files.writeString(archivo.toPath(), textoComprobante, StandardCharsets.UTF_8);
             return archivo;
         } catch (Exception e) {
-            Log.error("No se pudo generar el comprobante HTML " + nombre, e);
+            Log.error("No se pudo guardar el comprobante " + nombre, e);
             return null;
         }
-    }
-
-    //el HTML usa el texto del comprobante tal cual, escapando los caracteres especiales
-    private static String html(String codigo, String textoComprobante) {
-        return "<!DOCTYPE html>\n"
-                + "<html lang=\"es\"><head><meta charset=\"UTF-8\">"
-                + "<title>Comprobante " + escapar(codigo) + "</title>"
-                + "<style>"
-                + "body{font-family:Consolas,monospace;background:#f4f4f4;padding:24px;}"
-                + ".ticket{background:#fff;max-width:460px;margin:0 auto;padding:22px 26px;"
-                + "border:1px solid #ddd;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.08);}"
-                + "h1{font-size:18px;letter-spacing:2px;text-align:center;margin:0 0 4px;}"
-                + ".sub{text-align:center;color:#777;font-size:12px;margin-bottom:14px;}"
-                + "pre{font-size:13px;line-height:1.45;white-space:pre-wrap;}"
-                + ".pie{margin-top:16px;text-align:center;color:#777;font-size:11px;}"
-                + "@media print{body{background:#fff;padding:0}.ticket{border:0;box-shadow:none}}"
-                + "</style></head><body><div class=\"ticket\">"
-                + "<h1>CINEMAX</h1><div class=\"sub\">Sistema de venta de entradas - UPeU</div>"
-                + "<pre>" + escapar(textoComprobante) + "</pre>"
-                + "<div class=\"pie\">Comprobante generado por el sistema</div>"
-                + "</div></body></html>";
     }
 
     /** Codigo visible de la compra: el guardado o "V-" + idventa si es vieja. */
@@ -116,13 +94,6 @@ public class Comprobante {
 
     private static String texto(String valor) {
         return valor == null ? "" : valor;
-    }
-
-    private static String escapar(String valor) {
-        if (valor == null) {
-            return "";
-        }
-        return valor.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 
     private static String limpiar(String valor) {

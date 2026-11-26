@@ -32,8 +32,6 @@ import pe.edu.upeu.gestioo_de_cine.utils.UtilAlerts;
 import pe.edu.upeu.gestioo_de_cine.utils.Validaciones;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -535,41 +533,16 @@ public class VentaFormController {
                         "Fecha de venta: " + LocalDate.now() + "\n" +
                         "Estado: activa";
 
-        //MEJORA 9a: ademas de mostrarlo, el comprobante se guarda en un archivo
-        String ruta = guardarComprobante(codigo, texto);
-        if (ruta != null) {
-            texto = texto + "\n\nComprobante guardado en:\n" + ruta;
-        }
-        //MEJORA 9: tambien se genera el HTML, que se abre e imprime desde el navegador
-        File html = Comprobante.generarHtml(codigo, texto);
-        if (html != null) {
-            texto = texto + "\n\nComprobante para imprimir (HTML):\n" + html.getAbsolutePath();
+        //MEJORA 9: ademas de mostrarlo, el comprobante se guarda como archivo de
+        //texto (.txt), que se abre con el Bloc de notas para imprimirlo
+        File archivo = Comprobante.guardar(codigo, texto);
+        if (archivo != null) {
+            texto = texto + "\n\nComprobante guardado en:\n" + archivo.getAbsolutePath();
+        } else {
+            texto = texto + "\n\nNo se pudo guardar el comprobante en disco.";
         }
         Alert alert = utilAlerts.mostrarAlerts("Comprobante de venta", texto, "INFORMATION");
         alert.showAndWait();
-    }
-
-    /**
-     * MEJORA 9a: guarda el comprobante como archivo de texto (.txt).
-     * Queda en C:\\Users\\<usuario>\\SistemaCineUPeU\\comprobantes\\
-     * para que se pueda imprimir o enviar al cliente despues.
-     * Si no se puede guardar, la venta NO se pierde: solo se devuelve null.
-     */
-    private String guardarComprobante(String codigo, String texto) {
-        try {
-            String userHome = System.getProperty("user.home");
-            File carpeta = new File(userHome + File.separator + "SistemaCineUPeU"
-                    + File.separator + "comprobantes");
-            if (!carpeta.exists()) {
-                carpeta.mkdirs();
-            }
-            File archivo = new File(carpeta, "comprobante_" + codigo + ".txt");
-            Files.writeString(archivo.toPath(), texto, StandardCharsets.UTF_8);
-            return archivo.getAbsolutePath();
-        } catch (Exception e) {
-            System.out.println("No se pudo guardar el comprobante: " + e.getMessage());
-            return null;
-        }
     }
 
     //CORREGIDO: numero visible de la butaca. Se cuentan las butacas de las
