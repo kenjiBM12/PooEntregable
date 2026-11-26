@@ -16,11 +16,14 @@ public interface IVentaDao {
     //registra el cliente (si es nuevo) y una venta por butaca en una sola transaccion.
     //devuelve el codigo de compra generado, o null si una butaca ya estaba vendida.
     //los errores de BD se lanzan como RuntimeException.
-    String registrarVentas(Funcion funcion, Cliente cliente, List<Butaca> butacas, int idUsuario);
+    //MEJORA 6: metodoPago es la forma de pago elegida en el formulario
+    String registrarVentas(Funcion funcion, Cliente cliente, List<Butaca> butacas,
+                           int idUsuario, String metodoPago);
 
     //anula la venta conservando el registro (ya no borra la fila)
-    boolean anular(Venta v);
+    //MEJORA 6: se guarda quien anulo, cuando y el motivo
+    boolean anular(Venta v, int idUsuario, String motivo);
 
     //anula todos los boletos de una misma compra (mismo codigo)
-    boolean anularCompra(String codigoCompra);
+    boolean anularCompra(String codigoCompra, int idUsuario, String motivo);
 }

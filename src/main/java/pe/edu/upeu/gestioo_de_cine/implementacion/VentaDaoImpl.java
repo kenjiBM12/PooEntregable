@@ -16,6 +16,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,8 +27,9 @@ public class VentaDaoImpl implements IVentaDao {
             " SELECT v.idventa,v.id_funcion,v.id_cliente,v.cliente,v.cantidad_asientos, " +
             " v.total_pagar,v.fecha_venta,v.id_butaca,v.id_usuario,v.estado, " +
             " COALESCE(v.codigo_compra,'V-' || v.idventa) AS codigo_compra, " +
+            " v.metodo_pago,v.anulada_por,v.fecha_anulacion,v.motivo_anulacion, " +
             " c.nombre AS nombre_cliente,c.apellidos AS apellidos_cliente,c.dni AS dni_cliente, " +
-            " u.nombre AS nombre_empleado, " +
+            " u.nombre AS nombre_empleado,ua.nombre AS nombre_anulador, " +
             " f.horario,f.precio,f.fecha AS fecha_funcion,f.id_pelicula,f.id_sala, " +
             " p.titulo AS nombre_pelicula,p.numero AS numero_pelicula, " +
             " p.duracion,p.categoria,p.clasificacion, " +
@@ -37,6 +39,7 @@ public class VentaDaoImpl implements IVentaDao {
             " FROM venta v " +
             " LEFT JOIN cliente c ON v.id_cliente = c.idcliente " +
             " LEFT JOIN usuario u ON v.id_usuario = u.idusuario " +
+            " LEFT JOIN usuario ua ON v.anulada_por = ua.idusuario " +
             " LEFT JOIN funcion f ON v.id_funcion = f.idfuncion " +
             " LEFT JOIN pelicula p ON f.id_pelicula = p.idpelicula " +
             " LEFT JOIN sala s ON f.id_sala = s.idsala " +
@@ -44,8 +47,10 @@ public class VentaDaoImpl implements IVentaDao {
 
     @Override
     public boolean insert(Venta v) {
+        //MEJORA 6: se agrega la columna metodo_pago al INSERT
         String query = "INSERT INTO venta(id_funcion,id_cliente,cliente,cantidad_asientos,total_pagar," +
-                "fecha_venta,id_butaca,estado,id_usuario,codigo_compra)VALUES(?,?,?,?,?,?,?,?,?,?);";
+                "fecha_venta,id_butaca,estado,id_usuario,codigo_compra,metodo_pago)" +
+                "VALUES(?,?,?,?,?,?,?,?,?,?,?);";
         //la conexion es compartida: solo se cierra el statement
         Connection cn = ConexionDB.getConnection();
         try (PreparedStatement st = cn.prepareStatement(query)) {
@@ -68,6 +73,7 @@ public class VentaDaoImpl implements IVentaDao {
             } else {
                 st.setNull(10, Types.VARCHAR);
             }
+            st.setString(11, v.getMetodoPago() != null ? v.getMetodoPago() : "EFECTIVO");
             //true solo si la fila se guardo de verdad
             return st.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -127,7 +133,8 @@ public class VentaDaoImpl implements IVentaDao {
      *  - al final se hace commit; si algo falla se hace rollback y no queda nada a medias
      */
     @Override
-    public String registrarVentas(Funcion f, Cliente cliente, List<Butaca> butacas, int idUsuario) {
+    public String registrarVentas(Funcion f, Cliente cliente, List<Butaca> butacas, int idUsuario,
+                                  String metodoPago) {
         if (f == null || cliente == null || butacas == null || butacas.isEmpty()) {
             return null;
         }
@@ -137,11 +144,20 @@ public class VentaDaoImpl implements IVentaDao {
 
             //1) se reutiliza el cliente si ya existe un DNI igual
             int idCliente = cliente.getIdcliente();
-            if (idCliente <= 0) {
+            boolean clienteExistente = idCliente > 0;
+            if (!clienteExistente) {
                 idCliente = buscarIdClientePorDni(cn, cliente.getDni());
-                if (idCliente <= 0) {
-                    idCliente = insertarCliente(cn, cliente);
+                if (idCliente > 0) {
+                    clienteExistente = true;
                 }
+            }
+            if (!clienteExistente) {
+                idCliente = insertarCliente(cn, cliente);
+            } else {
+                //MEJORA 4b: si el cliente ya existia, sus datos se actualizan con
+                //lo que se escribio en la venta (telefono, correo, nombres...).
+                //Antes solo se reutilizaba su id y los datos nuevos se perdian.
+                actualizarCliente(cn, cliente, idCliente);
             }
             //si no se pudo obtener el id del cliente no se vende nada:
             //nunca se guarda una venta con id_cliente = 0
@@ -164,7 +180,7 @@ public class VentaDaoImpl implements IVentaDao {
             String nombreCliente = nombreCompleto(cliente);
             for (Butaca b : butacas) {
                 boolean guardada = insertarVenta(cn, codigo, f, idCliente, nombreCliente,
-                        b.getIdbutaca(), idUsuario);
+                        b.getIdbutaca(), idUsuario, metodoPago);
                 //si la butaca ya estaba vendida se deshace TODA la compra:
                 //no quedan boletos sueltos ni el cliente creado
                 if (!guardada) {
@@ -193,12 +209,20 @@ public class VentaDaoImpl implements IVentaDao {
     }
 
     //anular no borra la fila: solo cambia el estado y libera la butaca
+    //MEJORA 6: ademas se guarda quien anulo, cuando y por que (auditoria)
     @Override
-    public boolean anular(Venta v) {
-        String query = "UPDATE venta SET estado='anulada' WHERE idventa=?";
+    public boolean anular(Venta v, int idUsuario, String motivo) {
+        //CORREGIDO: el WHERE exige estado='activa'. Asi un boleto ya anulado no
+        //se puede volver a anular: el UPDATE no toca ninguna fila y devuelve
+        //false, aunque dos ventanas del sistema intenten anularlo a la vez.
+        String query = "UPDATE venta SET estado='anulada', anulada_por=?, " +
+                "fecha_anulacion=?, motivo_anulacion=? WHERE idventa=? AND estado='activa'";
         Connection cn = ConexionDB.getConnection();
         try (PreparedStatement st = cn.prepareStatement(query)) {
-            st.setInt(1, v.getIdventa());
+            st.setInt(1, idUsuario);
+            st.setString(2, LocalDateTime.now().withNano(0).toString());
+            st.setString(3, motivo);
+            st.setInt(4, v.getIdventa());
             return st.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error al anular venta:" + e.getMessage(), e);
@@ -207,12 +231,16 @@ public class VentaDaoImpl implements IVentaDao {
 
     //anula todos los boletos que comparten el mismo codigo de compra
     @Override
-    public boolean anularCompra(String codigoCompra) {
-        String query = "UPDATE venta SET estado='anulada' " +
+    public boolean anularCompra(String codigoCompra, int idUsuario, String motivo) {
+        String query = "UPDATE venta SET estado='anulada', anulada_por=?, " +
+                "fecha_anulacion=?, motivo_anulacion=? " +
                 "WHERE COALESCE(codigo_compra,'V-' || idventa)=? AND estado='activa'";
         Connection cn = ConexionDB.getConnection();
         try (PreparedStatement st = cn.prepareStatement(query)) {
-            st.setString(1, codigoCompra);
+            st.setInt(1, idUsuario);
+            st.setString(2, LocalDateTime.now().withNano(0).toString());
+            st.setString(3, motivo);
+            st.setString(4, codigoCompra);
             return st.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error al anular la compra:" + e.getMessage(), e);
@@ -249,6 +277,25 @@ public class VentaDaoImpl implements IVentaDao {
             }
         }
         return 0;
+    }
+
+    /**
+     * MEJORA 4b: actualiza los datos de un cliente que ya existia.
+     * Se hace DENTRO de la misma transaccion de la venta: si la venta falla,
+     * el rollback tambien deshace este cambio.
+     */
+    private void actualizarCliente(Connection cn, Cliente c, int idCliente) throws SQLException {
+        String query = "UPDATE cliente SET nombre=?, apellidos=?, email=?, genero=?, telefono=? " +
+                "WHERE idcliente=?";
+        try (PreparedStatement st = cn.prepareStatement(query)) {
+            st.setString(1, c.getNombre());
+            st.setString(2, c.getApellidos() != null ? c.getApellidos() : "");
+            st.setString(3, c.getEmail());
+            st.setString(4, c.getGenero());
+            st.setString(5, c.getTelefono());
+            st.setInt(6, idCliente);
+            st.executeUpdate();
+        }
     }
 
     //inserta el cliente y devuelve el id que genero la base de datos
@@ -329,10 +376,11 @@ public class VentaDaoImpl implements IVentaDao {
      * Devuelve true solo si se guardo la fila.
      */
     private boolean insertarVenta(Connection cn, String codigo, Funcion f, int idCliente,
-                                  String nombreCliente, int idButaca, int idUsuario) throws SQLException {
+                                  String nombreCliente, int idButaca, int idUsuario,
+                                  String metodoPago) throws SQLException {
         String query = "INSERT INTO venta(id_funcion,id_cliente,cliente,cantidad_asientos,total_pagar," +
-                "fecha_venta,id_butaca,estado,id_usuario,codigo_compra) " +
-                "SELECT ?,?,?,?,?,?,?,?,?,? " +
+                "fecha_venta,id_butaca,estado,id_usuario,codigo_compra,metodo_pago) " +
+                "SELECT ?,?,?,?,?,?,?,?,?,?,? " +
                 "WHERE NOT EXISTS (SELECT 1 FROM venta " +
                 "WHERE id_funcion=? AND id_butaca=? AND estado='activa')";
         try (PreparedStatement st = cn.prepareStatement(query)) {
@@ -347,8 +395,9 @@ public class VentaDaoImpl implements IVentaDao {
             st.setString(8, "activa");
             st.setInt(9, idUsuario);
             st.setString(10, codigo);
-            st.setInt(11, f.getIdfuncion());
-            st.setInt(12, idButaca);
+            st.setString(11, metodoPago != null ? metodoPago : "EFECTIVO");
+            st.setInt(12, f.getIdfuncion());
+            st.setInt(13, idButaca);
             return st.executeUpdate() > 0;
         }
     }
@@ -406,6 +455,20 @@ public class VentaDaoImpl implements IVentaDao {
         v.setFechaVenta(parseFecha(rs.getString("fecha_venta")));
         v.setIdUsuario(rs.getInt("id_usuario"));
         v.setEstado(rs.getString("estado") != null ? rs.getString("estado") : "activa");
+        //MEJORA 6: forma de pago y resumen de la anulacion para la tabla
+        v.setMetodoPago(rs.getString("metodo_pago") != null
+                ? rs.getString("metodo_pago") : "EFECTIVO");
+        String nombreAnulador = rs.getString("nombre_anulador");
+        String motivoAnulacion = rs.getString("motivo_anulacion");
+        String textoAnulacion = "";
+        if (nombreAnulador != null) {
+            textoAnulacion = nombreAnulador;
+        }
+        if (motivoAnulacion != null && !motivoAnulacion.isBlank()) {
+            textoAnulacion = textoAnulacion.isEmpty()
+                    ? motivoAnulacion : textoAnulacion + " - " + motivoAnulacion;
+        }
+        v.setAnulacion(textoAnulacion);
         v.setIdButaca(rs.getInt("id_butaca"));
         //butaca solo para mostrar fila y numero
         int fila = rs.getInt("butaca_fila");

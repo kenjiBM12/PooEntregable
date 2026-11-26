@@ -106,3 +106,68 @@ CREATE INDEX IF NOT EXISTS ix_venta_funcion_butaca
 --
 -- No se ejecuta aqui porque hay funciones que apuntan a sala:
 -- habria que revisar esa relacion antes. Se deja documentado.
+
+
+-- ============================================================
+-- 7) MEJORA 6: forma de pago y auditoria de la anulacion
+-- ============================================================
+-- NOTA: el sistema agrega estas columnas SOLO al iniciar
+-- (ConexionDB.initDatabase -> agregarColumna). Este bloque sirve
+-- para hacerlo a mano desde DB Browser. Si la columna ya existe,
+-- SQLite responde "duplicate column name": eso NO es un error grave,
+-- solo significa que ya estaba creada.
+
+-- forma de pago usada en la compra: Efectivo / Tarjeta / Yape
+ALTER TABLE venta ADD COLUMN metodo_pago TEXT DEFAULT 'EFECTIVO';
+
+-- datos de la anulacion (auditoria):
+--   anulada_por      -> id del usuario que anulo
+--   fecha_anulacion  -> cuando se anulo
+--   motivo_anulacion -> por que se anulo
+ALTER TABLE venta ADD COLUMN anulada_por INTEGER;
+ALTER TABLE venta ADD COLUMN fecha_anulacion TEXT;
+ALTER TABLE venta ADD COLUMN motivo_anulacion TEXT;
+
+-- las ventas que ya existian quedan como Efectivo
+UPDATE venta SET metodo_pago = 'EFECTIVO' WHERE metodo_pago IS NULL;
+
+
+-- ============================================================
+-- 8) MEJORA 8: una butaca activa por funcion (indice parcial)
+-- ============================================================
+-- Solo se aplica a las ventas 'activa'. Si una venta se anula,
+-- la butaca queda libre y se puede volver a vender.
+CREATE UNIQUE INDEX IF NOT EXISTS ux_venta_funcion_butaca_activa
+    ON venta (id_funcion, id_butaca) WHERE estado = 'activa';
+
+
+-- ============================================================
+-- 9) MEJORA 8: llaves foraneas para bases ya creadas
+-- ============================================================
+-- SQLite NO permite "ALTER TABLE ... ADD CONSTRAINT". Para una base
+-- que ya tiene datos se usan TRIGGERS: se ejecutan solos antes de
+-- insertar y rechazan la venta si la funcion o la butaca no existen.
+CREATE TRIGGER IF NOT EXISTS trg_venta_funcion_valida
+BEFORE INSERT ON venta
+FOR EACH ROW
+WHEN (SELECT COUNT(*) FROM funcion WHERE idfuncion = NEW.id_funcion) = 0
+BEGIN
+    SELECT RAISE(ABORT, 'La funcion de la venta no existe');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_venta_butaca_valida
+BEFORE INSERT ON venta
+FOR EACH ROW
+WHEN NEW.id_butaca IS NOT NULL
+ AND (SELECT COUNT(*) FROM butaca WHERE idbutaca = NEW.id_butaca) = 0
+BEGIN
+    SELECT RAISE(ABORT, 'La butaca de la venta no existe');
+END;
+
+
+-- ============================================================
+-- 10) MEJORA 7: contraseñas con hash
+-- ============================================================
+-- No hace falta migrar nada a mano: UsuarioDaoImpl cambia la clave
+-- en texto plano por su hash la primera vez que ese usuario inicia
+-- sesion. El usuario admin/admin123 se migra solo al entrar.

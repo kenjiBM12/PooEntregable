@@ -32,6 +32,10 @@ public class Venta {
     //dni del cliente y nombre del empleado: solo se muestran en la tabla (vienen del JOIN)
     private final StringProperty dniCliente = new SimpleStringProperty();
     private final StringProperty empleado = new SimpleStringProperty();
+    //MEJORA 6: forma de pago (Efectivo / Tarjeta / Yape) y datos de la anulacion
+    private final StringProperty metodoPago = new SimpleStringProperty("EFECTIVO");
+    //texto armado para la tabla: "quien anulo - motivo". Vacio si sigue activa
+    private final StringProperty anulacion = new SimpleStringProperty("");
 
     public Venta() {
     }
@@ -212,6 +216,30 @@ public class Venta {
 
     public final StringProperty empleadoProperty() {
         return empleado;
+    }
+
+    public final String getMetodoPago() {
+        return metodoPago.get();
+    }
+
+    public final void setMetodoPago(String value) {
+        metodoPago.set(value);
+    }
+
+    public final StringProperty metodoPagoProperty() {
+        return metodoPago;
+    }
+
+    public final String getAnulacion() {
+        return anulacion.get();
+    }
+
+    public final void setAnulacion(String value) {
+        anulacion.set(value);
+    }
+
+    public final StringProperty anulacionProperty() {
+        return anulacion;
     }
 
     @Override

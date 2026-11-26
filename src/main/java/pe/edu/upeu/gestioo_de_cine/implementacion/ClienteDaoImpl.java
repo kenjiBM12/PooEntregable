@@ -81,10 +81,34 @@ public class ClienteDaoImpl implements IClienteDao {
         return cl;
     }
 
+    /**
+     * MEJORA 4a: un cliente con compras NO se puede eliminar.
+     * Si se borrara, sus ventas quedarian sin dueño y se perderia el
+     * historial (quien compro, con que DNI). Primero se cuenta cuantas
+     * ventas tiene; si hay al menos una, se lanza el aviso y no se borra nada.
+     */
     @Override
     public boolean delete(Cliente c) {
-        String query = "DELETE FROM cliente WHERE idcliente=?";
         Connection cn = ConexionDB.getConnection();
+
+        //1. revisar si el cliente tiene boletos vendidos
+        String queryVentas = "SELECT COUNT(*) FROM venta WHERE id_cliente=?";
+        try (PreparedStatement st = cn.prepareStatement(queryVentas)) {
+            st.setInt(1, c.getIdcliente());
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next() && rs.getInt(1) > 0) {
+                    throw new RuntimeException("El cliente " + c.getNombre()
+                            + " tiene " + rs.getInt(1) + " boleto(s) vendido(s).\n"
+                            + "No se puede eliminar: se perdería el historial de compras.");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al revisar las ventas del cliente:"
+                    + e.getMessage(), e);
+        }
+
+        //2. recien ahora se borra, porque no tiene ventas
+        String query = "DELETE FROM cliente WHERE idcliente=?";
         try (PreparedStatement st = cn.prepareStatement(query)) {
             st.setInt(1,c.getIdcliente());
             //true solo si realmente se borro una fila

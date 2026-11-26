@@ -96,8 +96,13 @@
 
                 <Label styleClass="etiqueta" text="Teléfono" GridPane.rowIndex="5" />
                 <TextField fx:id="txtTelefono" maxWidth="240.0" promptText="Ejemplo: 987654321" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+
+                <!-- MEJORA 6: forma de pago de la compra -->
+                <Label styleClass="etiqueta" text="Forma de pago" GridPane.rowIndex="6" />
+                <ComboBox fx:id="cbMetodoPago" maxWidth="240.0" GridPane.columnIndex="1" GridPane.rowIndex="6" />
             </children>
          <rowConstraints>
+            <RowConstraints />
             <RowConstraints />
             <RowConstraints />
             <RowConstraints />

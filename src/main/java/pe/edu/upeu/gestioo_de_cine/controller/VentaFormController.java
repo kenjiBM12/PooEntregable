@@ -27,7 +27,11 @@ import pe.edu.upeu.gestioo_de_cine.modelo.Pelicula;
 import pe.edu.upeu.gestioo_de_cine.utils.Sesion;
 import pe.edu.upeu.gestioo_de_cine.utils.UtilAlerts;
 
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -61,6 +65,9 @@ public class VentaFormController {
     //igual que el formulario de clientes (Masculino / Femenino)
     @FXML
     private ComboBox<String> cbgenero;
+    //MEJORA 6: forma de pago de la compra
+    @FXML
+    private ComboBox<String> cbMetodoPago;
 
     //se pueden elegir varias butacas en una misma venta
     private final List<Butaca> butacasSeleccionadas = new ArrayList<>();
@@ -84,6 +91,9 @@ public class VentaFormController {
         cboFuncion.valueProperty().addListener((obs, viejo, nuevo) -> cargarButacas());
         //opciones de genero, las mismas que en el alta de cliente
         cbgenero.getItems().addAll("Masculino", "Femenino");
+        //MEJORA 6: formas de pago simples para el cierre de caja
+        cbMetodoPago.getItems().addAll("Efectivo", "Tarjeta", "Yape");
+        cbMetodoPago.setValue("Efectivo");
         //paso 3: cuando el DNI tiene 8 numeros se busca al cliente
         txtDni.textProperty().addListener((obs, viejo, nuevo) -> {
             if (nuevo != null && nuevo.trim().length() == 8) {
@@ -109,6 +119,10 @@ public class VentaFormController {
             return;
         }
         for (Funcion f : funcionDao.listAll()) {
+            //MEJORA 5b: no se ofrecen funciones que ya empezaron
+            if (yaPaso(f)) {
+                continue;
+            }
             if (f.getPelicula() != null
                     && String.valueOf(f.getPelicula().getidpelicula())
                     .equals(String.valueOf(pelicula.getidpelicula()))) {
@@ -116,9 +130,40 @@ public class VentaFormController {
             }
         }
         if (cboFuncion.getItems().isEmpty()) {
-            lblMensaje.setText("Esa película no tiene funciones programadas.");
+            lblMensaje.setText("Esa película no tiene funciones disponibles "
+                    + "(las que ya empezaron no se venden).");
         }
         actualizarEstadoSiguiente();
+    }
+
+    /**
+     * MEJORA 5b: revisa si una funcion ya comenzo.
+     * Se compara la fecha como texto (yyyy-MM-dd) y, si es el dia de hoy,
+     * tambien la hora. Una funcion pasada ya no se puede vender.
+     */
+    private boolean yaPaso(Funcion f) {
+        if (f == null || f.getFecha() == null || f.getFecha().isBlank()) {
+            return false;
+        }
+        String fecha = f.getFecha().trim();
+        if (fecha.length() > 10) {
+            fecha = fecha.substring(0, 10);
+        }
+        String hoy = LocalDate.now().toString();
+        if (fecha.compareTo(hoy) < 0) {
+            return true;
+        }
+        if (fecha.compareTo(hoy) > 0) {
+            return false;
+        }
+        //es hoy: se compara la hora de inicio con la hora actual
+        try {
+            LocalTime hora = LocalTime.parse(f.getHorario().trim());
+            return !hora.isAfter(LocalTime.now());
+        } catch (Exception e) {
+            //si la hora guardada no tiene un formato entendible, se deja pasar
+            return false;
+        }
     }
 
     //paso 2: solo se pueden elegir butacas libres
@@ -263,6 +308,12 @@ public class VentaFormController {
                     "El DNI debe tener 8 números.", "WARNING").showAndWait();
             return false;
         }
+        //MEJORA 6: siempre debe haber una forma de pago
+        if (cbMetodoPago.getValue() == null) {
+            utilAlerts.mostrarAlerts("Falta la forma de pago",
+                    "Elija cómo está pagando el cliente.", "WARNING").showAndWait();
+            return false;
+        }
         return true;
     }
 
@@ -297,25 +348,36 @@ public class VentaFormController {
             }
         }
 
-        //si el cliente no existe se arma aqui, pero se guarda dentro de la misma transaccion
-        //de la venta: si la venta no se completa, el cliente tampoco queda registrado
-        Cliente cliente = clienteDao.searchByDni(txtDni.getText().trim());
+        //MEJORA 4b: el cliente se arma SIEMPRE con lo que esta escrito en el
+        //formulario. Si su DNI ya existe se conserva su id, y el DAO actualiza
+        //sus datos dentro de la misma transaccion de la venta.
+        String dni = txtDni.getText().trim();
+        Cliente cliente;
+        try {
+            cliente = clienteDao.searchByDni(dni);
+        } catch (RuntimeException e) {
+            System.out.println("Error al buscar el cliente: " + e.getMessage());
+            utilAlerts.mostrarAlerts("Error",
+                    "No se pudo revisar el DNI. Intente otra vez.", "ERROR").showAndWait();
+            return;
+        }
         if (cliente == null) {
             cliente = new Cliente();
-            cliente.setNombre(txtNombre.getText().trim());
-            cliente.setApellidos(txtApellidos.getText().trim());
-            cliente.setEmail(txtEmail.getText().trim());
-            cliente.setDni(txtDni.getText().trim());
-            //CORREGIDO: el genero elegido tambien se guarda en el cliente nuevo
-            cliente.setGenero(cbgenero.getValue());
-            cliente.setTelefono(txtTelefono.getText().trim());
         }
+        cliente.setNombre(txtNombre.getText().trim());
+        cliente.setApellidos(txtApellidos.getText().trim());
+        cliente.setEmail(txtEmail.getText().trim());
+        cliente.setDni(dni);
+        //CORREGIDO: el genero elegido tambien se guarda en el cliente nuevo
+        cliente.setGenero(cbgenero.getValue());
+        cliente.setTelefono(txtTelefono.getText().trim());
 
         int idUsuario = Sesion.getUsuario() != null ? Sesion.getUsuario().getIdusuario() : 0;
         String codigo;
         try {
             //el DAO guarda al cliente (si es nuevo) y una venta por butaca en una sola transaccion
-            codigo = ventaDao.registrarVentas(f, cliente, butacasSeleccionadas, idUsuario);
+            codigo = ventaDao.registrarVentas(f, cliente, butacasSeleccionadas, idUsuario,
+                    cbMetodoPago.getValue());
         } catch (RuntimeException e) {
             System.out.println("Error al registrar la venta:" + e.getMessage());
             utilAlerts.mostrarAlerts("Error",
@@ -360,12 +422,42 @@ public class VentaFormController {
                         "Función: " + f.getFecha() + "  " + f.getHorario() + "\n" +
                         "Boletos:\n" + boletos +
                         "Entradas: " + butacasSeleccionadas.size() + "\n" +
+                        "Forma de pago: " + cbMetodoPago.getValue() + "\n" +
                         "TOTAL: S/ " + total + "\n" +
                         "Atendido por: " + nombreEmpleado + "\n" +
                         "Fecha de venta: " + LocalDate.now() + "\n" +
                         "Estado: activa";
+
+        //MEJORA 9a: ademas de mostrarlo, el comprobante se guarda en un archivo
+        String ruta = guardarComprobante(codigo, texto);
+        if (ruta != null) {
+            texto = texto + "\n\nComprobante guardado en:\n" + ruta;
+        }
         Alert alert = utilAlerts.mostrarAlerts("Comprobante de venta", texto, "INFORMATION");
         alert.showAndWait();
+    }
+
+    /**
+     * MEJORA 9a: guarda el comprobante como archivo de texto (.txt).
+     * Queda en C:\\Users\\<usuario>\\SistemaCineUPeU\\comprobantes\\
+     * para que se pueda imprimir o enviar al cliente despues.
+     * Si no se puede guardar, la venta NO se pierde: solo se devuelve null.
+     */
+    private String guardarComprobante(String codigo, String texto) {
+        try {
+            String userHome = System.getProperty("user.home");
+            File carpeta = new File(userHome + File.separator + "SistemaCineUPeU"
+                    + File.separator + "comprobantes");
+            if (!carpeta.exists()) {
+                carpeta.mkdirs();
+            }
+            File archivo = new File(carpeta, "comprobante_" + codigo + ".txt");
+            Files.writeString(archivo.toPath(), texto, StandardCharsets.UTF_8);
+            return archivo.getAbsolutePath();
+        } catch (Exception e) {
+            System.out.println("No se pudo guardar el comprobante: " + e.getMessage());
+            return null;
+        }
     }
 
     //CORREGIDO: numero visible de la butaca. Se cuentan las butacas de las

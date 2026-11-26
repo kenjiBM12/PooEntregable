@@ -105,6 +105,14 @@ public class FuncionFormController {
                     "Ingresa una hora valida (ejemplo: 18:30).", "WARNING").showAndWait();
             return false;
         }
+        //MEJORA 5a: una funcion NUEVA no puede quedar en una fecha pasada.
+        //Al editar se permite porque la funcion pudo haber sido programada antes.
+        if (funcion == null && dpFecha.getValue().isBefore(LocalDate.now())) {
+            utilAlerts.mostrarAlerts("Fecha invalida",
+                    "No se puede programar una función en una fecha que ya pasó.",
+                    "WARNING").showAndWait();
+            return false;
+        }
         try {
             double precio = leerPrecio();
             if (precio <= 0) {
@@ -153,9 +161,9 @@ public class FuncionFormController {
             return;
         }
         if (duplicada != null) {
-            utilAlerts.mostrarAlerts("Funcion duplicada",
-                    "Ya existe una funcion en esa sala a esa misma hora y fecha.",
-                    "WARNING").showAndWait();
+            utilAlerts.mostrarAlerts("Función cruzada",
+                    "Ya hay una función en esa sala a esa fecha y el horario se cruza "
+                            + "con la duración de la película.", "WARNING").showAndWait();
             return;
         }
 
@@ -173,9 +181,16 @@ public class FuncionFormController {
     }
 
     /**
-     * Una sala no puede tener dos funciones a la misma hora del mismo dia,
-     * sin importar que pelicula sea. El horario se compara como LocalTime
-     * para que "18:30" y "18:30:00" cuenten como la misma hora.
+     * MEJORA 5a: una sala no puede tener dos funciones que se CRUCEN.
+     *
+     * Antes solo se comparaba la hora exacta: se podia programar una pelicula
+     * de 2 horas a las 18:00 y otra a las 19:00 en la misma sala, y las dos
+     * se pisaban. Ahora se calcula a que hora termina cada funcion usando la
+     * duracion de su pelicula y se revisa si los horarios se superponen.
+     *
+     * Dos rangos se cruzan cuando uno empieza antes de que termine el otro:
+     *   nueva:   18:00 ---------------- 20:00
+     *   existente:      19:00 ---------------- 21:00   -> se cruzan
      */
     private Funcion buscarDuplicada() {
         LocalTime horaNueva;
@@ -191,6 +206,10 @@ public class FuncionFormController {
         }
         String fechaNueva = fechaSeleccionada.toString();
         int idSala = cbSala.getValue().getIdsala();
+        //hora a la que termina la funcion nueva
+        int duracionNueva = duracionMinutos(cbPelicula.getValue());
+        LocalTime finNueva = horaNueva.plusMinutes(duracionNueva);
+
         for (Funcion f : funcionDao.listAll()) {
             //al editar, la propia funcion no se compara consigo misma
             if (funcion != null && f.getIdfuncion() == funcion.getIdfuncion()) {
@@ -205,19 +224,58 @@ public class FuncionFormController {
             if (f.getHorario() == null) {
                 continue;
             }
+            LocalTime horaExistente;
             try {
                 //se comparan horas, no el texto
-                if (horaNueva.equals(LocalTime.parse(f.getHorario().trim()))) {
-                    return f;
-                }
+                horaExistente = LocalTime.parse(f.getHorario().trim());
             } catch (DateTimeParseException e) {
                 //si la hora guardada no tiene formato valido se compara como texto
                 if (f.getHorario().trim().equals(txtHorario.getText().trim())) {
                     return f;
                 }
+                continue;
+            }
+            //misma hora de inicio: siempre es un choque
+            if (horaNueva.equals(horaExistente)) {
+                return f;
+            }
+            //se cruzan si una empieza antes de que la otra termine
+            int duracionExistente = duracionMinutos(f.getPelicula());
+            LocalTime finExistente = horaExistente.plusMinutes(duracionExistente);
+            if (horaNueva.isBefore(finExistente) && horaExistente.isBefore(finNueva)) {
+                return f;
             }
         }
         return null;
+    }
+
+    /**
+     * Saca los minutos de la duracion de la pelicula, que se guarda como texto
+     * ("120", "95 min", "110 minutos"...). Se buscan los primeros digitos
+     * con un for normal, sin librerias adicionales.
+     * Si no hay numeros, devuelve 0. Esa pelicula solo choca a la misma hora.
+     */
+    private int duracionMinutos(Pelicula p) {
+        if (p == null || p.getDuracion() == null) {
+            return 0;
+        }
+        String texto = p.getDuracion().trim();
+        int inicio = 0;
+        while (inicio < texto.length() && !Character.isDigit(texto.charAt(inicio))) {
+            inicio++;
+        }
+        int fin = inicio;
+        while (fin < texto.length() && Character.isDigit(texto.charAt(fin))) {
+            fin++;
+        }
+        if (inicio == fin) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(texto.substring(inicio, fin));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     //de una fecha tipo "2026-11-20" toma solo "2026-11-20" (por si viene con hora)

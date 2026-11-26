@@ -40,8 +40,12 @@
             <children>
                 <TextField fx:id="txtBuscar" onAction="#handleBuscar" prefWidth="260.0"
                            promptText="Buscar por código, cliente, DNI, película..." HBox.hgrow="ALWAYS"/>
-                <ComboBox fx:id="cbEstado" prefWidth="130.0"/>
-                <DatePicker fx:id="dpFecha" prefWidth="150.0"/>
+                <ComboBox fx:id="cbEstado" prefWidth="120.0"/>
+                <!-- MEJORA 9b: rango de fechas desde / hasta -->
+                <Label styleClass="leyenda" text="Desde"/>
+                <DatePicker fx:id="dpFecha" prefWidth="130.0"/>
+                <Label styleClass="leyenda" text="Hasta"/>
+                <DatePicker fx:id="dpFechaHasta" prefWidth="130.0"/>
                 <Button mnemonicParsing="false" onAction="#handleBuscar" styleClass="button-secundario"
                         text="BUSCAR"/>
                 <Button mnemonicParsing="false" onAction="#handleLimpiar" styleClass="button-secundario"
@@ -64,6 +68,8 @@
                 <TableColumn fx:id="ColEmpleado" prefWidth="110.0" text="Empleado"/>
                 <TableColumn fx:id="ColTotal" prefWidth="75.0" text="Precio (S/)"/>
                 <TableColumn fx:id="ColEstado" prefWidth="85.0" text="Estado"/>
+                <!-- MEJORA 6: quien anulo y por que -->
+                <TableColumn fx:id="ColAnulacion" prefWidth="160.0" text="Anulación"/>
             </columns>
             <columnResizePolicy>
                 <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>

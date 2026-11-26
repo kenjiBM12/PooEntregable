@@ -3,6 +3,7 @@ package pe.edu.upeu.gestioo_de_cine.implementacion;
 import pe.edu.upeu.gestioo_de_cine.interfaces.IUsuarioDao;
 import pe.edu.upeu.gestioo_de_cine.modelo.Usuario;
 import pe.edu.upeu.gestioo_de_cine.utils.ConexionDB;
+import pe.edu.upeu.gestioo_de_cine.utils.Seguridad;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,23 +14,65 @@ import java.util.List;
 
 public class UsuarioDaoImpl implements IUsuarioDao {
 
+    /**
+     * MEJORA 7: login con contraseñas hasheadas y migracion automatica.
+     *
+     * Ya no se compara la contraseña dentro del SQL (WHERE contrasena=?)
+     * porque el valor guardado es un hash. Ahora:
+     *   1. se busca el usuario activo por su nombre
+     *   2. se compara el hash de lo escrito con el hash guardado
+     *   3. si la base todavia tiene la contraseña vieja en texto plano
+     *      (por ejemplo "admin123"), se acepta UNA vez y se cambia por su
+     *      hash en ese mismo momento. Asi nadie tiene que cambiar su clave.
+     */
     @Override
     public Usuario login(String usuario, String contrasena) {
         Usuario u = null;
-        String query = "SELECT * FROM usuario WHERE usuario=? AND contrasena=? AND activo=1";
+        String query = "SELECT * FROM usuario WHERE usuario=? AND activo=1";
         Connection cn = ConexionDB.getConnection();
         try (PreparedStatement st = cn.prepareStatement(query)) {
             st.setString(1, usuario);
-            st.setString(2, contrasena);
             try (ResultSet rs = st.executeQuery()) {
                 if (rs.next()) {
-                    u = construirUsuario(rs);
+                    String guardada = rs.getString("contrasena");
+                    boolean correcta = false;
+
+                    //caso normal: la base ya guarda un hash
+                    if (guardada != null && guardada.equals(Seguridad.hash(contrasena))) {
+                        correcta = true;
+                    }
+                    //caso de una base vieja: la clave esta en texto plano
+                    if (!correcta && guardada != null && guardada.equals(contrasena)) {
+                        correcta = true;
+                        migrarContrasena(cn, rs.getInt("idusuario"), contrasena);
+                    }
+
+                    if (correcta) {
+                        u = construirUsuario(rs);
+                    }
                 }
             }
         } catch (SQLException e) {
             throw new RuntimeException("Error al validar el usuario:" + e.getMessage(), e);
         }
         return u;
+    }
+
+    /**
+     * Cambia una contraseña en texto plano por su hash.
+     * Se llama solo cuando el login fue correcto con la clave vieja.
+     */
+    private void migrarContrasena(Connection cn, int idUsuario, String contrasenaPlana) {
+        String query = "UPDATE usuario SET contrasena=? WHERE idusuario=?";
+        try (PreparedStatement st = cn.prepareStatement(query)) {
+            st.setString(1, Seguridad.hash(contrasenaPlana));
+            st.setInt(2, idUsuario);
+            st.executeUpdate();
+            System.out.println("Contrasena migrada a SHA-256 para el usuario id " + idUsuario);
+        } catch (SQLException e) {
+            //si falla la migracion el login ya fue correcto: solo se avisa
+            System.out.println("No se pudo migrar la contrasena: " + e.getMessage());
+        }
     }
 
     @Override
@@ -56,7 +99,8 @@ public class UsuarioDaoImpl implements IUsuarioDao {
         try (PreparedStatement st = cn.prepareStatement(query)) {
             st.setString(1, u.getNombre());
             st.setString(2, u.getUsuario());
-            st.setString(3, u.getContrasena());
+            //MEJORA 7: nunca se guarda la clave escrita, solo su hash
+            st.setString(3, claveParaGuardar(u.getContrasena()));
             st.setString(4, u.getRol());
             st.setInt(5, 1);
             //true solo si se guardo la fila
@@ -76,7 +120,7 @@ public class UsuarioDaoImpl implements IUsuarioDao {
         try (PreparedStatement st = cn.prepareStatement(query)) {
             st.setString(1, u.getNombre());
             st.setString(2, u.getUsuario());
-            st.setString(3, u.getContrasena());
+            st.setString(3, claveParaGuardar(u.getContrasena()));
             st.setString(4, u.getRol());
             st.setInt(5, u.getActivo());
             st.setInt(6, u.getIdusuario());
@@ -85,6 +129,18 @@ public class UsuarioDaoImpl implements IUsuarioDao {
             throw new RuntimeException("Error al actualizar usuario:" + e.getMessage(), e);
         }
         return flag;
+    }
+
+    /**
+     * Si el texto YA es un hash (por ejemplo, al editar un usuario sin tocar
+     * su contraseña) se guarda tal cual; si es una clave nueva, se hashea.
+     * Asi nunca se guarda dos veces el hash de un hash.
+     */
+    private String claveParaGuardar(String contrasena) {
+        if (Seguridad.esHash(contrasena)) {
+            return contrasena;
+        }
+        return Seguridad.hash(contrasena);
     }
 
     @Override

@@ -37,6 +37,9 @@ public class MainController {
     private Button btnButacas;
     @FXML
     private Button btnUsuarios;
+    //MEJORA 3: boton para la pantalla de reportes / cierre de caja
+    @FXML
+    private Button btnReportes;
 
     @FXML
     public void initialize(){
@@ -73,6 +76,9 @@ public class MainController {
         btnSalas.setManaged(admin);
         btnFunciones.setVisible(admin);
         btnFunciones.setManaged(admin);
+        //los reportes muestran dinero: solo el admin los ve
+        btnReportes.setVisible(admin);
+        btnReportes.setManaged(admin);
         //el empleado solo ve ventas, por eso tampoco tiene Inicio
         btnInicio.setVisible(admin);
         btnInicio.setManaged(admin);
@@ -91,7 +97,7 @@ public class MainController {
     //resalta en el menu la pantalla que se esta viendo
     private void marcarActivo(Button activo){
         Button[] botones = {btnInicio, btnClientes, btnPeliculas, btnSalas,
-                btnFunciones, btnVentas, btnButacas, btnUsuarios};
+                btnFunciones, btnVentas, btnButacas, btnUsuarios, btnReportes};
         for (Button b : botones){
             if (b != null){
                 b.getStyleClass().remove("nav-button-activo");
@@ -147,6 +153,14 @@ public class MainController {
         if (sinPermiso()) return;
         loadView("usuario-view.fxml");
         marcarActivo(btnUsuarios);
+    }
+
+    //MEJORA 3: abre el cierre de caja por rango de fechas
+    @FXML
+    private void showReportes(){
+        if (sinPermiso()) return;
+        loadView("reporte-view.fxml");
+        marcarActivo(btnReportes);
     }
 
     //cierra la sesion y vuelve al login

@@ -16,6 +16,7 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import pe.edu.upeu.gestioo_de_cine.HelloApplication;
@@ -62,6 +63,9 @@ public class VentaController {
     private TableColumn<Venta, String> ColFecha;
     @FXML
     private TableColumn<Venta, String> ColEstado;
+    //MEJORA 6: columna que muestra quien anulo y por que
+    @FXML
+    private TableColumn<Venta, String> ColAnulacion;
 
     //controles de busqueda
     @FXML
@@ -70,6 +74,9 @@ public class VentaController {
     private ComboBox<String> cbEstado;
     @FXML
     private DatePicker dpFecha;
+    //MEJORA 9b: segunda fecha para buscar un rango (desde / hasta)
+    @FXML
+    private DatePicker dpFechaHasta;
     @FXML
     private Label lblResumen;
 
@@ -137,12 +144,15 @@ public class VentaController {
         });
         ColEstado.setCellValueFactory(
                 cellData -> cellData.getValue().estadoProperty());
+        ColAnulacion.setCellValueFactory(
+                cellData -> cellData.getValue().anulacionProperty());
 
-        //las ventas se pueden filtrar por estado y por fecha
+        //las ventas se pueden filtrar por estado y por un rango de fechas
         cbEstado.getItems().addAll("Todas", "Activa", "Anulada");
         cbEstado.setValue("Todas");
         cbEstado.valueProperty().addListener((obs, viejo, nuevo) -> filtrar());
         dpFecha.valueProperty().addListener((obs, viejo, nuevo) -> filtrar());
+        dpFechaHasta.valueProperty().addListener((obs, viejo, nuevo) -> filtrar());
 
         cargarDatos();
     }
@@ -189,6 +199,9 @@ public class VentaController {
         if (dpFecha != null) {
             dpFecha.setValue(null);
         }
+        if (dpFechaHasta != null) {
+            dpFechaHasta.setValue(null);
+        }
         filtrar();
     }
 
@@ -196,7 +209,9 @@ public class VentaController {
     private void filtrar() {
         String texto = txtBuscar != null ? txtBuscar.getText().trim().toLowerCase() : "";
         String estado = cbEstado != null && cbEstado.getValue() != null ? cbEstado.getValue() : "Todas";
-        LocalDate fecha = dpFecha != null ? dpFecha.getValue() : null;
+        //MEJORA 9b: rango de fechas. Cualquiera de las dos puede quedar vacia
+        LocalDate fechaDesde = dpFecha != null ? dpFecha.getValue() : null;
+        LocalDate fechaHasta = dpFechaHasta != null ? dpFechaHasta.getValue() : null;
 
         List<Venta> filtradas = new ArrayList<>();
         for (Venta v : todasLasVentas) {
@@ -204,11 +219,15 @@ public class VentaController {
                     && !estado.equalsIgnoreCase(v.getEstado())) {
                 continue;
             }
-            if (fecha != null) {
-                String fechaFuncion = v.getFuncion() != null ? v.getFuncion().getFecha() : null;
-                if (fechaFuncion == null || !fechaFuncion.startsWith(fecha.toString())) {
-                    continue;
-                }
+            String fechaFuncion = "";
+            if (v.getFuncion() != null && v.getFuncion().getFecha() != null) {
+                fechaFuncion = soloFecha(v.getFuncion().getFecha());
+            }
+            if (fechaDesde != null && fechaFuncion.compareTo(fechaDesde.toString()) < 0) {
+                continue;
+            }
+            if (fechaHasta != null && fechaFuncion.compareTo(fechaHasta.toString()) > 0) {
+                continue;
             }
             if (!texto.isEmpty() && !coincide(v, texto)) {
                 continue;
@@ -247,6 +266,17 @@ public class VentaController {
         return valor != null && valor.toLowerCase().contains(texto);
     }
 
+    //de "2026-11-20" o "2026-11-20 18:30" toma solo los 10 primeros caracteres
+    private String soloFecha(String fecha) {
+        String texto = fecha.trim();
+        return texto.length() > 10 ? texto.substring(0, 10) : texto;
+    }
+
+    //id del usuario conectado (0 si por algun motivo no hay sesion)
+    private int idUsuarioActual() {
+        return Sesion.getUsuario() != null ? Sesion.getUsuario().getIdusuario() : 0;
+    }
+
     //debajo de la tabla: boletos activos y dinero (las anuladas no suman)
     private void mostrarResumen(List<Venta> ventas) {
         if (lblResumen == null) {
@@ -280,18 +310,28 @@ public class VentaController {
                     "Este boleto ya está anulado.", "WARNING").showAndWait();
             return;
         }
-        Alert confirm = utilAlert.mostrarAlerts("Confirmar anulación",
-                "¿Anular el boleto " + selectId.getCodigoCompra() + " de "
-                        + selectId.getCliente() + "?", "CONFIRMATION");
-        Optional<ButtonType> result = confirm.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
+        //MEJORA 6: se pide el motivo de la anulacion y queda guardado con
+        //el nombre del usuario que la hizo. Un solo dialogo hace las dos cosas.
+        TextInputDialog dialogo = new TextInputDialog("Sin motivo");
+        dialogo.setTitle("Anular boleto");
+        dialogo.setHeaderText("¿Anular el boleto " + selectId.getCodigoCompra()
+                + " de " + selectId.getCliente() + "?");
+        dialogo.setContentText("Motivo de la anulación:");
+        Optional<String> result = dialogo.showAndWait();
+        if (result.isPresent()) {
+            String motivo = result.get().trim();
+            if (motivo.isEmpty()) {
+                motivo = "Sin motivo";
+            }
             try {
-                if (ventaDao.anular(selectId)) {
+                if (ventaDao.anular(selectId, idUsuarioActual(), motivo)) {
                     //se recarga la tabla para ver el estado 'anulada'
                     cargarDatos();
                 } else {
-                    utilAlert.mostrarAlerts("Error",
-                            "No se pudo anular el boleto", "ERROR").showAndWait();
+                    //el DAO solo anula si el boleto seguia 'activa'
+                    utilAlert.mostrarAlerts("Sin cambios",
+                            "Ese boleto ya estaba anulado.", "WARNING").showAndWait();
+                    cargarDatos();
                 }
             } catch (RuntimeException e) {
                 System.out.println("Error al anular el boleto:" + e.getMessage());
@@ -310,13 +350,20 @@ public class VentaController {
                     "Seleccione un boleto de la compra que desea anular", "WARNING").showAndWait();
             return;
         }
-        Alert confirm = utilAlert.mostrarAlerts("Confirmar anulación de compra",
-                "¿Anular TODOS los boletos de la compra " + selectId.getCodigoCompra()
-                        + " de " + selectId.getCliente() + "?", "CONFIRMATION");
-        Optional<ButtonType> result = confirm.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
+        //MEJORA 6: igual que el boleto individual, la compra guarda motivo y usuario
+        TextInputDialog dialogo = new TextInputDialog("Sin motivo");
+        dialogo.setTitle("Anular compra");
+        dialogo.setHeaderText("¿Anular TODOS los boletos de la compra "
+                + selectId.getCodigoCompra() + " de " + selectId.getCliente() + "?");
+        dialogo.setContentText("Motivo de la anulación:");
+        Optional<String> result = dialogo.showAndWait();
+        if (result.isPresent()) {
+            String motivo = result.get().trim();
+            if (motivo.isEmpty()) {
+                motivo = "Sin motivo";
+            }
             try {
-                if (ventaDao.anularCompra(selectId.getCodigoCompra())) {
+                if (ventaDao.anularCompra(selectId.getCodigoCompra(), idUsuarioActual(), motivo)) {
                     cargarDatos();
                 } else {
                     utilAlert.mostrarAlerts("Sin cambios",

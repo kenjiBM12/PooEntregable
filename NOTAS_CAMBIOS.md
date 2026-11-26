@@ -548,3 +548,159 @@ funciona como antes; el cambio solo evita que un bloqueo se confunda con un DNI 
 | `BEGIN IMMEDIATE` sobre la base real después de cerrar DB Browser | **Ejecutada y exitosa**: ya no hay bloqueo y el `-journal` desapareció. |
 | `ClienteDaoImpl.update` contra la base **real** (los 2 clientes, reescribiendo sus mismos datos) | **Ejecutada y exitosa**: `update=true` en ambos, sin excepción y sin dejar `-journal`. |
 | Guardar desde la interfaz (hacer clic en el formulario) | **No se pudo ejecutar desde aquí**: falta el clic; conviene repetir la prueba en la ventana del sistema. |
+
+---
+
+## 11. Actualización 26/11/2026 — las 10 mejoras implementadas
+
+Se implementaron las 10 mejoras propuestas, con el mismo estilo del curso
+(segundo ciclo de POO): clases y `ArrayList`, DAO con `PreparedStatement`,
+transacciones, JavaFX/FXML y **comentarios en español** explicando cada cambio.
+No se agregaron librerías nuevas (solo `java.security`, `java.nio.file` que ya
+vienen con Java) y no se tocó la base real: cuando se abra el sistema por primera
+vez, `ConexionDB` agrega las columnas nuevas **después de crear un respaldo**.
+
+### 11.1 Qué se hizo en cada mejora
+
+| # | Mejora | Archivos principales | Cómo se prueba en la interfaz |
+|---|---|---|---|
+| 1 | Esquema único | `utils/ConexionDB.java`, `sql/esquema.sql` | Instalar de cero con `esquema.sql` y abrir el sistema: ya no falta ninguna columna |
+| 2 | Respaldo automático | `utils/RespaldoDB.java`, `ConexionDB` | Abrir el sistema y mirar `%USERPROFILE%\SistemaCineUPeU\respaldos` |
+| 3 | Reportes / cierre de caja | `modelo/Reporte`, `IReporteDao`, `ReporteDaoImpl`, `ReporteController`, `reporte-view.fxml`, botón en `main-view` | Menú **Reportes** → elegir fechas → GENERAR |
+| 4 | Integridad de clientes | `ClienteDaoImpl.delete`, `VentaDaoImpl.actualizarCliente`, `VentaFormController` | Vender a un DNI existente cambiando el teléfono; intentar borrar un cliente con compras |
+| 5 | Funciones sin choques / sin vender funciones pasadas | `FuncionFormController`, `VentaFormController` | Programar 18:00 (120 min) y luego 19:00 en la misma sala: debe rechazar |
+| 6 | Forma de pago + auditoría de anulación | `modelo/Venta`, `VentaDaoImpl`, `IVentaDao`, `VentaFormController`, `VentaController`, FXML de venta | Vender eligiendo Efectivo/Tarjeta/Yape; anular pidiendo motivo; ver columna Anulación |
+| 7 | Contraseñas SHA-256 | `utils/Seguridad.java`, `UsuarioDaoImpl` | Entrar con `admin/admin123`: la clave se cambia sola por su hash |
+| 8 | Índice único parcial + llaves foráneas | `ConexionDB`, `sql/esquema.sql`, `sql/migracion.sql` | Vender dos veces la misma butaca en la misma función: la segunda venta no se guarda |
+| 9 | Comprobante guardable + rango de fechas | `VentaFormController.guardarComprobante`, `VentaController`, `venta-view.fxml` | Al vender se avisa la ruta del `.txt`; en Ventas hay fecha **Desde** y **Hasta** |
+| 10 | `.exe` con `jpackage` + código muerto justificado | `empaquetar_exe.bat`, comentarios en `Historial`/`IHistorial`/`IHistorialDao` | Ejecutar `empaquetar_exe.bat` y abrir `target\exe\SistemaCineUPeU\SistemaCineUPeU.exe` |
+
+**Explicación corta de cada una:**
+
+1. **Esquema único.** El código usaba `pelicula.titulo` y `sala.tipo_sala`, pero
+   `sql/esquema.sql` definía `nombre` y `tipo`. Se alineó el `.sql` con el código
+   (que es lo que usa la base real) y se separaron los `CREATE INDEX`, porque
+   antes `sqlite-jdbc` solo ejecutaba el primero del bloque.
+2. **Respaldo.** Antes de abrir la conexión se copia el `.db` a `respaldos` con
+   fecha y hora. Se conservan las 10 copias más recientes. Un respaldo que falla
+   no impide usar el sistema.
+3. **Reportes.** `ReporteDaoImpl` usa `SUM(CASE WHEN ...)` para contar boletos
+   activos/anulados y sumar el dinero en un rango de fechas. La pantalla muestra
+   5 totales y el detalle de los boletos. Es de solo administrador porque muestra
+   dinero.
+4. **Clientes.** `delete` cuenta las ventas del cliente y, si tiene al menos una,
+   lanza un aviso y no borra. Al vender a un DNI existente, `registrarVentas`
+   actualiza sus datos dentro de la misma transacción (si la venta falla, el
+   `rollback` también deshace la actualización).
+5. **Funciones.** Se calcula la hora de fin con la duración de la película
+   (`18:00` + 120 min = `20:00`) y se rechaza si los rangos se cruzan. Además no
+   se puede programar una función nueva en una fecha pasada y la venta ya no
+   ofrece funciones que empezaron.
+6. **Pago y auditoría.** Se agregaron `metodo_pago`, `anulada_por`,
+   `fecha_anulacion` y `motivo_anulacion` a `venta`. Al anular se pide el motivo
+   con `TextInputDialog` y se guarda junto con el usuario de la sesión.
+7. **SHA-256.** `Seguridad.hash()` usa `MessageDigest`. El login compara el hash;
+   si la base todavía tiene la clave en texto plano, la acepta una vez y la migra
+   en ese momento (no hay que cambiar contraseñas a mano).
+8. **Índice parcial y FK.** `CREATE UNIQUE INDEX ... WHERE estado='activa'` impide
+   vender dos veces la misma butaca en una función, pero permite revenderla si la
+   venta se anuló. Como SQLite no permite `ALTER TABLE ... ADD CONSTRAINT`, en las
+   bases ya creadas la relación se controla con **triggers**.
+9. **Comprobante y fechas.** Cada venta deja un `comprobante_C-0001.txt` en
+   `%USERPROFILE%\SistemaCineUPeU\comprobantes`. La lista de ventas se filtra con
+   dos `DatePicker` (desde / hasta), no con una sola fecha.
+10. **Empaquetado y código muerto.** `empaquetar_exe.bat` compila y llama a
+    `jpackage --type app-image`, que genera un `.exe` con su propio Java. Las clases
+    vacías `Historial`, `IHistorial` e `IHistorialDao` se dejaron (regla de no
+    borrar archivos) pero ahora tienen un comentario que explica que no se usan.
+
+### 11.2 Cambios en la base de datos
+
+Todo esto lo aplica el sistema **solo** al iniciar (`initDatabase`), y antes crea
+un respaldo. También está escrito a mano en `sql/migracion.sql` (secciones 7 a 10):
+
+- `venta.metodo_pago TEXT DEFAULT 'EFECTIVO'`
+- `venta.anulada_por INTEGER`
+- `venta.fecha_anulacion TEXT`
+- `venta.motivo_anulacion TEXT`
+- índice `ux_venta_funcion_butaca_activa` (parcial, solo `estado='activa'`)
+- triggers `trg_venta_funcion_valida` y `trg_venta_butaca_valida`
+- para instalaciones nuevas, `venta` declara las 4 llaves foráneas
+
+Ninguna columna se borra y ninguna venta se modifica: solo se **agregan** columnas
+(con `ALTER TABLE ... ADD COLUMN`, que conserva los datos).
+
+### 11.3 Verificaciones de esta sesión
+
+| Verificación | Resultado |
+|---|---|
+| `mvnw compile` | **Ejecutada y exitosa** (`COMPILE_EXIT=0`) |
+| `mvnw -DskipTests package` | **Ejecutada y exitosa** (`PACKAGE_EXIT=0`) |
+| XML de los 18 FXML | **Ejecutada y exitosa**: 18 válidos, 0 con error |
+| `fx:id` / `onAction` contra los controladores | **Ejecutada**: 0 acciones faltantes; único `fx:id` sin campo: `btnCancelar1` (ya existía y no se usa) |
+| Prueba funcional sobre base **nueva** en carpeta temporal | **Ejecutada y exitosa — 25/25**: columnas e índice creados, venta con Tarjeta, cliente actualizado, butaca repetida rechazada, cliente con compras no se borra, anulación con motivo y usuario, butaca revendida, reporte con totales, hash y migración de contraseña, admin hasheado, respaldo creado |
+| Migración sobre una **copia** de la base real | **Ejecutada y exitosa — 10/10**: columnas, índice y triggers creados; 3 ventas y 2 clientes conservados |
+| `jpackage --type app-image` | **Ejecutada y exitosa** (`JPACKAGE_EXIT=0`): `target\exe\SistemaCineUPeU\SistemaCineUPeU.exe` |
+| Abrir el `.exe` / hacer clic en la interfaz | **No se pudo ejecutar** desde aquí: abre una ventana en la PC del usuario y además migraría la base real. El `.exe` se generó y se revisó su estructura, pero no se lanzó |
+
+### 11.4 Limitaciones que conviene saber (para la defensa)
+
+- SHA-256 **sin sal** es suficiente para el curso, pero un sistema real usa sal o
+  `bcrypt`/`argon2` para que dos claves iguales no den el mismo hash.
+- `target\dist` quedó bloqueado por un proceso abierto: por eso
+  `empaquetar_exe.bat` usa `package` y no `clean`. Cerrar el `.exe` anterior y
+  borrar `target\dist` a mano si alguna vez molesta.
+- Las ventas viejas sin código siguen mostrándose como `V-<id>`.
+- Los botones y formularios se revisaron por código, no con clics reales.
+
+### 11.5 Conceptos de POO / BD que se pueden explicar con estos cambios
+
+- **Encapsulamiento**: los campos de `Venta` y `Reporte` son privados con
+  `get`/`set`; las propiedades de JavaFX avisan a la tabla cuando cambian.
+- **Interfaz + implementación**: `IReporteDao` / `ReporteDaoImpl`, igual que los
+  demás DAO (`IClienteDao` / `ClienteDaoImpl`).
+false)`, `commit()`, `rollback()` y
+  `setAutoCommit(true)` en `finally` (venta + actualización de cliente juntos).
+- **PreparedStatement**: todos los valores van con `?`, nunca concatenados.
+- **Manejo de errores**: los DAO lanzan `RuntimeException` con mensaje en español;
+  la pantalla lo muestra, no lo esconde.
+- **Seguridad**: `MessageDigest` (SHA-256) y migración de datos viejos sin perder
+  usuarios.
+- **SQL**: `SUM(CASE WHEN ...)` para totales, índice parcial `WHERE`, triggers
+  `BEFORE INSERT` con `RAISE(ABORT, ...)`.
+---
+
+## 12. Corrección del cierre de caja y de la anulación (26/11/2026)
+
+### 12.1 El cierre de caja usa la fecha de VENTA
+
+Antes el reporte filtraba por `funcion.fecha`, es decir, por el día en que se
+proyecta la película. Eso hacía que una entrada vendida hoy para una función del
+mes siguiente no apareciera en el cierre de hoy (el dinero ya había entrado).
+
+Ahora se usa `venta.fecha_venta`:
+
+- `implementacion/ReporteDaoImpl.java`: el `WHERE` compara
+  `substr(COALESCE(NULLIF(v.fecha_venta,''), f.fecha),1,10) BETWEEN ? AND ?`.
+  Se usa `COALESCE` con la fecha de la función solo como respaldo para ventas muy
+  viejas que no tengan `fecha_venta`, así no desaparecen del reporte.
+- `controller/ReporteController.java`: el detalle de la tabla y la columna
+  **Fecha** también usan la fecha de venta (método nuevo `fechaCierre(Venta)`).
+
+### 12.2 Un boleto anulado no se puede anular otra vez
+
+- `implementacion/VentaDaoImpl.java`: `anular(...)` ahora actualiza con
+  `WHERE idventa=? AND estado='activa'`. Si el boleto ya estaba anulado, el
+  `UPDATE` no toca ninguna fila y el método devuelve `false`, sin sobrescribir el
+  motivo ni el usuario de la primera anulación.
+- `controller/VentaController.java`: cuando el DAO devuelve `false`, la pantalla
+  avisa "Ese boleto ya estaba anulado" y recarga la tabla.
+- `anularCompra(...)` ya tenía esa misma condición desde antes.
+
+### 12.3 Verificación
+
+| Prueba | Resultado |
+|---|---|
+| `mvnw compile` | **exit 0** |
+| Prueba sobre base nueva en carpeta temporal (`PruebaCorreccion`) | **8/8 OK**: la venta hecha hoy para una función del 2020-01-01 aparece en el cierre de HOY y **no** en el de la fecha de la función; la primera anulación funciona, la segunda se rechaza y el motivo original no se sobrescribe |
+| Interfaz JavaFX (clic en Reportes / ANULAR BOLETO) | **No ejecutada**: requiere clics del usuario |
