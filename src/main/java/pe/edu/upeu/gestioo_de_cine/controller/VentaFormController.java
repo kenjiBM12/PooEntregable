@@ -26,8 +26,10 @@ import pe.edu.upeu.gestioo_de_cine.modelo.Cliente;
 import pe.edu.upeu.gestioo_de_cine.modelo.Funcion;
 import pe.edu.upeu.gestioo_de_cine.modelo.Pelicula;
 import pe.edu.upeu.gestioo_de_cine.utils.Bitacora;
+import pe.edu.upeu.gestioo_de_cine.utils.Comprobante;
 import pe.edu.upeu.gestioo_de_cine.utils.Sesion;
 import pe.edu.upeu.gestioo_de_cine.utils.UtilAlerts;
+import pe.edu.upeu.gestioo_de_cine.utils.Validaciones;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -161,6 +163,10 @@ public class VentaFormController {
             }
             //la pelicula si tiene funciones programadas (de cualquier fecha)
             tieneFunciones = true;
+            //MEJORA 7: una funcion cancelada ya no se ofrece para vender
+            if (f.isCancelada()) {
+                continue;
+            }
             //solo se ofrecen de hoy en adelante: las de fechas ya pasadas no
             //sirven para vender y solo alargaban la lista
             if (esDeHoyOEnAdelante(f)) {
@@ -385,9 +391,22 @@ public class VentaFormController {
             return false;
         }
         String dni = txtDni.getText().trim();
-        if (dni.length() != 8 || !dni.matches("[0-9]+")) {
+        //MEJORA 14: la regla del DNI vive en Validaciones (compartida y probada)
+        if (!Validaciones.dni(dni)) {
             utilAlerts.mostrarAlerts("DNI invalido",
                     "El DNI debe tener 8 números.", "WARNING").showAndWait();
+            return false;
+        }
+        //MEJORA 14: email y telefono validos cuando se escriben
+        if (!Validaciones.email(txtEmail.getText())) {
+            utilAlerts.mostrarAlerts("Correo invalido",
+                    "Escriba un correo válido, por ejemplo nombre@correo.com.",
+                    "WARNING").showAndWait();
+            return false;
+        }
+        if (!txtTelefono.getText().isBlank() && !Validaciones.telefono(txtTelefono.getText())) {
+            utilAlerts.mostrarAlerts("Teléfono invalido",
+                    "El teléfono debe tener entre 6 y 15 números.", "WARNING").showAndWait();
             return false;
         }
         //MEJORA 6: siempre debe haber una forma de pago
@@ -521,6 +540,11 @@ public class VentaFormController {
         if (ruta != null) {
             texto = texto + "\n\nComprobante guardado en:\n" + ruta;
         }
+        //MEJORA 9: tambien se genera el HTML, que se abre e imprime desde el navegador
+        File html = Comprobante.generarHtml(codigo, texto);
+        if (html != null) {
+            texto = texto + "\n\nComprobante para imprimir (HTML):\n" + html.getAbsolutePath();
+        }
         Alert alert = utilAlerts.mostrarAlerts("Comprobante de venta", texto, "INFORMATION");
         alert.showAndWait();
     }
@@ -590,7 +614,8 @@ public class VentaFormController {
      * empezo y si su sala no esta inactiva.
      */
     private boolean puedeVenderse(Funcion f) {
-        return f != null && !yaPaso(f) && !salaInactiva(f);
+        //MEJORA 7: tampoco se vende una funcion cancelada
+        return f != null && !yaPaso(f) && !salaInactiva(f) && !f.isCancelada();
     }
 
     //MEJORA 6: la sala esta en mantenimiento (estado INACTIVA)
@@ -603,6 +628,9 @@ public class VentaFormController {
 
     //explica por que una funcion aparece en la lista pero no se puede vender
     private String mensajeNoVendible(Funcion f) {
+        if (f != null && f.isCancelada()) {
+            return "Esa función fue cancelada: elija otra función u otra fecha.";
+        }
         if (salaInactiva(f)) {
             return "La " + f.getSala().getEtiqueta() + " está inactiva. "
                     + "Actívela en el menú Salas para vender entradas.";

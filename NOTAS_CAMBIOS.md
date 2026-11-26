@@ -865,3 +865,103 @@ Ahora:
   elegida no se puede vender.
 - Verificación: `mvnw compile` exit 0 y `mvnw test` exit 0. La interfaz no se
   abrió con clics reales.
+
+---
+
+## 16. Segunda etapa: cierre de caja, seguridad y calidad (26/11/2026)
+
+Se implementaron las 15 mejoras de la propuesta «Próximas mejoras para el
+sistema de cine (priorizadas)», en el orden en que estaban planteadas.
+
+### 16.1 Nivel 1 — dinero y datos
+
+1. **Cierre de caja con arqueo** (`modelo/CierreCaja`, `ICierreCajaDao`,
+   `CierreCajaDaoImpl`, `controller/CierreCajaController`,
+   `views/cierre-caja.fxml`). Tabla `cierre_caja` (`UNIQUE(fecha)`): monto
+   inicial, cobrado/devuelto por forma de pago, total esperado, contado,
+   diferencia, usuario y observación. `calcularDia` separa boletos activos de
+   anulados; el esperado de efectivo es `inicial + ventas - devoluciones`.
+   Se abre desde Reportes con el botón **CERRAR CAJA** y se puede corregir el
+   mismo día volviendo a guardar.
+2. **Pruebas de integración de DAOs** (`IntegracionDaoTest`, 8 pruebas) sobre
+   una base temporal con `@TempDir` y `user.home` cambiado: venta en
+   transacción, butaca repetida (el índice único parcial la rechaza), anulación
+   por función, cobrado/devuelto del arqueo, guardado del cierre, tarifas y
+   sal del admin. Nunca tocan la base real.
+3. **Reportes con gráficos** (`modelo/Estadistica`, `IEstadisticaDao`,
+   `EstadisticaDaoImpl`, `reporte-view.fxml`): ventas por día del rango y top 5
+   de películas con `BarChart` nativo, más `.chart` en `style.css` para que
+   sigan el tema oscuro. `ocupacionPorFuncion` queda disponible en el DAO.
+4. **Tarifas por tipo de sala y día** (`modelo/Tarifa`, `ITarifaDao`,
+   `TarifaDaoImpl`): tabla `tarifa` (`UNIQUE(tipo_sala, dia_semana)`, 0 = base,
+   1..7 = lunes..domingo) sembrada con 2D 10, 3D 15, XD 18 y VIP 25.
+   `FuncionFormController` propone el precio al elegir sala o fecha y respeta
+   el precio guardado al editar.
+
+### 16.2 Nivel 2 — seguridad y operación
+
+5. **PBKDF2 con sal** (`Seguridad.pbkdf2/nuevaSal/verificar/esClaveGuardada`,
+   `UsuarioDaoImpl`, `ConexionDB`): columnas `usuario.sal` e
+   `usuario.iteraciones`; 120 000 iteraciones, 256 bits, Base64. El login
+   acepta el SHA-256 viejo y lo migra en el mismo ingreso. El admin inicial ya
+   se crea con sal.
+6. **Sesión**: el botón «Cerrar sesión» ya existía; se agregaron **límite de 5
+   intentos fallidos** con bloqueo de 60 s (`LoginController`, auditado como
+   `LOGIN BLOQUEADO`) y **cierre por inactividad de 15 minutos**
+   (`MainController`, aviso + `Bitacora`).
+7. **Cancelar función** (`Funcion.estado`, `IFuncionDao.cancelar`,
+   `IVentaDao.anularPorFuncion`, `FuncionController`): estado `cancelada`,
+   anulación transaccional de sus boletos activos y aviso con la cantidad;
+   las funciones canceladas no se ofrecen en Ventas y no aparecen en la
+   cartelera.
+8. **Ventas y cierre por empleado** (`VentaController`, `venta-view.fxml`):
+   combo de empleados alimentado con `venta.id_usuario` + JOIN a `usuario`
+   (campo `empleado` del modelo ya existente).
+9. **Comprobante reimprimible en HTML** (`utils/Comprobante`,
+   `IVentaDao.listarPorCodigo`, botón **REIMPRIMIR**): reconstruye la compra
+   desde la base, genera `.txt` y un `.html` con estilos, listo para imprimir
+   desde el navegador. La venta nueva también deja el HTML.
+
+### 16.3 Nivel 3 — calidad y experiencia
+
+10. **Migraciones numeradas** (`utils/Migraciones`): pasos `aV3`… con
+    `PRAGMA user_version`; `ConexionDB` ya no mezcla migraciones en
+    `initDatabase`. La versión 3 agrega `funcion.estado`, `usuario.sal`,
+    `usuario.iteraciones`, `tarifa` y `cierre_caja`.
+11. **Log de errores** (`utils/Log`): `logs/error.log`, manejador global
+    instalado en `HelloApplication` con alerta genérica; usado en login, menú,
+    vista, comprobante y migraciones.
+12. **Atajos de teclado** (`MainController`): `Ctrl+F1` Inicio, `Ctrl+F2` Ventas,
+    `Ctrl+F3` Funciones, `Ctrl+F4` Reportes (los permisos se siguen validando).
+13. **Hora de fin y cartelera** (`Funcion.getHoraFin`, columna «Termina» en
+    Funciones, botón **CARTELERA** en Ventas): suma la duración normalizada al
+    horario y lista las funciones activas del día con su hora de fin.
+14. **Validadores compartidos** (`utils/Validaciones` + `ValidacionesTest`):
+    DNI, email, teléfono, precio, duración y hora; usados en el formulario de
+    venta.
+15. **Modo demostración** (`utils/DatosDemo`, botón en el login): cambia
+    `user.home` a `SistemaCineUPeU_demo`, crea ahí el esquema y carga 2 salas
+    con 64 butacas, 2 películas, 3 funciones, 2 clientes y 3 boletos; entra
+    como `admin/admin123`. La base real no se toca.
+
+### 16.4 Verificación
+
+| Prueba | Resultado |
+|---|---|
+| `mvnw compile` | **exit 0** |
+| `mvnw test` | **exit 0**: 30 pruebas (`IntegracionDaoTest` 9, `ValidacionesTest` 6, `SeguridadPbkdf2Test` 4, `SeguridadTest` 3, `DuracionTest` 5, `FuncionTest` 3), 0 fallos |
+| Migración sobre copia de la base real | `Esquema migrado de la version 2 a la 3` en `target/tmp/hogar_ui` |
+| Carga de las 20 vistas FXML sobre la copia | **20 de 20 OK** |
+| Modo demostración en carpeta temporal | 2 películas, 2 salas, 64 butacas, 3 funciones, 3 ventas, 2 clientes, `user_version = 3`, login `admin` OK |
+| Capturas de Cierre de caja y Reportes | Revisadas visualmente (tema oscuro y gráficos con datos) |
+| Interacción con clics reales (botones, formularios) | **No ejecutada**: la revisión fue por carga de vistas y pruebas de DAO |
+
+### 16.5 Notas y limitaciones
+
+- `sql/esquema.sql` y `sql/migracion.sql` **no se modificaron** (no se pidió):
+  una base creada con esos archivos queda en versión 2 y el sistema la migra
+  sola a la 3 al abrir.
+- La duración y los permisos existentes se respetan: el empleado sigue viendo
+  solo Ventas/Butacas y la cancelación de funciones es solo del admin.
+- El bloqueo por intentos y la inactividad se guardan en memoria del proceso;
+  al reiniciar el programa se limpian (suficiente para una PC de boletería).

@@ -15,6 +15,9 @@ public class ResumenPago {
     private String metodo = "";
     private int boletos;
     private double monto;
+    //MEJORA 1: dinero devuelto por anulaciones en esa forma de pago.
+    //Asi el cierre de caja muestra cobrado, devuelto y neto por medio.
+    private double devuelto;
 
     public ResumenPago() {
     }
@@ -47,5 +50,18 @@ public class ResumenPago {
 
     public void setMonto(double monto) {
         this.monto = monto;
+    }
+
+    public double getDevuelto() {
+        return devuelto;
+    }
+
+    public void setDevuelto(double devuelto) {
+        this.devuelto = devuelto;
+    }
+
+    /** Lo que queda en caja de ese medio: cobrado menos devuelto. */
+    public double getNeto() {
+        return monto - devuelto;
     }
 }

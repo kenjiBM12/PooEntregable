@@ -25,7 +25,7 @@ public class ConexionDB {
      * - version 1: esquema original del sistema de cine
      * - version 2: duraciones normalizadas a minutos y tabla de auditoria
      */
-    private static final int VERSION_ESQUEMA = 2;
+    private static final int VERSION_ESQUEMA = Migraciones.VERSION_ACTUAL;
 
     /**
      * Devuelve el archivo .db del usuario actual y crea la carpeta si falta.
@@ -38,6 +38,18 @@ public class ConexionDB {
             directory.mkdirs();
         }
         return new File(directory, ARCHIVO_BD);
+    }
+
+    /**
+     * Carpeta del sistema (SistemaCineUPeU). Se usa para respaldos, reportes,
+     * comprobantes, logs y para el modo demostracion.
+     */
+    public static File carpetaSistema() {
+        File carpeta = archivoBase().getParentFile();
+        if (!carpeta.exists()) {
+            carpeta.mkdirs();
+        }
+        return carpeta;
     }
 
     public static Connection getConnection() {
@@ -242,18 +254,25 @@ public class ConexionDB {
             //minutos para que el cruce de horarios funcione con todas.
             normalizarDuraciones();
 
-            //MEJORA 5: se guarda en la base la version del esquema
-            actualizarVersionEsquema(stmt);
+            //MEJORA 10: los cambios de estructura viven en Migraciones, que
+            //aplica solo los pasos que le faltan a esta base y guarda user_version.
+            Migraciones.aplicar(connection);
 
             //5. INSERTAR USUARIO ADMIN POR DEFECTO (si la tabla esta vacia)
             //esto es vital para poder entrar al sistema la primera vez
             //MEJORA 7: la contraseña se guarda como hash SHA-256, no en texto plano
             try (ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM usuario")) {
                 if (rs.next() && rs.getInt(1) == 0) {
+                    //MEJORA 5: la clave inicial se guarda con PBKDF2 y sal propia
+                    String sal = Seguridad.nuevaSal();
+                    String clave = Seguridad.pbkdf2("admin123", sal, Seguridad.ITERACIONES);
                     try (java.sql.PreparedStatement ps = connection.prepareStatement(
-                            "INSERT INTO usuario (nombre, usuario, contrasena, rol, activo) "
-                                    + "VALUES ('Administrador', 'admin', ?, 'admin', 1)")) {
-                        ps.setString(1, Seguridad.hash("admin123"));
+                            "INSERT INTO usuario (nombre, usuario, contrasena, rol, activo, "
+                                    + "sal, iteraciones) "
+                                    + "VALUES ('Administrador', 'admin', ?, 'admin', 1, ?, ?)")) {
+                        ps.setString(1, clave);
+                        ps.setString(2, sal);
+                        ps.setInt(3, Seguridad.ITERACIONES);
                         ps.executeUpdate();
                     }
                     System.out.println("Usuario inicial 'admin' creado.");
@@ -317,33 +336,6 @@ public class ConexionDB {
         }
         if (!ids.isEmpty()) {
             System.out.println("Duraciones normalizadas a minutos: " + ids.size());
-        }
-    }
-
-    /**
-     * MEJORA 5: lee "PRAGMA user_version" y la actualiza si la base esta en
-     * una version anterior. Es el numero que permite saber, en el futuro, que
-     * migraciones ya se aplicaron a este archivo.
-     */
-    private static void actualizarVersionEsquema(Statement stmt) {
-        int version = 0;
-        try (ResultSet rs = stmt.executeQuery("PRAGMA user_version")) {
-            if (rs.next()) {
-                version = rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            System.out.println("No se pudo leer la version del esquema: " + e.getMessage());
-            return;
-        }
-        if (version >= VERSION_ESQUEMA) {
-            return;
-        }
-        try {
-            stmt.execute("PRAGMA user_version = " + VERSION_ESQUEMA);
-            System.out.println("Esquema actualizado de la version " + version
-                    + " a la " + VERSION_ESQUEMA);
-        } catch (SQLException e) {
-            System.out.println("No se pudo guardar la version del esquema: " + e.getMessage());
         }
     }
 

@@ -15,6 +15,8 @@ import pe.edu.upeu.gestioo_de_cine.implementacion.FuncionDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.implementacion.PeliculaDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.implementacion.SalaDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.interfaces.IFuncionDao;
+import pe.edu.upeu.gestioo_de_cine.interfaces.ITarifaDao;
+import pe.edu.upeu.gestioo_de_cine.implementacion.TarifaDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.interfaces.IPeliculaDao;
 import pe.edu.upeu.gestioo_de_cine.interfaces.ISalaDao;
 import pe.edu.upeu.gestioo_de_cine.modelo.Funcion;
@@ -45,6 +47,10 @@ public class FuncionFormController {
     private final IPeliculaDao peliculaDao = new PeliculaDaoImpl();
     private final ISalaDao salaDao = new SalaDaoImpl();
     private final IFuncionDao funcionDao = new FuncionDaoImpl();
+    //MEJORA 4: tarifas por tipo de sala y dia
+    private final ITarifaDao tarifaDao = new TarifaDaoImpl();
+    //mientras se cargan los datos de una funcion existente no se toca el precio
+    private boolean cargandoFuncion = false;
 
     @FXML
     public void initialize() {
@@ -83,6 +89,26 @@ public class FuncionFormController {
         }
         //fecha sugerida al crear una funcion nueva
         dpFecha.setValue(LocalDate.now());
+
+        //MEJORA 4: al elegir sala o fecha se propone el precio de la tarifa
+        cbSala.valueProperty().addListener((obs, viejo, nuevo) -> sugerirPrecio());
+        dpFecha.valueProperty().addListener((obs, viejo, nuevo) -> sugerirPrecio());
+    }
+
+    /**
+     * MEJORA 4: busca la tarifa del tipo de sala para ese dia de la semana y
+     * la escribe en el campo de precio. Si no hay tarifa configurada se deja
+     * lo que el administrador haya escrito.
+     */
+    private void sugerirPrecio() {
+        if (cargandoFuncion || cbSala.getValue() == null || dpFecha.getValue() == null) {
+            return;
+        }
+        int dia = dpFecha.getValue().getDayOfWeek().getValue(); //1 = lunes ... 7 = domingo
+        double precio = tarifaDao.precio(cbSala.getValue().getTipoSala(), dia);
+        if (precio > 0) {
+            txtPrecio.setText(String.format(java.util.Locale.US, "%.2f", precio));
+        }
     }
 
     public boolean isSaved() {
@@ -287,6 +313,9 @@ public class FuncionFormController {
 
     public void setFuncion(Funcion f) {
         this.funcion = f;
+        //MEJORA 4: al editar se respeta el precio guardado, no el de la tarifa
+        cargandoFuncion = true;
+        try {
         if (f != null) {
             lblTitulo.setText("Editar Funcion");
             if (f.getPelicula() != null) {
@@ -327,6 +356,9 @@ public class FuncionFormController {
             } else {
                 dpFecha.setValue(LocalDate.now());
             }
+        }
+        } finally {
+            cargandoFuncion = false;
         }
     }
 }

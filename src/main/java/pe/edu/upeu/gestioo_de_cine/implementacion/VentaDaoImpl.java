@@ -272,6 +272,68 @@ public class VentaDaoImpl implements IVentaDao {
         return lista;
     }
 
+    /**
+     * MEJORA 9: todos los boletos de una compra, para reimprimir el comprobante.
+     * Se acepta el codigo guardado o el "V-<id>" de las ventas viejas.
+     */
+    @Override
+    public List<Venta> listarPorCodigo(String codigoCompra) {
+        List<Venta> lista = new ArrayList<>();
+        String query = QUERY_BASE
+                + " WHERE COALESCE(v.codigo_compra,'V-' || v.idventa)=? ORDER BY v.idventa";
+        Connection cn = ConexionDB.getConnection();
+        try (PreparedStatement st = cn.prepareStatement(query)) {
+            st.setString(1, codigoCompra);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(construirVenta(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al listar la compra: " + e.getMessage(), e);
+        }
+        return lista;
+    }
+
+    /**
+     * MEJORA 7: anula todos los boletos activos de una funcion cancelada.
+     * Se hace en una transaccion: o se anulan todos o no se anula ninguno.
+     * Devuelve la cantidad de boletos anulados (0 si no habia ventas).
+     */
+    @Override
+    public int anularPorFuncion(int idFuncion, int idUsuario, String motivo) {
+        String query = "UPDATE venta SET estado='anulada', anulada_por=?, "
+                + "fecha_anulacion=?, motivo_anulacion=? "
+                + "WHERE id_funcion=? AND estado='activa'";
+        Connection cn = ConexionDB.getConnection();
+        try {
+            cn.setAutoCommit(false);
+            try (PreparedStatement st = cn.prepareStatement(query)) {
+                st.setInt(1, idUsuario);
+                st.setString(2, LocalDateTime.now().withNano(0).toString());
+                st.setString(3, motivo);
+                st.setInt(4, idFuncion);
+                int anulados = st.executeUpdate();
+                cn.commit();
+                return anulados;
+            }
+        } catch (SQLException e) {
+            try {
+                cn.rollback();
+            } catch (SQLException ex) {
+                System.out.println("No se pudo deshacer la anulacion: " + ex.getMessage());
+            }
+            throw new RuntimeException("Error al anular los boletos de la funcion: "
+                    + e.getMessage(), e);
+        } finally {
+            try {
+                cn.setAutoCommit(true);
+            } catch (SQLException ex) {
+                System.out.println("No se pudo restaurar el autocommit: " + ex.getMessage());
+            }
+        }
+    }
+
     @Override
     public List<Venta> listAll() {
         List<Venta> lista = new ArrayList<>();

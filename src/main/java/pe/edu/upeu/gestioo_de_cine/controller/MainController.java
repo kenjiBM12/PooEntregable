@@ -1,18 +1,29 @@
 package pe.edu.upeu.gestioo_de_cine.controller;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import pe.edu.upeu.gestioo_de_cine.HelloApplication;
 import pe.edu.upeu.gestioo_de_cine.modelo.Usuario;
+import pe.edu.upeu.gestioo_de_cine.utils.Bitacora;
+import pe.edu.upeu.gestioo_de_cine.utils.Log;
 import pe.edu.upeu.gestioo_de_cine.utils.Sesion;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainController {
     @FXML
@@ -44,10 +55,18 @@ public class MainController {
     @FXML
     private Button btnAuditoria;
 
+    //MEJORA 6: la sesion se cierra sola si la PC queda sin uso
+    private static final long LIMITE_INACTIVIDAD_MS = 15L * 60L * 1000L;
+    private long ultimaActividad = System.currentTimeMillis();
+    private final AtomicBoolean sesionExpirada = new AtomicBoolean(false);
+    private Timeline relojInactividad;
+
     @FXML
     public void initialize(){
         mostrarSesion();
         aplicarPermisos();
+        //los atajos y el control de inactividad necesitan la escena ya montada
+        Platform.runLater(this::instalarAtajosYControlDeSesion);
         if (Sesion.esAdmin()){
             showHome();
         } else {
@@ -177,6 +196,56 @@ public class MainController {
         marcarActivo(btnAuditoria);
     }
 
+    /**
+     * MEJORA 6 y MEJORA 12:
+     *  - reinicia el contador de inactividad con cada tecla o movimiento de mouse;
+     *  - cierra la sesion a los 15 minutos sin uso (boleteria compartida);
+     *  - atajos: F1 Inicio, F2 Ventas, F3 Funciones, F4 Reportes.
+     * Si la sesion se cierra sola se avisa antes y se registra en la auditoria.
+     */
+    private void instalarAtajosYControlDeSesion() {
+        Scene scene = contentArea.getScene();
+        if (scene == null) {
+            return;
+        }
+        scene.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_MOVED,
+                e -> ultimaActividad = System.currentTimeMillis());
+        scene.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_PRESSED,
+                e -> ultimaActividad = System.currentTimeMillis());
+        scene.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED,
+                e -> ultimaActividad = System.currentTimeMillis());
+
+        scene.getAccelerators().put(
+                new KeyCodeCombination(KeyCode.F1, KeyCombination.SHORTCUT_DOWN), this::showHome);
+        scene.getAccelerators().put(
+                new KeyCodeCombination(KeyCode.F2, KeyCombination.SHORTCUT_DOWN), this::showVenta);
+        scene.getAccelerators().put(
+                new KeyCodeCombination(KeyCode.F3, KeyCombination.SHORTCUT_DOWN), this::showFuncion);
+        scene.getAccelerators().put(
+                new KeyCodeCombination(KeyCode.F4, KeyCombination.SHORTCUT_DOWN), this::showReportes);
+
+        relojInactividad = new Timeline(new KeyFrame(Duration.seconds(30), e -> revisarInactividad()));
+        relojInactividad.setCycleCount(Timeline.INDEFINITE);
+        relojInactividad.play();
+    }
+
+    private void revisarInactividad() {
+        long inactivo = System.currentTimeMillis() - ultimaActividad;
+        if (inactivo < LIMITE_INACTIVIDAD_MS || !sesionExpirada.compareAndSet(false, true)) {
+            return;
+        }
+        if (relojInactividad != null) {
+            relojInactividad.stop();
+        }
+        Bitacora.registrar("SESION", "Sesión cerrada por inactividad");
+        Alert aviso = new Alert(Alert.AlertType.WARNING);
+        aviso.setTitle("Sesión cerrada");
+        aviso.setHeaderText("La sesión se cerró por inactividad");
+        aviso.setContentText("Pasaron más de 15 minutos sin uso.\nVuelva a iniciar sesión.");
+        aviso.showAndWait();
+        handleLogout();
+    }
+
     //cierra la sesion y vuelve al login
     @FXML
     private void handleLogout(){
@@ -192,7 +261,7 @@ public class MainController {
             Stage actual = (Stage) contentArea.getScene().getWindow();
             actual.close();
         } catch (IOException e) {
-            System.err.println("Error al cerrar sesion" + e.getMessage());
+            Log.error("Error al cerrar sesión", e);
         }
     }
 
@@ -207,7 +276,7 @@ public class MainController {
             System.err.println("Error de carga de vista"+e.getMessage());
         } catch (RuntimeException e) {
             //aqui caen los errores de base de datos, se avisa en pantalla que fallo
-            System.err.println("Error al cargar los datos de la vista"+e.getMessage());
+            Log.error("Error al cargar los datos de la vista " + fxml, e);
             javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
                     javafx.scene.control.Alert.AlertType.ERROR);
             alert.setTitle("Error de base de datos");

@@ -60,6 +60,10 @@
                         <Button maxWidth="Infinity" mnemonicParsing="false"
                                 onAction="#handleLogin" styleClass="button-login"
                                 text="INGRESAR"/>
+                        <!-- MEJORA 15: entra con datos de ejemplo en una base aparte -->
+                        <Button maxWidth="Infinity" mnemonicParsing="false"
+                                onAction="#handleDemo" styleClass="button-secundario"
+                                text="PROBAR CON DATOS DEMO"/>
                     </children>
                 </VBox>
 

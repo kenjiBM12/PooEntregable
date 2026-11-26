@@ -41,6 +41,8 @@
                 <TextField fx:id="txtBuscar" onAction="#handleBuscar" prefWidth="260.0"
                            promptText="Buscar por código, cliente, DNI, película..." HBox.hgrow="ALWAYS"/>
                 <ComboBox fx:id="cbEstado" prefWidth="120.0"/>
+                <!-- MEJORA 8: filtrar por el empleado que vendio -->
+                <ComboBox fx:id="cbEmpleado" prefWidth="150.0"/>
                 <!-- MEJORA 9b: rango de fechas desde / hasta -->
                 <Label styleClass="leyenda" text="Desde"/>
                 <DatePicker fx:id="dpFecha" prefWidth="130.0"/>
@@ -88,6 +90,12 @@
             <children>
                 <Label fx:id="lblResumen" styleClass="resumen" text="Boletos activos: 0"/>
                 <Region HBox.hgrow="ALWAYS"/>
+                <!-- MEJORA 13: cartelera del dia con hora de fin -->
+                <Button mnemonicParsing="false" onAction="#handleCartelera"
+                        styleClass="button-secundario" text="CARTELERA"/>
+                <!-- MEJORA 9: reimprime el comprobante de la compra elegida -->
+                <Button mnemonicParsing="false" onAction="#handleReimprimir"
+                        styleClass="button-secundario" text="REIMPRIMIR"/>
                 <Button mnemonicParsing="false" onAction="#handleAnularCompra" styleClass="button-action-delete"
                         text="ANULAR COMPRA"/>
                 <Button mnemonicParsing="false" onAction="#handleDelete" styleClass="button-action-delete"

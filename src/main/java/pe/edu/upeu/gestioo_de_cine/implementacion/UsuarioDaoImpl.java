@@ -35,13 +35,19 @@ public class UsuarioDaoImpl implements IUsuarioDao {
             try (ResultSet rs = st.executeQuery()) {
                 if (rs.next()) {
                     String guardada = rs.getString("contrasena");
+                    String sal = rs.getString("sal");
+                    int iteraciones = rs.getInt("iteraciones");
                     boolean correcta = false;
 
-                    //caso normal: la base ya guarda un hash
-                    if (guardada != null && guardada.equals(Seguridad.hash(contrasena))) {
+                    //MEJORA 5: con sal se usa PBKDF2; sin sal, SHA-256 (base vieja)
+                    if (Seguridad.verificar(contrasena, guardada, sal, iteraciones)) {
                         correcta = true;
+                        //si venia de SHA-256 se migra en este mismo login
+                        if (sal == null || sal.isBlank()) {
+                            migrarContrasena(cn, rs.getInt("idusuario"), contrasena);
+                        }
                     }
-                    //caso de una base vieja: la clave esta en texto plano
+                    //caso de una base muy vieja: la clave esta en texto plano
                     if (!correcta && guardada != null && guardada.equals(contrasena)) {
                         correcta = true;
                         migrarContrasena(cn, rs.getInt("idusuario"), contrasena);
@@ -63,12 +69,16 @@ public class UsuarioDaoImpl implements IUsuarioDao {
      * Se llama solo cuando el login fue correcto con la clave vieja.
      */
     private void migrarContrasena(Connection cn, int idUsuario, String contrasenaPlana) {
-        String query = "UPDATE usuario SET contrasena=? WHERE idusuario=?";
+        //MEJORA 5: se pasa la clave a PBKDF2 con una sal nueva y se guarda la sal
+        String sal = Seguridad.nuevaSal();
+        String query = "UPDATE usuario SET contrasena=?, sal=?, iteraciones=? WHERE idusuario=?";
         try (PreparedStatement st = cn.prepareStatement(query)) {
-            st.setString(1, Seguridad.hash(contrasenaPlana));
-            st.setInt(2, idUsuario);
+            st.setString(1, Seguridad.pbkdf2(contrasenaPlana, sal, Seguridad.ITERACIONES));
+            st.setString(2, sal);
+            st.setInt(3, Seguridad.ITERACIONES);
+            st.setInt(4, idUsuario);
             st.executeUpdate();
-            System.out.println("Contrasena migrada a SHA-256 para el usuario id " + idUsuario);
+            System.out.println("Contrasena migrada a PBKDF2 para el usuario id " + idUsuario);
         } catch (SQLException e) {
             //si falla la migracion el login ya fue correcto: solo se avisa
             System.out.println("No se pudo migrar la contrasena: " + e.getMessage());
@@ -94,15 +104,19 @@ public class UsuarioDaoImpl implements IUsuarioDao {
     @Override
     public boolean insert(Usuario u) {
         boolean flag = false;
-        String query = "INSERT INTO usuario(nombre,usuario,contrasena,rol,activo)VALUES(?,?,?,?,?)";
+        String query = "INSERT INTO usuario(nombre,usuario,contrasena,rol,activo,sal,iteraciones)"
+                + "VALUES(?,?,?,?,?,?,?)";
         Connection cn = ConexionDB.getConnection();
         try (PreparedStatement st = cn.prepareStatement(query)) {
+            //MEJORA 5: la clave se guarda como hash PBKDF2 con su sal
+            String[] clave = claveNueva(u.getContrasena());
             st.setString(1, u.getNombre());
             st.setString(2, u.getUsuario());
-            //MEJORA 7: nunca se guarda la clave escrita, solo su hash
-            st.setString(3, claveParaGuardar(u.getContrasena()));
+            st.setString(3, clave[0]);
             st.setString(4, u.getRol());
             st.setInt(5, 1);
+            st.setString(6, clave[1]);
+            st.setInt(7, Seguridad.ITERACIONES);
             //true solo si se guardo la fila
             flag = st.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -114,16 +128,25 @@ public class UsuarioDaoImpl implements IUsuarioDao {
     @Override
     public boolean update(Usuario u) {
         boolean flag = false;
-        String query = "UPDATE usuario SET nombre=?, usuario=?, contrasena=?, rol=?, activo=? " +
-                "WHERE idusuario=?";
+        //COALESCE deja la sal anterior si la contraseña no se cambio
+        String query = "UPDATE usuario SET nombre=?, usuario=?, contrasena=?, rol=?, activo=?, "
+                + "sal=COALESCE(?, sal), iteraciones=COALESCE(?, iteraciones) "
+                + "WHERE idusuario=?";
         Connection cn = ConexionDB.getConnection();
         try (PreparedStatement st = cn.prepareStatement(query)) {
+            String[] clave = claveNueva(u.getContrasena());
             st.setString(1, u.getNombre());
             st.setString(2, u.getUsuario());
-            st.setString(3, claveParaGuardar(u.getContrasena()));
+            st.setString(3, clave[0]);
             st.setString(4, u.getRol());
             st.setInt(5, u.getActivo());
-            st.setInt(6, u.getIdusuario());
+            st.setString(6, clave[1]);
+            if (clave[1] == null) {
+                st.setNull(7, java.sql.Types.INTEGER);
+            } else {
+                st.setInt(7, Seguridad.ITERACIONES);
+            }
+            st.setInt(8, u.getIdusuario());
             flag = st.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error al actualizar usuario:" + e.getMessage(), e);
@@ -132,15 +155,18 @@ public class UsuarioDaoImpl implements IUsuarioDao {
     }
 
     /**
-     * Si el texto YA es un hash (por ejemplo, al editar un usuario sin tocar
-     * su contraseña) se guarda tal cual; si es una clave nueva, se hashea.
-     * Asi nunca se guarda dos veces el hash de un hash.
+     * Devuelve {hash, sal} para guardar una contraseña.
+     * Si el texto YA es una clave guardada (por ejemplo, al editar un usuario
+     * sin tocar su contraseña) se deja igual y la sal queda en null, para no
+     * hashear dos veces ni perder la sal existente.
+     * MEJORA 5: las claves nuevas usan PBKDF2 con sal aleatoria.
      */
-    private String claveParaGuardar(String contrasena) {
-        if (Seguridad.esHash(contrasena)) {
-            return contrasena;
+    private String[] claveNueva(String contrasena) {
+        if (Seguridad.esClaveGuardada(contrasena)) {
+            return new String[]{contrasena, null};
         }
-        return Seguridad.hash(contrasena);
+        String sal = Seguridad.nuevaSal();
+        return new String[]{Seguridad.pbkdf2(contrasena, sal, Seguridad.ITERACIONES), sal};
     }
 
     @Override

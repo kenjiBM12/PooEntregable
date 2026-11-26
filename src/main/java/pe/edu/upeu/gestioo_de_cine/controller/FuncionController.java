@@ -18,8 +18,11 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import pe.edu.upeu.gestioo_de_cine.HelloApplication;
 import pe.edu.upeu.gestioo_de_cine.implementacion.FuncionDaoImpl;
+import pe.edu.upeu.gestioo_de_cine.implementacion.VentaDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.interfaces.IFuncionDao;
+import pe.edu.upeu.gestioo_de_cine.interfaces.IVentaDao;
 import pe.edu.upeu.gestioo_de_cine.modelo.Funcion;
+import pe.edu.upeu.gestioo_de_cine.utils.Bitacora;
 import pe.edu.upeu.gestioo_de_cine.utils.Sesion;
 import pe.edu.upeu.gestioo_de_cine.utils.UtilAlerts;
 
@@ -46,12 +49,18 @@ public class FuncionController {
     private TableColumn<Funcion, Double> ColPrecio;
     @FXML
     private TableColumn<Funcion, String> ColFecha;
+    //MEJORA 13: hora de fin y MEJORA 7: estado de la funcion
+    @FXML
+    private TableColumn<Funcion, String> ColFin;
+    @FXML
+    private TableColumn<Funcion, String> ColEstado;
 
     //texto de busqueda y lista completa para poder filtrar
     @FXML
     private TextField txtBuscar;
 
     private final IFuncionDao funcionDao = new FuncionDaoImpl();
+    private final IVentaDao ventaDao = new VentaDaoImpl();
     private ObservableList<Funcion> listaFuncion;
     private List<Funcion> todasLasFunciones = new ArrayList<>();
 
@@ -84,6 +93,24 @@ public class FuncionController {
                         ? cellData.getValue().getHorario() : ""));
         ColPrecio.setCellValueFactory(
                 cellData -> cellData.getValue().precioProperty().asObject());
+        //MEJORA 13: hora de fin (horario + duracion de la pelicula)
+        ColFin.setCellValueFactory(cellData -> new SimpleStringProperty(
+                cellData.getValue().getHoraFin()));
+        //MEJORA 7: estado en mayusculas y en rojo si esta cancelada
+        ColEstado.setCellValueFactory(cellData -> new SimpleStringProperty(
+                cellData.getValue().isCancelada() ? "CANCELADA" : "ACTIVA"));
+        ColEstado.setCellFactory(columna -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item);
+                getStyleClass().removeAll("estado-activa", "estado-anulada");
+                if (!empty && item != null) {
+                    getStyleClass().add("CANCELADA".equals(item)
+                            ? "estado-anulada" : "estado-activa");
+                }
+            }
+        });
         cargarDatos();
     }
 
@@ -154,6 +181,67 @@ public class FuncionController {
         } else {
             utilAlert.mostrarAlerts("Seleccion requerida",
                     "Seleccione una funcion para eliminar", "WARNING").showAndWait();
+        }
+    }
+
+    /**
+     * MEJORA 7: cancela la funcion y anula los boletos activos.
+     * Antes de confirmar se muestra cuantos boletos hay vendidos, porque el
+     * aviso a los compradores se hace con esa lista (codigos y clientes).
+     */
+    @FXML
+    private void handleCancelar() {
+        if (sinPermiso()) return;
+        Funcion seleccion = tableFuncion.getSelectionModel().getSelectedItem();
+        if (seleccion == null) {
+            utilAlert.mostrarAlerts("Seleccion requerida",
+                    "Seleccione la función que desea cancelar.", "WARNING").showAndWait();
+            return;
+        }
+        if (seleccion.isCancelada()) {
+            utilAlert.mostrarAlerts("Ya está cancelada",
+                    "Esa función ya fue cancelada.", "WARNING").showAndWait();
+            return;
+        }
+        Alert confirmar = utilAlert.mostrarAlerts("Cancelar función",
+                "Se cancelará la función de "
+                        + (seleccion.getPelicula() != null
+                        ? seleccion.getPelicula().getTitulo() : "") + " del "
+                        + seleccion.getFecha() + " " + seleccion.getHorario() + ".\n"
+                        + "Todos sus boletos activos se anularán para devolver el dinero.\n"
+                        + "¿Continuar?",
+                "CONFIRMATION");
+        Optional<ButtonType> respuesta = confirmar.showAndWait();
+        if (!respuesta.isPresent() || respuesta.get() != ButtonType.OK) {
+            return;
+        }
+        try {
+            int anulados = 0;
+            String motivo = "Función cancelada";
+            if (funcionDao.cancelar(seleccion.getIdfuncion())) {
+                anulados = ventaDao.anularPorFuncion(seleccion.getIdfuncion(),
+                        Sesion.getUsuario() != null ? Sesion.getUsuario().getIdusuario() : 0,
+                        motivo);
+                Bitacora.registrar("CANCELACION FUNCION",
+                        "Función " + seleccion.getIdfuncion() + " cancelada; boletos anulados: "
+                                + anulados);
+                cargarDatos();
+                utilAlert.mostrarAlerts("Función cancelada",
+                        "La función quedó cancelada y se anularon " + anulados
+                                + " boleto(s).\nLos clientes afectados se pueden ver en Ventas "
+                                + "filtrando por estado Anulada.",
+                        "INFORMATION").showAndWait();
+            } else {
+                utilAlert.mostrarAlerts("Sin cambios",
+                        "No se pudo cancelar la función (puede que ya estuviera cancelada).",
+                        "WARNING").showAndWait();
+                cargarDatos();
+            }
+        } catch (RuntimeException e) {
+            System.out.println("Error al cancelar la función: " + e.getMessage());
+            utilAlert.mostrarAlerts("Error",
+                    "No se pudo cancelar la función.\nDetalle: " + e.getMessage(),
+                    "ERROR").showAndWait();
         }
     }
 

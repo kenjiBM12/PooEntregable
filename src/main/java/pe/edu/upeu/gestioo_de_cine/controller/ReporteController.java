@@ -4,6 +4,11 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceDialog;
@@ -11,7 +16,13 @@ import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import pe.edu.upeu.gestioo_de_cine.HelloApplication;
+import pe.edu.upeu.gestioo_de_cine.implementacion.EstadisticaDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.implementacion.ReporteDaoImpl;
+import pe.edu.upeu.gestioo_de_cine.interfaces.IEstadisticaDao;
+import pe.edu.upeu.gestioo_de_cine.modelo.Estadistica;
 import pe.edu.upeu.gestioo_de_cine.implementacion.VentaDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.interfaces.IReporteDao;
 import pe.edu.upeu.gestioo_de_cine.interfaces.IVentaDao;
@@ -96,8 +107,15 @@ public class ReporteController {
     @FXML
     private TableColumn<Venta, String> ColEstado;
 
+    //MEJORA 3: graficos del rango (ventas por dia y top de peliculas)
+    @FXML
+    private BarChart<String, Number> chartDias;
+    @FXML
+    private BarChart<String, Number> chartPeliculas;
+
     private final IReporteDao reporteDao = new ReporteDaoImpl();
     private final IVentaDao ventaDao = new VentaDaoImpl();
+    private final IEstadisticaDao estadisticaDao = new EstadisticaDaoImpl();
 
     //MEJORA 7: detalle que se esta viendo, para poder exportarlo a CSV
     private final List<Venta> ultimoDetalle = new ArrayList<>();
@@ -200,6 +218,61 @@ public class ReporteController {
         ultimoDetalle.addAll(detalle);
         ObservableList<Venta> lista = FXCollections.observableArrayList(detalle);
         tableReporte.setItems(lista);
+
+        //MEJORA 3: se actualizan los dos gráficos con el mismo rango
+        cargarGraficos(desde, hasta);
+    }
+
+    /**
+     * MEJORA 3: llena el gráfico de ventas por día y el de películas más
+     * vendidas. Si una consulta falla, el reporte de tablas sigue funcionando.
+     */
+    private void cargarGraficos(LocalDate desde, LocalDate hasta) {
+        if (chartDias == null || chartPeliculas == null) {
+            return;
+        }
+        try {
+            XYChart.Series<String, Number> serieDias = new XYChart.Series<>();
+            serieDias.setName("Boletos por día");
+            for (Estadistica e : estadisticaDao.ventasPorDia(desde, hasta)) {
+                serieDias.getData().add(new XYChart.Data<>(e.getEtiqueta(), e.getCantidad()));
+            }
+            chartDias.getData().setAll(serieDias);
+
+            XYChart.Series<String, Number> seriePeliculas = new XYChart.Series<>();
+            seriePeliculas.setName("Boletos");
+            for (Estadistica e : estadisticaDao.topPeliculas(5)) {
+                seriePeliculas.getData().add(new XYChart.Data<>(e.getEtiqueta(), e.getCantidad()));
+            }
+            chartPeliculas.getData().setAll(seriePeliculas);
+        } catch (RuntimeException e) {
+            System.out.println("No se pudieron cargar los gráficos: " + e.getMessage());
+        }
+    }
+
+    /**
+     * MEJORA 1: abre la pantalla de cierre de caja con arqueo.
+     * Se abre como ventana modal sobre Reportes y, al cerrarla, se regenera el
+     * reporte porque pudo cambiar algún dato.
+     */
+    @FXML
+    private void handleCerrarCaja() {
+        try {
+            FXMLLoader loader = new FXMLLoader(HelloApplication.class
+                    .getResource("/pe/edu/upeu/gestioo_de_cine/views/cierre-caja.fxml"));
+            Parent root = loader.load();
+            Stage stage = new Stage();
+            stage.setTitle("Cierre de caja");
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(new Scene(root));
+            stage.showAndWait();
+            handleGenerar();
+        } catch (Exception e) {
+            System.out.println("No se pudo abrir el cierre de caja: " + e.getMessage());
+            utilAlert.mostrarAlerts("Error",
+                    "No se pudo abrir el cierre de caja.\nDetalle: " + e.getMessage(),
+                    "ERROR").showAndWait();
+        }
     }
 
     //limpia el rango y vuelve al mes actual

@@ -1,8 +1,13 @@
 package pe.edu.upeu.gestioo_de_cine.utils;
 
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Base64;
 
 /**
  * MEJORA 7: contraseñas guardadas con SHA-256.
@@ -19,6 +24,17 @@ import java.security.NoSuchAlgorithmException;
  * externas: solo java.security.MessageDigest, que viene con Java.
  */
 public class Seguridad {
+
+    /**
+     * MEJORA 5: algoritmo lento con sal para las claves nuevas.
+     * SHA-256 solo es rapidisimo: millones de intentos por segundo. PBKDF2
+     * repite el calculo muchas veces y mezcla una sal aleatoria por usuario,
+     * asi dos personas con la misma clave tienen hashes distintos y atacar
+     * el archivo .db cuesta muchisimo mas.
+     * Todo viene en el JDK (javax.crypto): no se agregan librerias.
+     */
+    private static final String ALGORITMO_PBKDF2 = "PBKDF2WithHmacSHA256";
+    public static final int ITERACIONES = 120000;
 
     /**
      * Devuelve el hash SHA-256 del texto, en minusculas y en hexadecimal.
@@ -43,6 +59,68 @@ public class Seguridad {
         } catch (NoSuchAlgorithmException e) {
             //SHA-256 siempre existe en Java; si no, es un error grave del sistema
             throw new RuntimeException("No se encontro el algoritmo SHA-256", e);
+        }
+    }
+
+    /**
+     * MEJORA 5: genera una sal aleatoria nueva (16 bytes, en Base64).
+     * Cada usuario tiene su propia sal; se guarda junto al hash.
+     */
+    public static String nuevaSal() {
+        byte[] bytes = new byte[16];
+        new SecureRandom().nextBytes(bytes);
+        return Base64.getEncoder().encodeToString(bytes);
+    }
+
+    /**
+     * Calcula el hash PBKDF2 de la clave con la sal y las iteraciones dadas.
+     * El resultado se guarda en Base64 (no se puede deshacer).
+     */
+    public static String pbkdf2(String clave, String sal, int iteraciones) {
+        try {
+            byte[] salBytes = Base64.getDecoder().decode(sal);
+            PBEKeySpec spec = new PBEKeySpec(clave.toCharArray(), salBytes,
+                    Math.max(iteraciones, ITERACIONES), 256);
+            SecretKeyFactory fabrica = SecretKeyFactory.getInstance(ALGORITMO_PBKDF2);
+            byte[] hash = fabrica.generateSecret(spec).getEncoded();
+            spec.clearPassword();
+            return Base64.getEncoder().encodeToString(hash);
+        } catch (Exception e) {
+            throw new RuntimeException("No se pudo calcular PBKDF2", e);
+        }
+    }
+
+    /**
+     * Comprueba una clave contra lo guardado.
+     * - Si hay sal, se usa PBKDF2 (formato nuevo).
+     * - Si no hay sal, se compara con SHA-256 (bases viejas). El login se
+     *   encarga despues de migrar esa clave a PBKDF2.
+     */
+    public static boolean verificar(String clave, String guardada, String sal, int iteraciones) {
+        if (guardada == null) {
+            return false;
+        }
+        if (sal == null || sal.isBlank()) {
+            return guardada.equals(hash(clave));
+        }
+        return guardada.equals(pbkdf2(clave, sal, iteraciones));
+    }
+
+    /**
+     * Revisa si un texto YA es una clave guardada (hash) y no una clave nueva.
+     * Sirve al editar un usuario sin cambiarle la contraseña.
+     */
+    public static boolean esClaveGuardada(String texto) {
+        if (esHash(texto)) {
+            return true;
+        }
+        if (texto == null || texto.length() < 40) {
+            return false;
+        }
+        try {
+            return Base64.getDecoder().decode(texto).length == 32;
+        } catch (IllegalArgumentException e) {
+            return false;
         }
     }
 

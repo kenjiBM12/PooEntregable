@@ -29,4 +29,16 @@ public interface IVentaDao {
 
     //MEJORA 3: historial de compras de un cliente, de la mas nueva a la mas vieja
     List<Venta> listarPorCliente(int idCliente);
+
+    /**
+     * MEJORA 9: todos los boletos de una misma compra (mismo codigo).
+     * Sirve para reimprimir el comprobante desde la pantalla de Ventas.
+     */
+    List<Venta> listarPorCodigo(String codigoCompra);
+
+    /**
+     * MEJORA 7: anula todos los boletos activos de una funcion cancelada.
+     * Devuelve la cantidad de boletos anulados.
+     */
+    int anularPorFuncion(int idFuncion, int idUsuario, String motivo);
 }

@@ -18,6 +18,7 @@ public class FuncionDaoImpl implements IFuncionDao {
 
     private static final String QUERY_BASE =
             " SELECT f.idfuncion,f.id_pelicula,f.id_sala,f.fecha,f.horario,f.precio, " +
+                    " f.estado AS estado_funcion, " +
                     " p.titulo AS titulo_pelicula,p.numero AS numero_pelicula,p.duracion, " +
                     " p.categoria,p.clasificacion, " +
                     " s.numero AS numero_sala,s.tipo_sala AS tipo_sala,s.capacidad,s.estado, " +
@@ -30,7 +31,9 @@ public class FuncionDaoImpl implements IFuncionDao {
     public boolean insert(Funcion f) {
         boolean flag = false;
         //fecha es obligatoria en la tabla funcion, no se puede omitir
-        String query = "INSERT INTO funcion(id_pelicula,id_sala,fecha,horario,precio)VALUES(?,?,?,?,?);";
+        //MEJORA 7: toda funcion nueva nace 'activa'
+        String query = "INSERT INTO funcion(id_pelicula,id_sala,fecha,horario,precio,estado)"
+                + "VALUES(?,?,?,?,?,?);";
         Connection cn = ConexionDB.getConnection();
         try (PreparedStatement st = cn.prepareStatement(query)) {
             //si la funcion no trae fecha se usa la de hoy, y se guarda en el objeto
@@ -44,6 +47,7 @@ public class FuncionDaoImpl implements IFuncionDao {
             st.setString(3, fecha);
             st.setString(4, f.getHorario());
             st.setDouble(5, f.getPrecio());
+            st.setString(6, f.getEstado());
             //CORREGIDO: antes se devolvia true aunque no se insertara nada;
             //ahora se usa el resultado real del executeUpdate
             flag = st.executeUpdate() > 0;
@@ -56,8 +60,8 @@ public class FuncionDaoImpl implements IFuncionDao {
     @Override
     public boolean update(Funcion f) {
         boolean flag = false;
-        String query = " UPDATE funcion SET id_pelicula=?, id_sala=?, fecha=?, horario=?, precio=? " +
-                " WHERE idfuncion=?";
+        String query = " UPDATE funcion SET id_pelicula=?, id_sala=?, fecha=?, horario=?, "
+                + " precio=?, estado=? WHERE idfuncion=?";
         Connection cn = ConexionDB.getConnection();
         try (PreparedStatement st = cn.prepareStatement(query)) {
             st.setInt(1, f.getPelicula().getidpelicula());
@@ -66,7 +70,8 @@ public class FuncionDaoImpl implements IFuncionDao {
             st.setString(3, f.getFecha());
             st.setString(4, f.getHorario());
             st.setDouble(5, f.getPrecio());
-            st.setInt(6, f.getIdfuncion());
+            st.setString(6, f.getEstado());
+            st.setInt(7, f.getIdfuncion());
             //CORREGIDO: solo es true si el UPDATE o el DELETE modifico una fila
             flag = st.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -109,6 +114,7 @@ public class FuncionDaoImpl implements IFuncionDao {
                     funcion.setFecha(rs.getString("fecha"));
                     funcion.setHorario(rs.getString("horario"));
                     funcion.setPrecio(rs.getDouble("precio"));
+                    funcion.setEstado(rs.getString("estado_funcion"));
                     funcion.setPelicula(p);
                     funcion.setSala(s);
                 }
@@ -186,6 +192,7 @@ public class FuncionDaoImpl implements IFuncionDao {
                 f.setFecha(rs.getString("fecha"));
                 f.setHorario(rs.getString("horario"));
                 f.setPrecio(rs.getDouble("precio"));
+                f.setEstado(rs.getString("estado_funcion"));
                 f.setPelicula(p);
                 f.setSala(s);
 
@@ -199,5 +206,22 @@ public class FuncionDaoImpl implements IFuncionDao {
         }
         return lista;
 
+    }
+
+    /**
+     * MEJORA 7: cancela la funcion sin borrarla. Los boletos ya vendidos se
+     * conservan (se anulan aparte) para poder avisar y devolver el dinero.
+     */
+    @Override
+    public boolean cancelar(int idfuncion) {
+        String query = "UPDATE funcion SET estado='cancelada' "
+                + "WHERE idfuncion=? AND COALESCE(estado,'activa')<>'cancelada'";
+        Connection cn = ConexionDB.getConnection();
+        try (PreparedStatement st = cn.prepareStatement(query)) {
+            st.setInt(1, idfuncion);
+            return st.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al cancelar la funcion: " + e.getMessage(), e);
+        }
     }
 }

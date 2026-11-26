@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
@@ -102,12 +105,39 @@
             <children>
                 <Label styleClass="leyenda" text="Acciones del cierre"/>
                 <Region HBox.hgrow="ALWAYS"/>
+                <!-- MEJORA 1: abre el cierre de caja con arqueo del dia -->
+                <Button mnemonicParsing="false" onAction="#handleCerrarCaja"
+                        styleClass="button-login" text="CERRAR CAJA"/>
                 <Button mnemonicParsing="false" onAction="#handleExportarCsv"
                         styleClass="button-secundario" text="EXPORTAR CSV"/>
                 <Button mnemonicParsing="false" onAction="#handleRespaldar"
                         styleClass="button-secundario" text="RESPALDAR AHORA"/>
                 <Button mnemonicParsing="false" onAction="#handleRestaurar"
                         styleClass="button-action-delete" text="RESTAURAR RESPALDO"/>
+            </children>
+        </HBox>
+
+        <!-- MEJORA 3: gráficos del rango elegido (ventas por dia y top peliculas) -->
+        <HBox spacing="16.0">
+            <children>
+                <BarChart fx:id="chartDias" barGap="3.0" categoryGap="42.0" prefHeight="220.0"
+                          title="Ventas por día" HBox.hgrow="ALWAYS">
+                    <xAxis>
+                        <CategoryAxis/>
+                    </xAxis>
+                    <yAxis>
+                        <NumberAxis/>
+                    </yAxis>
+                </BarChart>
+                <BarChart fx:id="chartPeliculas" barGap="3.0" categoryGap="42.0" prefHeight="220.0"
+                          prefWidth="340.0" title="Películas más vendidas">
+                    <xAxis>
+                        <CategoryAxis/>
+                    </xAxis>
+                    <yAxis>
+                        <NumberAxis/>
+                    </yAxis>
+                </BarChart>
             </children>
         </HBox>
 

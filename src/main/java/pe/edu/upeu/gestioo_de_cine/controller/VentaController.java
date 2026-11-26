@@ -20,10 +20,14 @@ import javafx.scene.control.TextInputDialog;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import pe.edu.upeu.gestioo_de_cine.HelloApplication;
+import pe.edu.upeu.gestioo_de_cine.implementacion.FuncionDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.implementacion.VentaDaoImpl;
+import pe.edu.upeu.gestioo_de_cine.interfaces.IFuncionDao;
 import pe.edu.upeu.gestioo_de_cine.interfaces.IVentaDao;
+import pe.edu.upeu.gestioo_de_cine.modelo.Funcion;
 import pe.edu.upeu.gestioo_de_cine.modelo.Venta;
 import pe.edu.upeu.gestioo_de_cine.utils.Bitacora;
+import pe.edu.upeu.gestioo_de_cine.utils.Comprobante;
 import pe.edu.upeu.gestioo_de_cine.utils.Sesion;
 import pe.edu.upeu.gestioo_de_cine.utils.UtilAlerts;
 
@@ -86,8 +90,12 @@ public class VentaController {
     private DatePicker dpFechaHasta;
     @FXML
     private Label lblResumen;
+    //MEJORA 8: filtro por empleado
+    @FXML
+    private ComboBox<String> cbEmpleado;
 
     private final IVentaDao ventaDao = new VentaDaoImpl();
+    private final IFuncionDao funcionDao = new FuncionDaoImpl();
     private ObservableList<Venta> listaVenta;
     //lista completa para poder filtrar sin volver a consultar la base
     private List<Venta> todasLasVentas = new ArrayList<>();
@@ -165,6 +173,10 @@ public class VentaController {
         cbEstado.getItems().addAll("Todas", "Activa", "Anulada");
         cbEstado.setValue("Todas");
         cbEstado.valueProperty().addListener((obs, viejo, nuevo) -> filtrar());
+        //MEJORA 8: el combo de empleados se llena con los que aparecen en ventas
+        if (cbEmpleado != null) {
+            cbEmpleado.valueProperty().addListener((obs, viejo, nuevo) -> filtrar());
+        }
         dpFecha.valueProperty().addListener((obs, viejo, nuevo) -> filtrar());
         dpFechaHasta.valueProperty().addListener((obs, viejo, nuevo) -> filtrar());
 
@@ -188,7 +200,26 @@ public class VentaController {
                         "ERROR").showAndWait();
             }
         }
+        cargarEmpleados();
         filtrar();
+    }
+
+    /** MEJORA 8: lista de empleados que aparecen en las ventas cargadas. */
+    private void cargarEmpleados() {
+        if (cbEmpleado == null) {
+            return;
+        }
+        String elegido = cbEmpleado.getValue();
+        List<String> empleados = new ArrayList<>();
+        empleados.add("Todos");
+        for (Venta v : todasLasVentas) {
+            String nombre = v.getEmpleado();
+            if (nombre != null && !nombre.isBlank() && !empleados.contains(nombre)) {
+                empleados.add(nombre);
+            }
+        }
+        cbEmpleado.getItems().setAll(empleados);
+        cbEmpleado.setValue(elegido != null && empleados.contains(elegido) ? elegido : "Todos");
     }
 
     @FXML
@@ -210,6 +241,9 @@ public class VentaController {
         if (cbEstado != null) {
             cbEstado.setValue("Todas");
         }
+        if (cbEmpleado != null) {
+            cbEmpleado.setValue("Todos");
+        }
         if (dpFecha != null) {
             dpFecha.setValue(null);
         }
@@ -223,6 +257,9 @@ public class VentaController {
     private void filtrar() {
         String texto = txtBuscar != null ? txtBuscar.getText().trim().toLowerCase() : "";
         String estado = cbEstado != null && cbEstado.getValue() != null ? cbEstado.getValue() : "Todas";
+        //MEJORA 8: empleado elegido en el combo ("Todos" = sin filtro)
+        String empleado = cbEmpleado != null && cbEmpleado.getValue() != null
+                ? cbEmpleado.getValue() : "Todos";
         //MEJORA 9b: rango de fechas. Cualquiera de las dos puede quedar vacia
         LocalDate fechaDesde = dpFecha != null ? dpFecha.getValue() : null;
         LocalDate fechaHasta = dpFechaHasta != null ? dpFechaHasta.getValue() : null;
@@ -231,6 +268,10 @@ public class VentaController {
         for (Venta v : todasLasVentas) {
             if (!"Todas".equals(estado)
                     && !estado.equalsIgnoreCase(v.getEstado())) {
+                continue;
+            }
+            if (!"Todos".equals(empleado)
+                    && !empleado.equalsIgnoreCase(v.getEmpleado())) {
                 continue;
             }
             String fechaFuncion = "";
@@ -395,6 +436,84 @@ public class VentaController {
                         "No se pudo anular la compra.", "ERROR").showAndWait();
             }
         }
+    }
+
+    /**
+     * MEJORA 9: reimprime el comprobante de la compra del boleto elegido.
+     * Se vuelve a armar desde la base (no del archivo), se guarda el HTML y
+     * se muestra la ruta para abrirlo e imprimirlo desde el navegador.
+     */
+    @FXML
+    private void handleReimprimir() {
+        Venta seleccion = tableVenta.getSelectionModel().getSelectedItem();
+        if (seleccion == null) {
+            utilAlert.mostrarAlerts("Seleccion requerida",
+                    "Seleccione un boleto de la compra que desea reimprimir.",
+                    "WARNING").showAndWait();
+            return;
+        }
+        String codigo = Comprobante.codigo(seleccion);
+        try {
+            List<Venta> boletos = ventaDao.listarPorCodigo(codigo);
+            if (boletos.isEmpty()) {
+                utilAlert.mostrarAlerts("Sin datos",
+                        "No se encontraron los boletos de la compra " + codigo + ".",
+                        "WARNING").showAndWait();
+                return;
+            }
+            String texto = Comprobante.texto(boletos);
+            java.io.File html = Comprobante.generarHtml(codigo, texto);
+            Bitacora.registrar("COMPROBANTE", "Comprobante reimpreso: " + codigo);
+            utilAlert.mostrarAlerts("Comprobante generado",
+                    texto + (html != null
+                            ? "\n\nArchivo para imprimir:\n" + html.getAbsolutePath()
+                            : "\n\nNo se pudo guardar el archivo HTML."),
+                    "INFORMATION").showAndWait();
+        } catch (RuntimeException e) {
+            System.out.println("Error al reimprimir el comprobante: " + e.getMessage());
+            utilAlert.mostrarAlerts("Error",
+                    "No se pudo generar el comprobante.\nDetalle: " + e.getMessage(),
+                    "ERROR").showAndWait();
+        }
+    }
+
+    /**
+     * MEJORA 13: cartelera de hoy con la hora de fin de cada función.
+     * Sirve en boletería para responder "¿a qué hora termina?".
+     */
+    @FXML
+    private void handleCartelera() {
+        String hoy = LocalDate.now().toString();
+        List<Funcion> funciones = new ArrayList<>();
+        try {
+            for (Funcion f : funcionDao.listAll()) {
+                String fecha = f.getFecha() != null ? soloFecha(f.getFecha()) : "";
+                if (hoy.equals(fecha) && !f.isCancelada()) {
+                    funciones.add(f);
+                }
+            }
+        } catch (RuntimeException e) {
+            utilAlert.mostrarAlerts("Error",
+                    "No se pudo leer la cartelera.\nDetalle: " + e.getMessage(),
+                    "ERROR").showAndWait();
+            return;
+        }
+        if (funciones.isEmpty()) {
+            utilAlert.mostrarAlerts("Cartelera de hoy",
+                    "No quedan funciones activas para hoy.", "INFORMATION").showAndWait();
+            return;
+        }
+        StringBuilder texto = new StringBuilder("Cartelera de hoy " + hoy + "\n\n");
+        for (Funcion f : funciones) {
+            String titulo = f.getPelicula() != null ? f.getPelicula().getTitulo() : "";
+            String sala = f.getSala() != null ? f.getSala().getEtiqueta() : "";
+            String fin = f.getHoraFin();
+            texto.append(f.getHorario()).append(fin.isEmpty() ? "" : " - " + fin)
+                    .append("   ").append(titulo).append("   ").append(sala)
+                    .append("   S/ ").append(String.format("%.2f", f.getPrecio()))
+                    .append('\n');
+        }
+        utilAlert.mostrarAlerts("Cartelera de hoy", texto.toString(), "INFORMATION").showAndWait();
     }
 
     //CORREGIDO: mismo calculo que en el mapa de butacas. Se usan las columnas

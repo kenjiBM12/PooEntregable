@@ -554,3 +554,27 @@
     -fx-text-fill: #6C748A;
     -fx-font-size: 11px;
 }
+
+/* MEJORA 3: los gráficos de Reportes usan el mismo tema oscuro de la app */
+.chart {
+    -fx-background-color: transparent;
+}
+.chart-plot-background {
+    -fx-background-color: #1b202b;
+}
+.chart-vertical-grid-lines, .chart-horizontal-grid-lines {
+    -fx-stroke: rgba(255, 255, 255, 0.08);
+}
+.chart-bar {
+    -fx-bar-fill: #e0b45c;
+}
+.axis {
+    -fx-tick-label-fill: #cfd3dc;
+    -fx-border-color: transparent;
+}
+.chart-title {
+    -fx-text-fill: #f2f2f2;
+}
+.chart-legend {
+    -fx-background-color: transparent;
+}
