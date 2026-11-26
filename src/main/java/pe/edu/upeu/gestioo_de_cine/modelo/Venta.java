@@ -13,28 +13,20 @@ import java.time.LocalDate;
 
 public class Venta {
     private final IntegerProperty idventa = new SimpleIntegerProperty();
-    //referencia estable al cliente: se guarda su id, no solo el nombre
     private final IntegerProperty idCliente = new SimpleIntegerProperty();
     private final StringProperty cliente = new SimpleStringProperty();
     private final IntegerProperty cantidadAsientos = new SimpleIntegerProperty();
     private final DoubleProperty totalPagar = new SimpleDoubleProperty();
     private final ObjectProperty<LocalDate> fechaVenta = new SimpleObjectProperty<>();
-    //asociacion de la llave foranea
     private final ObjectProperty<Funcion> funcion = new SimpleObjectProperty<>();
-    //butaca vendida y empleado que vendio
     private final IntegerProperty idButaca = new SimpleIntegerProperty();
-    //objeto butaca solo para mostrar fila y numero en la tabla
     private final ObjectProperty<Butaca> butaca = new SimpleObjectProperty<>();
     private final IntegerProperty idUsuario = new SimpleIntegerProperty();
     private final StringProperty estado = new SimpleStringProperty("activa");
-    //codigo de compra: es el mismo para todos los boletos de una misma compra
     private final StringProperty codigoCompra = new SimpleStringProperty();
-    //dni del cliente y nombre del empleado: solo se muestran en la tabla (vienen del JOIN)
     private final StringProperty dniCliente = new SimpleStringProperty();
     private final StringProperty empleado = new SimpleStringProperty();
-    //MEJORA 6: forma de pago (Efectivo / Tarjeta / Yape) y datos de la anulacion
     private final StringProperty metodoPago = new SimpleStringProperty("EFECTIVO");
-    //texto armado para la tabla: "quien anulo - motivo". Vacio si sigue activa
     private final StringProperty anulacion = new SimpleStringProperty("");
 
     public Venta() {

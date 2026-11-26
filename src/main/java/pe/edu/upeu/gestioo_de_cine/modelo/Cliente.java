@@ -1,6 +1,5 @@
 package pe.edu.upeu.gestioo_de_cine.modelo;
 
-
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -13,7 +12,6 @@ public class Cliente {
     private final StringProperty dni = new SimpleStringProperty();
     private final StringProperty email = new SimpleStringProperty();
     private final StringProperty genero = new SimpleStringProperty();
-    //telefono: se pide en la venta de entradas
     private final StringProperty telefono = new SimpleStringProperty();
 
     public Cliente() {}
@@ -51,7 +49,6 @@ public class Cliente {
         return dni;
     }
 
-
     public final String getApellidos() {
         return apellidos.get();
     }
@@ -63,7 +60,6 @@ public class Cliente {
     public final StringProperty apellidosProperty() {
         return apellidos;
     }
-
 
     public final String getNombre() {
         return nombre.get();
@@ -77,7 +73,6 @@ public class Cliente {
         return nombre;
     }
 
-
     public final String getGenero() {
         return genero.get();
     }
@@ -89,7 +84,6 @@ public class Cliente {
     public final StringProperty generoProperty() {
         return genero;
     }
-
 
     public final String getEmail() {
         return email.get();

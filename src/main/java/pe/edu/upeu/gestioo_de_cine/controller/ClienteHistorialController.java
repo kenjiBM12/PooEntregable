@@ -15,13 +15,6 @@ import pe.edu.upeu.gestioo_de_cine.utils.UtilAlerts;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * MEJORA 3: ventana con el historial de compras de un cliente.
- *
- * Se abre desde la pantalla de Clientes con el boton HISTORIAL. Muestra una
- * fila por boleto (igual que la pantalla de Ventas) y un resumen abajo con
- * cuantos boletos siguen activos y cuanto dinero lleva gastado el cliente.
- */
 public class ClienteHistorialController {
 
     private static UtilAlerts utilAlert = new UtilAlerts();
@@ -66,7 +59,6 @@ public class ClienteHistorialController {
                 celda.getValue().getFuncion() != null
                         ? celda.getValue().getFuncion().getFecha() + "  "
                         + celda.getValue().getFuncion().getHorario() : ""));
-        //la butaca se muestra con su numero global (1..capacidad), igual que en ventas
         ColButaca.setCellValueFactory(celda -> new SimpleStringProperty(
                 celda.getValue().getButaca() != null
                         ? String.valueOf(numeroVisible(celda.getValue())) : ""));
@@ -78,10 +70,6 @@ public class ClienteHistorialController {
                 celda -> celda.getValue().estadoProperty());
     }
 
-    /**
-     * Recibe el cliente elegido en la tabla y carga sus compras.
-     * Se llama despues de cargar el FXML, por eso los campos ya existen.
-     */
     public void setCliente(Cliente c) {
         if (c == null) {
             return;
@@ -104,7 +92,6 @@ public class ClienteHistorialController {
         mostrarResumen(ventas);
     }
 
-    //resumen de abajo: boletos activos, anulados y dinero realmente gastado
     private void mostrarResumen(List<Venta> ventas) {
         int activos = 0;
         int anulados = 0;
@@ -123,10 +110,6 @@ public class ClienteHistorialController {
                 + "   ·   Gastado: S/ " + String.format("%.2f", total));
     }
 
-    /**
-     * Mismo calculo que en la pantalla de ventas: la butaca se guarda por
-     * fila y numero, y aqui se muestra el numero corrido de la sala.
-     */
     private int numeroVisible(Venta v) {
         if (v.getButaca() == null) {
             return 0;

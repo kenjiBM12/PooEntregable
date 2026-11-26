@@ -10,26 +10,13 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
 
-/**
- * MEJORA 2: fila del cierre de caja por forma de pago.
- *
- * El reporte usa un objeto de esta clase por cada forma de pago encontrada
- * en el rango de fechas (EFECTIVO, TARJETA, YAPE...). Asi el administrador
- * sabe cuanto dinero entro por cada medio y puede cuadrar la caja.
- *
- * Usa propiedades de JavaFX como los demas modelos. El neto es una propiedad
- * calculada: se actualiza solo cuando cambian el cobrado o el devuelto.
- */
 public class ResumenPago {
 
     private final StringProperty metodo = new SimpleStringProperty();
     private final IntegerProperty boletos = new SimpleIntegerProperty();
     private final DoubleProperty monto = new SimpleDoubleProperty();
-    //MEJORA 1: dinero devuelto por anulaciones en esa forma de pago.
-    //Asi el cierre de caja muestra cobrado, devuelto y neto por medio.
     private final DoubleProperty devuelto = new SimpleDoubleProperty();
 
-    //cobrado - devuelto: es lo que realmente queda en caja de ese medio
     private final DoubleBinding neto = Bindings.createDoubleBinding(
             () -> getMonto() - getDevuelto(), monto, devuelto);
 
@@ -90,12 +77,10 @@ public class ResumenPago {
         return devuelto;
     }
 
-    /** Lo que queda en caja de ese medio: cobrado menos devuelto. */
     public final double getNeto() {
         return neto.get();
     }
 
-    /** Version observable del neto, lista para una columna de TableView. */
     public final ObservableValue<Double> netoProperty() {
         return neto.asObject();
     }

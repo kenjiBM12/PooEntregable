@@ -10,7 +10,6 @@ public class Butaca {
     private final IntegerProperty idSala = new SimpleIntegerProperty();
     private final IntegerProperty fila = new SimpleIntegerProperty();
     private final IntegerProperty numero = new SimpleIntegerProperty();
-    //no se guarda en la tabla: sirve para saber si esta ocupada en una funcion
     private final BooleanProperty ocupada = new SimpleBooleanProperty();
 
     public Butaca() {

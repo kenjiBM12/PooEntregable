@@ -10,31 +10,15 @@ import javafx.beans.property.StringProperty;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * MEJORA 3: modelo del reporte de cierre de caja.
- *
- * Esta clase guarda los totales que calcula el ReporteDaoImpl con SQL, y el
- * desglose por forma de pago. Los totales son propiedades de JavaFX, igual
- * que en los demas modelos; la lista de pagos se maneja como ArrayList.
- *
- * Los boletos "activos" son los que cuentan como venta; los "anulados" ya
- * no cuentan como ingreso, pero se informan aparte para el cierre de caja.
- */
 public class Reporte {
 
-    //rango de fechas consultado (texto yyyy-MM-dd, solo para mostrarlo)
     private final StringProperty desde = new SimpleStringProperty();
     private final StringProperty hasta = new SimpleStringProperty();
 
-    //cantidad de boletos
     private final IntegerProperty boletosActivos = new SimpleIntegerProperty();
     private final IntegerProperty boletosAnulados = new SimpleIntegerProperty();
 
-    //dinero
-    private final DoubleProperty ingresos = new SimpleDoubleProperty();     //suma de boletos activos
-    private final DoubleProperty montoAnulado = new SimpleDoubleProperty(); //suma de boletos anulados
-
-    //MEJORA 2: desglose por forma de pago (EFECTIVO / TARJETA / YAPE...)
+    private final DoubleProperty ingresos = new SimpleDoubleProperty();         private final DoubleProperty montoAnulado = new SimpleDoubleProperty();
     private final List<ResumenPago> porMetodoPago = new ArrayList<>();
 
     public Reporte() {
@@ -112,12 +96,10 @@ public class Reporte {
         return montoAnulado;
     }
 
-    //el total neto es simplemente lo que realmente ingreso a caja
     public final double getTotalNeto() {
         return getIngresos();
     }
 
-    //MEJORA 2: lista con un resumen por cada forma de pago del rango
     public List<ResumenPago> getPorMetodoPago() {
         return porMetodoPago;
     }

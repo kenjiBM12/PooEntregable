@@ -7,7 +7,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import pe.edu.upeu.gestioo_de_cine.modelo.Pelicula;
-import pe.edu.upeu.gestioo_de_cine.utils.Duracion;
 import pe.edu.upeu.gestioo_de_cine.utils.UtilAlerts;
 
 public class PeliculaFormController {
@@ -56,13 +55,11 @@ public class PeliculaFormController {
             ).showAndWait();
             return false;
         }
-        //el codigo de la pelicula debe ser un numero positivo
         if (numero <= 0) {
             utilAlerts.mostrarAlerts("Número inválido",
                     "El número de la película debe ser mayor que cero.", "WARNING").showAndWait();
             return false;
         }
-        //la duracion debe ser mayor que cero: "120" minutos o "1:50" horas
         if (!duracionValida(txtDuracion.getText())) {
             utilAlerts.mostrarAlerts("Duración inválida",
                     "Ingresa la duración en minutos (ejemplo: 120) o como horas:minutos (ejemplo: 1:50).",
@@ -73,7 +70,6 @@ public class PeliculaFormController {
         return true;
     }
 
-    //revisa que la duracion sea un numero positivo, con o sin "h" al final
     private boolean duracionValida(String texto) {
         String valor = texto.trim().replace("h", "").replace("H", "").trim();
         if (valor.matches("[0-9]{1,3}")) {
@@ -89,7 +85,6 @@ public class PeliculaFormController {
         Stage stage = (Stage) txtTitulo.getScene().getWindow();
         stage.close();
     }
-    //actions of the views
     @FXML
     private void handleCancel(){
         cerrar();
@@ -101,29 +96,23 @@ public class PeliculaFormController {
                 pelicula = new Pelicula();
             pelicula.setNumero(Integer.parseInt(txtNumero.getText().trim()));
             pelicula.setTitulo(txtTitulo.getText().trim());
-            //MEJORA 1: la duracion se guarda SIEMPRE en minutos. Si el usuario
-            //escribe "1:50" queda 110; si escribe "95 min" queda 95.
-            pelicula.setDuracion(Duracion.normalizar(txtDuracion.getText()));
+            pelicula.setDuracion(txtDuracion.getText().trim());
             pelicula.setClasificacion(txtClasificacion.getText().trim());
             pelicula.setCategoria(cbCategoria.getValue());
             saved =true;
             cerrar();
         }
     }
-    //metodo para enviar los datos al formulario y editar
     public void setPelicula(Pelicula p){
         this.pelicula = p;
         if (p!=null){
             lblTitulo.setText("Editar Pelicula");
             txtNumero.setText(p.getNumero().toString());
             txtTitulo.setText(p.getTitulo());
-            //MEJORA 1: las peliculas viejas se muestran ya en minutos
-            txtDuracion.setText(Duracion.normalizar(p.getDuracion()));
+            txtDuracion.setText(p.getDuracion());
             txtClasificacion.setText(p.getClasificacion());
             cbCategoria.setValue(p.getCategoria());
         }
     }
 
-
 }
-

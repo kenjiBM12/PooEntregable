@@ -51,8 +51,8 @@ public class TestCliente {
     }
     private static void mostrarRutaBD() {
         try (var cn = pe.edu.upeu.gestioo_de_cine.utils.ConexionDB.getConnection();
-             var st = cn.createStatement();
-             var rs = st.executeQuery("PRAGMA database_list")) {
+        var st = cn.createStatement();
+        var rs = st.executeQuery("PRAGMA database_list")) {
 
             while (rs.next()) {
                 System.out.println("Base de datos usada: " + rs.getString("file"));
@@ -64,10 +64,8 @@ public class TestCliente {
 
     public static void main(String[] args) {
         System.out.println("************");
-mostrarRutaBD();
+        mostrarRutaBD();
         insertar();
     }
 
-
 }
-

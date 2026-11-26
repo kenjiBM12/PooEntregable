@@ -19,7 +19,7 @@ import pe.edu.upeu.gestioo_de_cine.HelloApplication;
 import pe.edu.upeu.gestioo_de_cine.implementacion.UsuarioDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.interfaces.IUsuarioDao;
 import pe.edu.upeu.gestioo_de_cine.modelo.Usuario;
-import pe.edu.upeu.gestioo_de_cine.utils.Sesion;
+import pe.edu.upeu.gestioo_de_cine.modelo.UserSession;
 import pe.edu.upeu.gestioo_de_cine.utils.UtilAlerts;
 
 import java.util.ArrayList;
@@ -83,7 +83,6 @@ public class UsuarioController {
         filtrar();
     }
 
-    //filtra por nombre, nombre de acceso y rol con un for normal
     private void filtrar() {
         String texto = txtBuscar != null ? txtBuscar.getText().trim().toLowerCase() : "";
         listaUsuarios.clear();
@@ -101,7 +100,7 @@ public class UsuarioController {
 
     @FXML
     private void handleNew() {
-        if (!Sesion.esAdmin()) {
+        if (!UserSession.esAdmin()) {
             utilAlert.mostrarAlerts("Sin permiso",
                     "Solo el administrador puede registrar cuentas.", "WARNING").showAndWait();
             return;
@@ -111,7 +110,7 @@ public class UsuarioController {
 
     @FXML
     private void handleEdit() {
-        if (!Sesion.esAdmin()) {
+        if (!UserSession.esAdmin()) {
             utilAlert.mostrarAlerts("Sin permiso",
                     "Solo el administrador puede editar cuentas.", "WARNING").showAndWait();
             return;
@@ -125,10 +124,9 @@ public class UsuarioController {
         showForm(seleccionado);
     }
 
-    //desactiva un empleado sin borrarlo, y lo puede volver a activar
     @FXML
     private void handleCambiarEstado() {
-        if (!Sesion.esAdmin()) {
+        if (!UserSession.esAdmin()) {
             utilAlert.mostrarAlerts("Sin permiso",
                     "Solo el administrador puede activar o desactivar cuentas.", "WARNING").showAndWait();
             return;
@@ -139,8 +137,8 @@ public class UsuarioController {
                     "Seleccione un usuario de la tabla.", "WARNING").showAndWait();
             return;
         }
-        if (Sesion.getUsuario() != null
-                && seleccionado.getIdusuario() == Sesion.getUsuario().getIdusuario()) {
+        if (UserSession.getUsuario() != null
+                && seleccionado.getIdusuario() == UserSession.getUsuario().getIdusuario()) {
             utilAlert.mostrarAlerts("No permitido",
                     "No puede desactivar la cuenta con la que esta conectado.", "WARNING").showAndWait();
             return;
@@ -153,8 +151,6 @@ public class UsuarioController {
         if (result.isPresent() && result.get() == ButtonType.OK) {
             int estadoAnterior = seleccionado.getActivo();
             seleccionado.setActivo(nuevoEstado);
-            //CORREGIDO: si la base falla se regresa el estado en memoria, para
-            //que la tabla no muestre un cambio que en realidad no se guardo
             try {
                 if (usuarioDao.update(seleccionado)) {
                     cargarDatos();

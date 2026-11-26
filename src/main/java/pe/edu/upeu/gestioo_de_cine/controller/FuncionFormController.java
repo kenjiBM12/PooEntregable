@@ -1,8 +1,8 @@
 package pe.edu.upeu.gestioo_de_cine.controller;
 
-import java.time.LocalDate; // CAMBIO: para saber la fecha de una funcion nueva
-import java.time.LocalTime; // CAMBIO: el horario se compara como hora, no como texto
-import java.time.format.DateTimeParseException; // CAMBIO: para validar formato de hora
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ComboBox;
@@ -15,14 +15,11 @@ import pe.edu.upeu.gestioo_de_cine.implementacion.FuncionDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.implementacion.PeliculaDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.implementacion.SalaDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.interfaces.IFuncionDao;
-import pe.edu.upeu.gestioo_de_cine.interfaces.ITarifaDao;
-import pe.edu.upeu.gestioo_de_cine.implementacion.TarifaDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.interfaces.IPeliculaDao;
 import pe.edu.upeu.gestioo_de_cine.interfaces.ISalaDao;
 import pe.edu.upeu.gestioo_de_cine.modelo.Funcion;
 import pe.edu.upeu.gestioo_de_cine.modelo.Pelicula;
 import pe.edu.upeu.gestioo_de_cine.modelo.Sala;
-import pe.edu.upeu.gestioo_de_cine.utils.Duracion;
 import pe.edu.upeu.gestioo_de_cine.utils.UtilAlerts;
 
 public class FuncionFormController {
@@ -37,7 +34,6 @@ public class FuncionFormController {
     private ComboBox<Pelicula> cbPelicula;
     @FXML
     private ComboBox<Sala> cbSala;
-    //selector de fecha: la tabla funcion exige una fecha
     @FXML
     private DatePicker dpFecha;
 
@@ -47,10 +43,6 @@ public class FuncionFormController {
     private final IPeliculaDao peliculaDao = new PeliculaDaoImpl();
     private final ISalaDao salaDao = new SalaDaoImpl();
     private final IFuncionDao funcionDao = new FuncionDaoImpl();
-    //MEJORA 4: tarifas por tipo de sala y dia
-    private final ITarifaDao tarifaDao = new TarifaDaoImpl();
-    //mientras se cargan los datos de una funcion existente no se toca el precio
-    private boolean cargandoFuncion = false;
 
     @FXML
     public void initialize() {
@@ -79,36 +71,13 @@ public class FuncionFormController {
         });
 
         cbPelicula.getItems().setAll(peliculaDao.listAll());
-        //MEJORA 6: solo se ofrecen salas activas. Una sala en mantenimiento
-        //(estado INACTIVA) ya no se puede programar.
         cbSala.getItems().clear();
         for (Sala s : salaDao.listAll()) {
             if (salaActiva(s)) {
                 cbSala.getItems().add(s);
             }
         }
-        //fecha sugerida al crear una funcion nueva
         dpFecha.setValue(LocalDate.now());
-
-        //MEJORA 4: al elegir sala o fecha se propone el precio de la tarifa
-        cbSala.valueProperty().addListener((obs, viejo, nuevo) -> sugerirPrecio());
-        dpFecha.valueProperty().addListener((obs, viejo, nuevo) -> sugerirPrecio());
-    }
-
-    /**
-     * MEJORA 4: busca la tarifa del tipo de sala para ese dia de la semana y
-     * la escribe en el campo de precio. Si no hay tarifa configurada se deja
-     * lo que el administrador haya escrito.
-     */
-    private void sugerirPrecio() {
-        if (cargandoFuncion || cbSala.getValue() == null || dpFecha.getValue() == null) {
-            return;
-        }
-        int dia = dpFecha.getValue().getDayOfWeek().getValue(); //1 = lunes ... 7 = domingo
-        double precio = tarifaDao.precio(cbSala.getValue().getTipoSala(), dia);
-        if (precio > 0) {
-            txtPrecio.setText(String.format(java.util.Locale.US, "%.2f", precio));
-        }
     }
 
     public boolean isSaved() {
@@ -127,11 +96,9 @@ public class FuncionFormController {
                 || txtPrecio.getText().isBlank()) {
             Alert alert = utilAlerts.mostrarAlerts("",
                     "Completa todos los campos obligatorios.", "ERROR");
-            // CAMBIO: showAndWait() en vez de show()
             alert.showAndWait();
             return false;
         }
-        // CAMBIO: se valida que txtHorario tenga un formato de hora válido (ej. 18:30)
         try {
             LocalTime.parse(txtHorario.getText().trim());
         } catch (DateTimeParseException e) {
@@ -139,8 +106,6 @@ public class FuncionFormController {
                     "Ingresa una hora valida (ejemplo: 18:30).", "WARNING").showAndWait();
             return false;
         }
-        //MEJORA 5a: una funcion NUEVA no puede quedar en una fecha pasada.
-        //Al editar se permite porque la funcion pudo haber sido programada antes.
         if (funcion == null && dpFecha.getValue().isBefore(LocalDate.now())) {
             utilAlerts.mostrarAlerts("Fecha invalida",
                     "No se puede programar una función en una fecha que ya pasó.",
@@ -162,9 +127,6 @@ public class FuncionFormController {
         return true;
     }
 
-    //CORREGIDO: en espanol el precio se escribe con coma (12,50) y
-    //Double.parseDouble solo acepta punto; aqui se cambia la coma por punto
-    //para que el precio se pueda escribir de las dos formas
     private double leerPrecio() {
         return Double.parseDouble(txtPrecio.getText().trim().replace(',', '.'));
     }
@@ -185,7 +147,6 @@ public class FuncionFormController {
             return;
         }
 
-        // CAMBIO: se busca duplicado ANTES de crear o modificar el objeto 'funcion'
         Funcion duplicada;
         try {
             duplicada = buscarDuplicada();
@@ -214,18 +175,6 @@ public class FuncionFormController {
         cerrar();
     }
 
-    /**
-     * MEJORA 5a: una sala no puede tener dos funciones que se CRUCEN.
-     *
-     * Antes solo se comparaba la hora exacta: se podia programar una pelicula
-     * de 2 horas a las 18:00 y otra a las 19:00 en la misma sala, y las dos
-     * se pisaban. Ahora se calcula a que hora termina cada funcion usando la
-     * duracion de su pelicula y se revisa si los horarios se superponen.
-     *
-     * Dos rangos se cruzan cuando uno empieza antes de que termine el otro:
-     *   nueva:   18:00 ---------------- 20:00
-     *   existente:      19:00 ---------------- 21:00   -> se cruzan
-     */
     private Funcion buscarDuplicada() {
         LocalTime horaNueva;
         try {
@@ -233,19 +182,16 @@ public class FuncionFormController {
         } catch (DateTimeParseException e) {
             return null;
         }
-        //la fecha se toma del selector del formulario
         LocalDate fechaSeleccionada = dpFecha.getValue();
         if (fechaSeleccionada == null) {
             return null;
         }
         String fechaNueva = fechaSeleccionada.toString();
         int idSala = cbSala.getValue().getIdsala();
-        //hora a la que termina la funcion nueva
         int duracionNueva = duracionMinutos(cbPelicula.getValue());
         LocalTime finNueva = horaNueva.plusMinutes(duracionNueva);
 
         for (Funcion f : funcionDao.listAll()) {
-            //al editar, la propia funcion no se compara consigo misma
             if (funcion != null && f.getIdfuncion() == funcion.getIdfuncion()) {
                 continue;
             }
@@ -260,20 +206,16 @@ public class FuncionFormController {
             }
             LocalTime horaExistente;
             try {
-                //se comparan horas, no el texto
                 horaExistente = LocalTime.parse(f.getHorario().trim());
             } catch (DateTimeParseException e) {
-                //si la hora guardada no tiene formato valido se compara como texto
                 if (f.getHorario().trim().equals(txtHorario.getText().trim())) {
                     return f;
                 }
                 continue;
             }
-            //misma hora de inicio: siempre es un choque
             if (horaNueva.equals(horaExistente)) {
                 return f;
             }
-            //se cruzan si una empieza antes de que la otra termine
             int duracionExistente = duracionMinutos(f.getPelicula());
             LocalTime finExistente = horaExistente.plusMinutes(duracionExistente);
             if (horaNueva.isBefore(finExistente) && horaExistente.isBefore(finNueva)) {
@@ -283,20 +225,10 @@ public class FuncionFormController {
         return null;
     }
 
-    /**
-     * MEJORA 1: los minutos se piden a la clase Duracion, que entiende
-     * "120", "95 min", "1:50" y "2h".
-     *
-     * Antes este metodo tomaba solo los primeros digitos, asi que una
-     * pelicula de "1:50" se leia como 1 minuto y el cruce de horarios no
-     * detectaba el choque. Si no hay numeros devuelve 0: esa pelicula solo
-     * choca cuando empieza a la misma hora que otra.
-     */
     private int duracionMinutos(Pelicula p) {
-        return p == null ? 0 : Duracion.aMinutos(p.getDuracion());
+        return p == null ? 0 : p.getDuracionMinutos();
     }
 
-    //MEJORA 6: una sala esta disponible si su estado no es INACTIVA
     private boolean salaActiva(Sala s) {
         if (s == null) {
             return false;
@@ -305,7 +237,6 @@ public class FuncionFormController {
         return !"INACTIVA".equalsIgnoreCase(estado);
     }
 
-    //de una fecha tipo "2026-11-20" toma solo "2026-11-20" (por si viene con hora)
     private String soloFecha(String fecha) {
         String texto = fecha.trim();
         return texto.length() > 10 ? texto.substring(0, 10) : texto;
@@ -313,9 +244,6 @@ public class FuncionFormController {
 
     public void setFuncion(Funcion f) {
         this.funcion = f;
-        //MEJORA 4: al editar se respeta el precio guardado, no el de la tarifa
-        cargandoFuncion = true;
-        try {
         if (f != null) {
             lblTitulo.setText("Editar Funcion");
             if (f.getPelicula() != null) {
@@ -335,17 +263,13 @@ public class FuncionFormController {
                         break;
                     }
                 }
-                //MEJORA 6: si la sala quedo inactiva ya no esta en la lista;
-                //se agrega solo para mostrar la funcion que se esta editando
                 if (!encontrada) {
                     cbSala.getItems().add(f.getSala());
                     cbSala.setValue(f.getSala());
                 }
             }
-            //el horario se guarda como texto, se muestra tal cual
             txtHorario.setText(f.getHorario() != null ? f.getHorario() : "");
             txtPrecio.setText(String.valueOf(f.getPrecio()));
-            //se muestra la fecha que ya tenia guardada la funcion
             String fecha = f.getFecha();
             if (fecha != null && !fecha.isBlank()) {
                 try {
@@ -356,9 +280,6 @@ public class FuncionFormController {
             } else {
                 dpFecha.setValue(LocalDate.now());
             }
-        }
-        } finally {
-            cargandoFuncion = false;
         }
     }
 }

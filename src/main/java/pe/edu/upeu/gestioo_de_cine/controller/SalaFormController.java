@@ -18,7 +18,6 @@ public class SalaFormController {
 
     @FXML
     private TextField txtNumero;
-    //la cuadricula de la sala: de aqui salen las butacas numeradas 1, 2, 3...
     @FXML
     private TextField txtFilas;
     @FXML
@@ -36,11 +35,8 @@ public class SalaFormController {
     public void initialize() {
         cbTipoSala.getItems().addAll("2D", "3D", "XD", "VIP");
         cbEstado.getItems().addAll("Activa", "Inactiva");
-        //MEJORA 6: una sala nueva se crea ACTIVA por defecto. Si se deja en
-        //Inactiva, sus funciones no se pueden vender y parecia que faltaban.
         cbEstado.setValue("Activa");
 
-        //la capacidad se muestra sola mientras se escriben filas y columnas
         txtFilas.textProperty().addListener((obs, viejo, nuevo) -> actualizarCapacidad());
         txtColumnas.textProperty().addListener((obs, viejo, nuevo) -> actualizarCapacidad());
         actualizarCapacidad();
@@ -54,7 +50,6 @@ public class SalaFormController {
         return sala;
     }
 
-    //capacidad de la sala = filas x columnas
     private void actualizarCapacidad() {
         long total = 0;
         try {
@@ -110,9 +105,6 @@ public class SalaFormController {
             return false;
         }
 
-        //CORREGIDO: filas x columnas se multiplica como int y con valores muy
-        //grandes la capacidad se desbordaba (podia quedar negativa en la base).
-        //Se limita la cuadricula a un tamaño razonable para un cine.
         if (filas > 100 || columnas > 100) {
             utilAlerts.mostrarAlerts(
                     "Cuadricula muy grande",
@@ -152,7 +144,6 @@ public class SalaFormController {
         sala.setTipoSala(cbTipoSala.getValue());
         sala.setFilas(filas);
         sala.setColumnas(columnas);
-        //la capacidad sale de la cuadricula, no se escribe a mano
         sala.setCapacidad(filas * columnas);
         sala.setEstado(cbEstado.getValue().trim());
 
@@ -166,7 +157,6 @@ public class SalaFormController {
         if (sala != null) {
             lblTitulo.setText("Editar Sala");
             txtNumero.setText(String.valueOf(sala.getNumero()));
-            //las salas viejas no tienen cuadricula guardada
             if (sala.getFilas() > 0) {
                 txtFilas.setText(String.valueOf(sala.getFilas()));
             }

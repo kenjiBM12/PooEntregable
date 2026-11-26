@@ -8,18 +8,14 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import pe.edu.upeu.gestioo_de_cine.utils.Duracion;
 
 public class Funcion {
     private final IntegerProperty idfuncion = new SimpleIntegerProperty();
-    //fecha de la funcion en texto (yyyy-MM-dd): se muestra junto con la hora
     private final StringProperty fecha = new SimpleStringProperty();
     private final StringProperty horario = new SimpleStringProperty();
     private final DoubleProperty precio = new SimpleDoubleProperty();
-    //asociacion de las llaves foraneas
     private final ObjectProperty<Pelicula> pelicula = new SimpleObjectProperty<>();
     private final ObjectProperty<Sala> sala = new SimpleObjectProperty<>();
-    //MEJORA 7: 'activa' o 'cancelada'. Una funcion cancelada ya no se vende.
     private final StringProperty estado = new SimpleStringProperty("activa");
 
     public Funcion() {
@@ -117,21 +113,15 @@ public class Funcion {
         return estado;
     }
 
-    /** true si la funcion fue cancelada (no se pueden vender entradas). */
     public boolean isCancelada() {
         return "cancelada".equalsIgnoreCase(getEstado());
     }
 
-    /**
-     * MEJORA 13: hora en que termina la funcion.
-     * Se suma la duracion de la pelicula (ya normalizada a minutos) al horario
-     * de inicio. Devuelve "" si falta el horario o la duracion.
-     */
     public String getHoraFin() {
         if (getHorario() == null || getHorario().isBlank()) {
             return "";
         }
-        int minutos = getPelicula() != null ? Duracion.aMinutos(getPelicula().getDuracion()) : 0;
+        int minutos = getPelicula() != null ? getPelicula().getDuracionMinutos() : 0;
         if (minutos <= 0) {
             return "";
         }
@@ -149,7 +139,6 @@ public class Funcion {
     @Override
     public String toString() {
         String nombrePelicula = getPelicula() != null ? getPelicula().getTitulo() : "Sin pelicula";
-        //se muestra tambien la fecha y la sala para no confundir funciones con la misma hora
         String fecha = getFecha() != null ? getFecha() : "";
         String sala = getSala() != null ? getSala().getEtiqueta() : "";
         return nombrePelicula + " - " + fecha + " " + getHorario() + (sala.isEmpty() ? "" : " - " + sala);

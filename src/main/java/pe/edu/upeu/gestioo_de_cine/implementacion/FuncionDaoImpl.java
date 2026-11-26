@@ -30,13 +30,10 @@ public class FuncionDaoImpl implements IFuncionDao {
     @Override
     public boolean insert(Funcion f) {
         boolean flag = false;
-        //fecha es obligatoria en la tabla funcion, no se puede omitir
-        //MEJORA 7: toda funcion nueva nace 'activa'
         String query = "INSERT INTO funcion(id_pelicula,id_sala,fecha,horario,precio,estado)"
                 + "VALUES(?,?,?,?,?,?);";
         Connection cn = ConexionDB.getConnection();
         try (PreparedStatement st = cn.prepareStatement(query)) {
-            //si la funcion no trae fecha se usa la de hoy, y se guarda en el objeto
             String fecha = f.getFecha();
             if (fecha == null || fecha.isBlank()) {
                 fecha = LocalDate.now().toString();
@@ -48,8 +45,6 @@ public class FuncionDaoImpl implements IFuncionDao {
             st.setString(4, f.getHorario());
             st.setDouble(5, f.getPrecio());
             st.setString(6, f.getEstado());
-            //CORREGIDO: antes se devolvia true aunque no se insertara nada;
-            //ahora se usa el resultado real del executeUpdate
             flag = st.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error al insertar funcion:" + e.getMessage(), e);
@@ -66,13 +61,11 @@ public class FuncionDaoImpl implements IFuncionDao {
         try (PreparedStatement st = cn.prepareStatement(query)) {
             st.setInt(1, f.getPelicula().getidpelicula());
             st.setInt(2, f.getSala().getIdsala());
-            //la fecha tambien se actualiza: antes se quedaba con la vieja
             st.setString(3, f.getFecha());
             st.setString(4, f.getHorario());
             st.setDouble(5, f.getPrecio());
             st.setString(6, f.getEstado());
             st.setInt(7, f.getIdfuncion());
-            //CORREGIDO: solo es true si el UPDATE o el DELETE modifico una fila
             flag = st.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error al actualizar funcion:" + e.getMessage(), e);
@@ -88,9 +81,6 @@ public class FuncionDaoImpl implements IFuncionDao {
         try (PreparedStatement st = cn.prepareStatement(query)) {
             st.setInt(1, id);
             try (ResultSet rs = st.executeQuery()) {
-                //CORREGIDO: este bloque estaba vacio y searchById siempre devolvia
-                //null; por eso al editar una funcion salia "ya no existe".
-                //Ahora se arma la funcion igual que en listAll.
                 if (rs.next()) {
                     Pelicula p = new Pelicula();
                     p.setidpelicula(rs.getInt("id_pelicula"));
@@ -130,7 +120,6 @@ public class FuncionDaoImpl implements IFuncionDao {
         boolean flag = false;
         Connection cn = ConexionDB.getConnection();
 
-        //una funcion con ventas no se borra: se perderia el historial de la compra
         String queryVentas = "SELECT COUNT(*) FROM venta WHERE id_funcion=?";
         try (PreparedStatement st = cn.prepareStatement(queryVentas)) {
             st.setInt(1, f.getIdfuncion());
@@ -149,7 +138,6 @@ public class FuncionDaoImpl implements IFuncionDao {
         String query = "DELETE FROM funcion WHERE idfuncion=?";
         try (PreparedStatement st = cn.prepareStatement(query)) {
             st.setInt(1, f.getIdfuncion());
-            //CORREGIDO: solo es true si el DELETE modifico una fila
             flag = st.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error al eliminar funcion:" + e.getMessage(), e);
@@ -160,16 +148,11 @@ public class FuncionDaoImpl implements IFuncionDao {
     @Override
     public List<Funcion> listAll() {
         List<Funcion> lista = new ArrayList<>();
-        // Reemplaza la consulta antigua de hotel por esta consulta del sistema de cine.
         String query = QUERY_BASE + " ORDER BY f.fecha, f.horario, f.idfuncion; ";
-        //CORREGIDO: antes el try-with-resources incluia la Connection y cerraba
-        //la conexion compartida; despues las demas pantallas fallaban. Ahora
-        //solo se cierran el Statement y el ResultSet.
         Connection cn = ConexionDB.getConnection();
         try (PreparedStatement st = cn.prepareStatement(query);
-             ResultSet rs = st.executeQuery()) {
+        ResultSet rs = st.executeQuery()) {
             while (rs.next()) {
-                //instancia de objetos relacionados
                 Pelicula p = new Pelicula();
                 p.setidpelicula(rs.getInt("id_pelicula"));
                 p.setNumero(rs.getInt("numero_pelicula"));
@@ -200,28 +183,24 @@ public class FuncionDaoImpl implements IFuncionDao {
             }
 
         } catch (SQLException e) {
-            //CORREGIDO: antes el error se ocultaba devolviendo una lista vacia;
-            //ahora se avisa para que el controlador muestre el motivo
             throw new RuntimeException("Error al listar funciones: " + e.getMessage(), e);
         }
         return lista;
 
     }
 
-    /**
-     * MEJORA 7: cancela la funcion sin borrarla. Los boletos ya vendidos se
-     * conservan (se anulan aparte) para poder avisar y devolver el dinero.
-     */
     @Override
     public boolean cancelar(int idfuncion) {
+        boolean flag = false;
         String query = "UPDATE funcion SET estado='cancelada' "
                 + "WHERE idfuncion=? AND COALESCE(estado,'activa')<>'cancelada'";
         Connection cn = ConexionDB.getConnection();
         try (PreparedStatement st = cn.prepareStatement(query)) {
             st.setInt(1, idfuncion);
-            return st.executeUpdate() > 0;
+            flag = st.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error al cancelar la funcion: " + e.getMessage(), e);
         }
+        return flag;
     }
 }

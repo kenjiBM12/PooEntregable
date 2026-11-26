@@ -11,10 +11,8 @@ public class Sala {
     private final StringProperty tipoSala = new SimpleStringProperty(this, "tipo");
     private final IntegerProperty capacidad = new SimpleIntegerProperty(this, "capacidad");
     private final StringProperty estado = new SimpleStringProperty(this, "estado");
-    //cuadricula de la sala: filas x columnas define las butacas que se generan
     private final IntegerProperty filas = new SimpleIntegerProperty(this, "filas");
     private final IntegerProperty columnas = new SimpleIntegerProperty(this, "columnas");
-
 
     public Sala() {
     }
@@ -74,7 +72,6 @@ public class Sala {
         return columnas;
     }
 
-    //cuadricula que se escribe en el formulario: 10 x 12 por ejemplo
     public String getCuadricula() {
         return getFilas() + " x " + getColumnas();
     }
@@ -115,7 +112,6 @@ public class Sala {
         return idsala;
     }
 
-    //etiqueta que se muestra al usuario: "Sala 2 — 3D"
     public String getEtiqueta() {
         String tipoSala = getTipoSala() != null ? getTipoSala() : "";
         return "Sala " + getNumero() + " — " + tipoSala;

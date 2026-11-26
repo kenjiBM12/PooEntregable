@@ -23,12 +23,10 @@ public class ButacaFormController {
 
     private int idSala;
     private int capacidad;
-    //cuadricula con la que se creo la sala (0 si es una sala vieja sin datos)
     private int filasSala;
     private int columnasSala;
     private boolean saved = false;
 
-    //la cuadricula se guarda en la sala: se reutiliza su DAO
     private final ISalaDao salaDao = new SalaDaoImpl();
 
     public boolean isSaved() {
@@ -42,7 +40,6 @@ public class ButacaFormController {
         this.columnasSala = columnas;
         lblSala.setText("Sala: " + nombre + "  ·  Capacidad actual: " + capacidad
                 + "  ·  Cuadricula actual: " + filas + " x " + columnas);
-        //se empieza con la cuadricula que tiene la sala
         if (filas > 0) {
             txtFilas.setText(String.valueOf(filas));
         }
@@ -66,9 +63,6 @@ public class ButacaFormController {
                         "Las filas y las columnas deben ser mayores que cero.", "WARNING").showAndWait();
                 return false;
             }
-            //CORREGIDO: antes este formulario no dejaba cambiar la cuadricula
-            //de la sala. Ahora si se permite, con el mismo limite del formulario
-            //de salas, para no generar una cantidad enorme de butacas.
             if (filas > 100 || columnas > 100) {
                 utilAlerts.mostrarAlerts("Cuadricula muy grande",
                         "Las filas y las columnas no pueden pasar de 100.", "WARNING").showAndWait();
@@ -102,7 +96,6 @@ public class ButacaFormController {
 
         Sala sala;
         try {
-            //se lee la sala completa para no perder numero, tipo ni estado
             sala = salaDao.searchById(idSala);
         } catch (RuntimeException e) {
             System.out.println("Error al leer la sala: " + e.getMessage());
@@ -118,13 +111,9 @@ public class ButacaFormController {
 
         sala.setFilas(filas);
         sala.setColumnas(columnas);
-        //la capacidad de la sala se actualiza sola: filas x columnas
         sala.setCapacidad(filas * columnas);
 
         try {
-            //el DAO hace todo en una transaccion: quita las butacas que sobran,
-            //agrega las que faltan y actualiza la sala. Si una butaca que se
-            //quitaria ya tiene ventas, lanza el aviso y no cambia nada.
             if (!salaDao.update(sala)) {
                 utilAlerts.mostrarAlerts("Sin cambios",
                         "No se pudo actualizar la sala.", "WARNING").showAndWait();

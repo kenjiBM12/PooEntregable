@@ -47,7 +47,6 @@ public class ClienteFormController {
             alert.showAndWait();
             return false;
         }
-        //el DNI debe tener exactamente 8 numeros, no letras ni espacios
         String dni = txtDni.getText().trim();
         if (!dni.matches("[0-9]{8}")) {
             utilAlerts.mostrarAlerts("DNI invalido",
@@ -62,7 +61,6 @@ public class ClienteFormController {
         stage.close();
     }
 
-    //actions of the views
     @FXML
     private void handleCancel() {
         cerrar();
@@ -78,14 +76,12 @@ public class ClienteFormController {
             cliente.setDni(txtDni.getText().trim());
             cliente.setEmail(txtEmail.getText().trim());
             cliente.setGenero(cbGenero.getValue());
-            //el telefono no es obligatorio, pero se guarda si lo escriben
             cliente.setTelefono(txtTelefono.getText().trim());
             saved = true;
             cerrar();
         }
     }
 
-    //metodo para enviar los datos al formulario y editar
     public void setCliente(Cliente c) {
         this.cliente = c;
         if (c != null) {

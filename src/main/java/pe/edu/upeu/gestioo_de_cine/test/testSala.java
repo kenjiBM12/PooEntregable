@@ -94,9 +94,6 @@ public class testSala {
         }
     }
 
-
-
-
     public static void main(String[] args) {
         System.out.println("************");
         insertar();
@@ -109,7 +106,5 @@ public class testSala {
         System.out.println("\n**********");
         actualizarPorNumero(1);
     }
-
-
 
 }

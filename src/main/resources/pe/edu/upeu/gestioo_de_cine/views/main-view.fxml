@@ -51,12 +51,8 @@
                         styleClass="nav-button" text="Butacas" />
                 <Button fx:id="btnUsuarios" maxWidth="Infinity" onAction="#showUsuarios" mnemonicParsing="false"
                         styleClass="nav-button" text="Usuarios" />
-                <!-- MEJORA 3: reportes y cierre de caja -->
                 <Button fx:id="btnReportes" maxWidth="Infinity" onAction="#showReportes" mnemonicParsing="false"
                         styleClass="nav-button" text="Reportes" />
-                <!-- MEJORA 9: bitacora de movimientos -->
-                <Button fx:id="btnAuditoria" maxWidth="Infinity" onAction="#showAuditoria" mnemonicParsing="false"
-                        styleClass="nav-button" text="Auditoría" />
                 <Region VBox.vgrow="ALWAYS" />
                 <Button maxWidth="Infinity" onAction="#handleLogout" mnemonicParsing="false"
                         styleClass="nav-button-salir" text="Cerrar sesión" />

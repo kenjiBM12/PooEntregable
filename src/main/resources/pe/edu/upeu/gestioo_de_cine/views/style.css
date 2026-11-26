@@ -436,6 +436,7 @@
     -fx-font-weight: bold;
 }
 
+
 /* ---------------- SELECTOR DE FECHA ---------------- */
 
 .date-picker {
@@ -457,36 +458,91 @@
     -fx-background-color: #C9D0E0;
 }
 
+/* El calendario se abre en una ventana aparte (popup) y JavaFX la pinta con su
+   tema claro por defecto: salia blanca con los numeros en blanco. Aqui se le
+   ponen los colores oscuros del sistema. Se usa "> *" porque asi viene la
+   estructura en el CSS interno de JavaFX (modena.css). */
+
 .date-picker-popup {
     -fx-background-color: #1B1F2B;
+    -fx-background: #1B1F2B;
+    -fx-control-inner-background: #1B1F2B;
+    -fx-background-insets: 0;
     -fx-border-color: #2C3244;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 12, 0.0, 0, 6);
 }
 
+/* franja del mes y el año */
 .date-picker-popup > .month-year-pane {
     -fx-background-color: #222836;
+    -fx-background-insets: 0;
 }
 
-.date-picker-popup .label {
+/* cuadricula de los dias: sin esta regla queda el fondo claro de JavaFX */
+.date-picker-popup > .calendar-grid {
+    -fx-background-color: #1B1F2B;
+    -fx-background: #1B1F2B;
+}
+
+.date-picker-popup > * > .spinner > .label {
     -fx-text-fill: #EDEFF4;
 }
 
-.date-picker-popup .day-name-cell {
+.date-picker-popup > * > .spinner > .button > .left-arrow,
+.date-picker-popup > * > .spinner > .button > .right-arrow {
+    -fx-background-color: #C9D0E0;
+}
+
+/* nombres de los dias: Lun, Mar, Mie... */
+.date-picker-popup > * > .day-name-cell {
+    -fx-background-color: #1B1F2B;
     -fx-text-fill: #9AA3B5;
 }
 
-.date-picker-popup .day-cell {
-    -fx-background-color: transparent;
+/* cada dia del mes */
+.date-picker-popup > * > .day-cell {
+    -fx-background-color: #1B1F2B;
+    -fx-border-color: #262C3B;
     -fx-text-fill: #EDEFF4;
 }
 
-.date-picker-popup .day-cell:hover {
-    -fx-background-color: #262C3B;
+/* dias del mes anterior y del siguiente: mas apagados */
+.date-picker-popup > * > .previous-month,
+.date-picker-popup > * > .next-month {
+    -fx-background-color: #171B25;
+    -fx-text-fill: #6C748A;
 }
 
-.date-picker-popup .day-cell:selected {
+/* dia de hoy: solo un borde dorado */
+.date-picker-popup > * > .today {
+    -fx-background-color: #1B1F2B;
+    -fx-background-insets: 0;
+    -fx-border-color: #E4B04A;
+}
+
+.date-picker-popup > * > .day-cell:hover,
+.date-picker-popup > * > .today:hover {
+    -fx-background-color: #2C3244;
+    -fx-text-fill: #EDEFF4;
+}
+
+.date-picker-popup > * > .day-cell:focused,
+.date-picker-popup > * > .today:focused {
+    -fx-background-color: #262C3B;
+    -fx-background-insets: 0;
+    -fx-text-fill: #EDEFF4;
+}
+
+/* dia elegido */
+.date-picker-popup > * > .selected,
+.date-picker-popup > * > .day-cell:selected,
+.date-picker-popup > * > .day-cell:selected:focused,
+.date-picker-popup > * > .today.selected {
     -fx-background-color: #E4B04A;
+    -fx-background-insets: 0;
     -fx-text-fill: #12151C;
 }
+
 /* ---------------- VISTAS DE LISTADO ---------------- */
 
 /* fondo de las pantallas que se cargan dentro del area de contenido */

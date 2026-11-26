@@ -26,9 +26,7 @@ import pe.edu.upeu.gestioo_de_cine.interfaces.IFuncionDao;
 import pe.edu.upeu.gestioo_de_cine.interfaces.IVentaDao;
 import pe.edu.upeu.gestioo_de_cine.modelo.Funcion;
 import pe.edu.upeu.gestioo_de_cine.modelo.Venta;
-import pe.edu.upeu.gestioo_de_cine.utils.Bitacora;
-import pe.edu.upeu.gestioo_de_cine.utils.Comprobante;
-import pe.edu.upeu.gestioo_de_cine.utils.Sesion;
+import pe.edu.upeu.gestioo_de_cine.modelo.UserSession;
 import pe.edu.upeu.gestioo_de_cine.utils.UtilAlerts;
 
 import java.time.LocalDate;
@@ -66,38 +64,31 @@ public class VentaController {
     private TableColumn<Venta, Double> ColTotal;
     @FXML
     private TableColumn<Venta, String> ColFecha;
-    //fecha en que se cobro el boleto: la misma que usa el cierre de caja
     @FXML
     private TableColumn<Venta, String> ColFechaVenta;
     @FXML
     private TableColumn<Venta, String> ColEstado;
-    //MEJORA 6: columna que muestra quien anulo y por que
     @FXML
     private TableColumn<Venta, String> ColAnulacion;
-    //MEJORA 2: forma de pago con la que se cobro el boleto
     @FXML
     private TableColumn<Venta, String> ColMetodoPago;
 
-    //controles de busqueda
     @FXML
     private TextField txtBuscar;
     @FXML
     private ComboBox<String> cbEstado;
     @FXML
     private DatePicker dpFecha;
-    //MEJORA 9b: segunda fecha para buscar un rango (desde / hasta)
     @FXML
     private DatePicker dpFechaHasta;
     @FXML
     private Label lblResumen;
-    //MEJORA 8: filtro por empleado
     @FXML
     private ComboBox<String> cbEmpleado;
 
     private final IVentaDao ventaDao = new VentaDaoImpl();
     private final IFuncionDao funcionDao = new FuncionDaoImpl();
     private ObservableList<Venta> listaVenta;
-    //lista completa para poder filtrar sin volver a consultar la base
     private List<Venta> todasLasVentas = new ArrayList<>();
 
     @FXML
@@ -132,8 +123,6 @@ public class VentaController {
                 cellData -> cellData.getValue().clienteProperty());
         ColDni.setCellValueFactory(
                 cellData -> cellData.getValue().dniClienteProperty());
-        //CORREGIDO: la columna Butaca muestra el numero global (1..capacidad),
-        //igual que el mapa de butacas y el comprobante, no "A1", "B2"...
         ColButaca.setCellValueFactory(cellData -> new SimpleStringProperty(
                 cellData.getValue().getButaca() != null
                         ? String.valueOf(numeroVisible(cellData.getValue())) : ""));
@@ -145,7 +134,6 @@ public class VentaController {
                 cellData.getValue().getFuncion() != null
                         && cellData.getValue().getFuncion().getFecha() != null
                         ? cellData.getValue().getFuncion().getFecha() : ""));
-        //la fecha de venta se guarda como LocalDate, por eso se pasa a texto
         ColFechaVenta.setCellValueFactory(cellData -> new SimpleStringProperty(
                 cellData.getValue().getFechaVenta() != null
                         ? cellData.getValue().getFechaVenta().toString() : ""));
@@ -165,15 +153,12 @@ public class VentaController {
                 cellData -> cellData.getValue().estadoProperty());
         ColAnulacion.setCellValueFactory(
                 cellData -> cellData.getValue().anulacionProperty());
-        //MEJORA 2: se muestra la forma de pago de cada boleto
         ColMetodoPago.setCellValueFactory(
                 cellData -> cellData.getValue().metodoPagoProperty());
 
-        //las ventas se pueden filtrar por estado y por un rango de fechas
         cbEstado.getItems().addAll("Todas", "Activa", "Anulada");
         cbEstado.setValue("Todas");
         cbEstado.valueProperty().addListener((obs, viejo, nuevo) -> filtrar());
-        //MEJORA 8: el combo de empleados se llena con los que aparecen en ventas
         if (cbEmpleado != null) {
             cbEmpleado.valueProperty().addListener((obs, viejo, nuevo) -> filtrar());
         }
@@ -183,14 +168,12 @@ public class VentaController {
         cargarDatos();
     }
 
-    //se avisa una sola vez por sesion si la base todavía no tiene la columna codigo_compra
     private static boolean avisoBase = false;
 
     private void cargarDatos() {
         try {
             todasLasVentas = ventaDao.listAll();
         } catch (RuntimeException e) {
-            //no se cae la pantalla: se muestra la tabla vacía y un aviso claro
             todasLasVentas = new ArrayList<>();
             System.out.println("Error al listar ventas: " + e.getMessage());
             if (!avisoBase) {
@@ -204,7 +187,6 @@ public class VentaController {
         filtrar();
     }
 
-    /** MEJORA 8: lista de empleados que aparecen en las ventas cargadas. */
     private void cargarEmpleados() {
         if (cbEmpleado == null) {
             return;
@@ -232,7 +214,6 @@ public class VentaController {
         filtrar();
     }
 
-    //limpia los filtros y vuelve a mostrar todo
     @FXML
     private void handleLimpiar() {
         if (txtBuscar != null) {
@@ -253,14 +234,11 @@ public class VentaController {
         filtrar();
     }
 
-    //filtra la lista con un for normal, comparando en minusculas
     private void filtrar() {
         String texto = txtBuscar != null ? txtBuscar.getText().trim().toLowerCase() : "";
         String estado = cbEstado != null && cbEstado.getValue() != null ? cbEstado.getValue() : "Todas";
-        //MEJORA 8: empleado elegido en el combo ("Todos" = sin filtro)
         String empleado = cbEmpleado != null && cbEmpleado.getValue() != null
                 ? cbEmpleado.getValue() : "Todos";
-        //MEJORA 9b: rango de fechas. Cualquiera de las dos puede quedar vacia
         LocalDate fechaDesde = dpFecha != null ? dpFecha.getValue() : null;
         LocalDate fechaHasta = dpFechaHasta != null ? dpFechaHasta.getValue() : null;
 
@@ -321,18 +299,15 @@ public class VentaController {
         return valor != null && valor.toLowerCase().contains(texto);
     }
 
-    //de "2026-11-20" o "2026-11-20 18:30" toma solo los 10 primeros caracteres
     private String soloFecha(String fecha) {
         String texto = fecha.trim();
         return texto.length() > 10 ? texto.substring(0, 10) : texto;
     }
 
-    //id del usuario conectado (0 si por algun motivo no hay sesion)
     private int idUsuarioActual() {
-        return Sesion.getUsuario() != null ? Sesion.getUsuario().getIdusuario() : 0;
+        return UserSession.getUsuario() != null ? UserSession.getUsuario().getIdusuario() : 0;
     }
 
-    //debajo de la tabla: boletos activos y dinero (las anuladas no suman)
     private void mostrarResumen(List<Venta> ventas) {
         if (lblResumen == null) {
             return;
@@ -346,12 +321,9 @@ public class VentaController {
             }
         }
         String texto = "Boletos activos: " + activos + "   ·   Total: S/ " + total;
-        //el resumen de dinero es informacion del historial: solo el admin lo ve
-        lblResumen.setText(Sesion.esAdmin() ? texto : "Boletos activos: " + activos);
+        lblResumen.setText(UserSession.esAdmin() ? texto : "Boletos activos: " + activos);
     }
 
-    //anula un solo boleto: no borra la fila, solo le cambia el estado a 'anulada'.
-    //como deja de estar activa, la butaca vuelve a quedar libre
     @FXML
     private void handleDelete() {
         Venta selectId = tableVenta.getSelectionModel().getSelectedItem();
@@ -365,8 +337,6 @@ public class VentaController {
                     "Este boleto ya está anulado.", "WARNING").showAndWait();
             return;
         }
-        //MEJORA 6: se pide el motivo de la anulacion y queda guardado con
-        //el nombre del usuario que la hizo. Un solo dialogo hace las dos cosas.
         TextInputDialog dialogo = new TextInputDialog("Sin motivo");
         dialogo.setTitle("Anular boleto");
         dialogo.setHeaderText("¿Anular el boleto " + selectId.getCodigoCompra()
@@ -380,13 +350,8 @@ public class VentaController {
             }
             try {
                 if (ventaDao.anular(selectId, idUsuarioActual(), motivo)) {
-                    //MEJORA 9: se deja constancia en la auditoria
-                    Bitacora.registrar("ANULACION", "Boleto " + selectId.getCodigoCompra()
-                            + " anulado. Motivo: " + motivo);
-                    //se recarga la tabla para ver el estado 'anulada'
                     cargarDatos();
                 } else {
-                    //el DAO solo anula si el boleto seguia 'activa'
                     utilAlert.mostrarAlerts("Sin cambios",
                             "Ese boleto ya estaba anulado.", "WARNING").showAndWait();
                     cargarDatos();
@@ -399,7 +364,6 @@ public class VentaController {
         }
     }
 
-    //anula todos los boletos de la misma compra (mismo codigo)
     @FXML
     private void handleAnularCompra() {
         Venta selectId = tableVenta.getSelectionModel().getSelectedItem();
@@ -408,7 +372,6 @@ public class VentaController {
                     "Seleccione un boleto de la compra que desea anular", "WARNING").showAndWait();
             return;
         }
-        //MEJORA 6: igual que el boleto individual, la compra guarda motivo y usuario
         TextInputDialog dialogo = new TextInputDialog("Sin motivo");
         dialogo.setTitle("Anular compra");
         dialogo.setHeaderText("¿Anular TODOS los boletos de la compra "
@@ -422,9 +385,6 @@ public class VentaController {
             }
             try {
                 if (ventaDao.anularCompra(selectId.getCodigoCompra(), idUsuarioActual(), motivo)) {
-                    //MEJORA 9: se deja constancia en la auditoria
-                    Bitacora.registrar("ANULACION", "Compra " + selectId.getCodigoCompra()
-                            + " anulada completa. Motivo: " + motivo);
                     cargarDatos();
                 } else {
                     utilAlert.mostrarAlerts("Sin cambios",
@@ -438,49 +398,6 @@ public class VentaController {
         }
     }
 
-    /**
-     * MEJORA 9: reimprime el comprobante de la compra del boleto elegido.
-     * Se vuelve a armar desde la base (no del archivo), se guarda como .txt y
-     * se muestra la ruta para abrirlo e imprimirlo desde el Bloc de notas.
-     */
-    @FXML
-    private void handleReimprimir() {
-        Venta seleccion = tableVenta.getSelectionModel().getSelectedItem();
-        if (seleccion == null) {
-            utilAlert.mostrarAlerts("Seleccion requerida",
-                    "Seleccione un boleto de la compra que desea reimprimir.",
-                    "WARNING").showAndWait();
-            return;
-        }
-        String codigo = Comprobante.codigo(seleccion);
-        try {
-            List<Venta> boletos = ventaDao.listarPorCodigo(codigo);
-            if (boletos.isEmpty()) {
-                utilAlert.mostrarAlerts("Sin datos",
-                        "No se encontraron los boletos de la compra " + codigo + ".",
-                        "WARNING").showAndWait();
-                return;
-            }
-            String texto = Comprobante.texto(boletos);
-            java.io.File archivo = Comprobante.guardar(codigo, texto);
-            Bitacora.registrar("COMPROBANTE", "Comprobante reimpreso: " + codigo);
-            utilAlert.mostrarAlerts("Comprobante generado",
-                    texto + (archivo != null
-                            ? "\n\nArchivo para imprimir:\n" + archivo.getAbsolutePath()
-                            : "\n\nNo se pudo guardar el archivo del comprobante."),
-                    "INFORMATION").showAndWait();
-        } catch (RuntimeException e) {
-            System.out.println("Error al reimprimir el comprobante: " + e.getMessage());
-            utilAlert.mostrarAlerts("Error",
-                    "No se pudo generar el comprobante.\nDetalle: " + e.getMessage(),
-                    "ERROR").showAndWait();
-        }
-    }
-
-    /**
-     * MEJORA 13: cartelera de hoy con la hora de fin de cada función.
-     * Sirve en boletería para responder "¿a qué hora termina?".
-     */
     @FXML
     private void handleCartelera() {
         String hoy = LocalDate.now().toString();
@@ -516,9 +433,6 @@ public class VentaController {
         utilAlert.mostrarAlerts("Cartelera de hoy", texto.toString(), "INFORMATION").showAndWait();
     }
 
-    //CORREGIDO: mismo calculo que en el mapa de butacas. Se usan las columnas
-    //de la sala de la funcion; si la sala es vieja y no las tiene, se deja el
-    //numero que esta guardado para no perder el dato.
     private int numeroVisible(Venta v) {
         if (v.getButaca() == null) {
             return 0;
@@ -548,8 +462,6 @@ public class VentaController {
                 cargarDatos();
             }
         } catch (Exception e) {
-            //se imprime la excepcion completa para saber la causa real
-            //(por ejemplo: una columna que no existe en la base de datos)
             System.out.println("Error al abrir el formulario de venta: " + e.getMessage());
             e.printStackTrace();
             Throwable causa = e.getCause() != null ? e.getCause() : e;

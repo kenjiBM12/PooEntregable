@@ -7,7 +7,6 @@ module pe.edu.upeu.gestioo_de_cine {
     requires net.synedra.validatorfx;
     requires org.kordamp.bootstrapfx.core;
     requires java.sql;
-    //requiero la dependencia de sqlite
     requires org.xerial.sqlitejdbc;
     requires java.desktop;
     requires javafx.base;

@@ -26,8 +26,6 @@ public class Pelicula {
         setClasificacion(clasisficacion);
     }
 
-
-
     public final String getClasificacion() {
         return clasificacion.get();
     }
@@ -63,7 +61,6 @@ public class Pelicula {
     public final StringProperty categoriaProperty() {
         return categoria;
     }
-
 
     public final Integer getNumero() {
         return numero.get();
@@ -101,7 +98,32 @@ public class Pelicula {
         return idpelicula;
     }
 
-    //para que el ComboBox muestre el nombre y no el paquete de la clase
+    public int getDuracionMinutos() {
+        String texto = getDuracion();
+        if (texto == null) {
+            return 0;
+        }
+        String valor = texto.trim().toLowerCase()
+                .replace("minutos", "").replace("min", "").trim();
+        if (valor.isEmpty()) {
+            return 0;
+        }
+        try {
+            if (valor.contains(":")) {
+                String[] partes = valor.split(":");
+                int horas = Integer.parseInt(partes[0].trim());
+                int minutos = partes.length > 1 ? Integer.parseInt(partes[1].trim()) : 0;
+                return horas * 60 + minutos;
+            }
+            if (valor.endsWith("h")) {
+                return Integer.parseInt(valor.replace("h", "").trim()) * 60;
+            }
+            return Integer.parseInt(valor);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
     @Override
     public String toString() {
         return getTitulo();

@@ -19,7 +19,6 @@ public class HelloApplication extends Application {
         stage.show();
     }
 
-    //al cerrar la aplicación se cierra también la conexión con la base de datos
     @Override
     public void stop() {
         ConexionDB.cerrar();

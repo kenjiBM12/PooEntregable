@@ -93,9 +93,6 @@
                 <!-- MEJORA 13: cartelera del dia con hora de fin -->
                 <Button mnemonicParsing="false" onAction="#handleCartelera"
                         styleClass="button-secundario" text="CARTELERA"/>
-                <!-- MEJORA 9: reimprime el comprobante de la compra elegida -->
-                <Button mnemonicParsing="false" onAction="#handleReimprimir"
-                        styleClass="button-secundario" text="REIMPRIMIR"/>
                 <Button mnemonicParsing="false" onAction="#handleAnularCompra" styleClass="button-action-delete"
                         text="ANULAR COMPRA"/>
                 <Button mnemonicParsing="false" onAction="#handleDelete" styleClass="button-action-delete"

@@ -15,7 +15,6 @@ public class PeliculaDaoImpl implements IPeliculaDao {
     @Override
     public boolean insert(Pelicula p) {
         boolean flag = false;
-        //la columna de la base se llama titulo, igual que la propiedad de Java
         String query = "INSERT INTO pelicula(numero,titulo,duracion,categoria,clasificacion)"
                 + " VALUES(?,?,?,?,?); ";
         Connection cn = ConexionDB.getConnection();
@@ -25,8 +24,6 @@ public class PeliculaDaoImpl implements IPeliculaDao {
             st.setString(3, p.getDuracion());
             st.setString(4, p.getCategoria());
             st.setString(5, p.getClasificacion());
-            //CORREGIDO: antes se devolvia true aunque no se guardara ninguna
-            //fila; ahora se revisa el resultado real del INSERT
             flag = st.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error al insertar pelicula:" + e.getMessage(), e);
@@ -48,8 +45,6 @@ public class PeliculaDaoImpl implements IPeliculaDao {
             st.setString(4, p.getCategoria());
             st.setString(5, p.getClasificacion());
             st.setInt(6, p.getidpelicula());
-            //CORREGIDO: si el id no existe el UPDATE no cambia nada y antes se
-            //informaba "guardado"; ahora solo es true si se modifico una fila
             flag = st.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error al actualizar película: " + e.getMessage(), e);
@@ -118,14 +113,11 @@ public class PeliculaDaoImpl implements IPeliculaDao {
         return p;
     }
 
-
     @Override
     public boolean delete(Pelicula c) {
         boolean flag = false;
         Connection cn = ConexionDB.getConnection();
 
-        //CORREGIDO: antes se borraban las ventas de la pelicula y se perDIA el
-        //historial. Ahora, si tiene boletos vendidos, el borrado se rechaza.
         String queryVentas = "SELECT COUNT(*) FROM venta WHERE id_funcion IN "
                 + "(SELECT idfuncion FROM funcion WHERE id_pelicula=?)";
         try (PreparedStatement st = cn.prepareStatement(queryVentas)) {
@@ -143,27 +135,21 @@ public class PeliculaDaoImpl implements IPeliculaDao {
         }
 
         try {
-            //si no hay ventas, sus funciones se borran junto con la pelicula
-            //en una sola transaccion: si algo falla no queda nada a medias
             cn.setAutoCommit(false);
 
-            //1. se borran las funciones de la pelicula
             String queryFunciones = "DELETE FROM funcion WHERE id_pelicula=?";
             try (PreparedStatement st = cn.prepareStatement(queryFunciones)) {
                 st.setInt(1, c.getidpelicula());
                 st.executeUpdate();
             }
 
-            //2. recien ahora se puede borrar la pelicula
             String query = "DELETE FROM pelicula WHERE idpelicula=?";
             try (PreparedStatement st = cn.prepareStatement(query)) {
                 st.setInt(1, c.getidpelicula());
-                //true solo si realmente se borro una fila
                 flag = st.executeUpdate() > 0;
             }
             cn.commit();
         } catch (SQLException e) {
-            //si algo fallo se deshace todo
             try {
                 cn.rollback();
             } catch (SQLException ex) {
@@ -180,7 +166,6 @@ public class PeliculaDaoImpl implements IPeliculaDao {
         return flag;
     }
 
-    //cuenta cuantas funciones tiene la pelicula (para avisar antes de borrar)
     @Override
     public int contarFunciones(int idPelicula) {
         int total = 0;
@@ -199,7 +184,6 @@ public class PeliculaDaoImpl implements IPeliculaDao {
         return total;
     }
 
-    //cuenta los boletos vendidos de las funciones de la pelicula
     @Override
     public int contarVentas(int idPelicula) {
         int total = 0;
@@ -225,7 +209,7 @@ public class PeliculaDaoImpl implements IPeliculaDao {
 
         Connection cn = ConexionDB.getConnection();
         try (PreparedStatement st = cn.prepareStatement(query);
-             ResultSet rs = st.executeQuery()) {
+        ResultSet rs = st.executeQuery()) {
 
             while (rs.next()) {
                 Pelicula p = new Pelicula();
@@ -244,4 +228,3 @@ public class PeliculaDaoImpl implements IPeliculaDao {
         return lista;
     }
 }
-

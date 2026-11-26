@@ -1,9 +1,6 @@
-package pe.edu.upeu.gestioo_de_cine.utils;
+package pe.edu.upeu.gestioo_de_cine.modelo;
 
-import pe.edu.upeu.gestioo_de_cine.modelo.Usuario;
-
-//clase que guarda al usuario que inicio sesion mientras se usan los formularios
-public class Sesion {
+public class UserSession {
 
     private static Usuario usuarioActual;
 

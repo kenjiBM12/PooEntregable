@@ -13,7 +13,7 @@ import pe.edu.upeu.gestioo_de_cine.HelloApplication;
 import pe.edu.upeu.gestioo_de_cine.implementacion.PeliculaDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.interfaces.IPeliculaDao;
 import pe.edu.upeu.gestioo_de_cine.modelo.Pelicula;
-import pe.edu.upeu.gestioo_de_cine.utils.Sesion;
+import pe.edu.upeu.gestioo_de_cine.modelo.UserSession;
 import pe.edu.upeu.gestioo_de_cine.utils.UtilAlerts;
 
 import java.util.ArrayList;
@@ -24,10 +24,8 @@ public class PeliculaController {
 
     private static UtilAlerts utilAlert = new UtilAlerts();
 
-    //definimos la tabla
     @FXML
     private TableView<Pelicula> tablePelicula;
-    //variable correlativa
     @FXML
     private TableColumn<Pelicula,Number> ColNumero;
     @FXML
@@ -43,14 +41,11 @@ public class PeliculaController {
     @FXML
     private TableColumn<Pelicula,String> ColClasificacion;
 
-
     private final IPeliculaDao peliculaDao = new PeliculaDaoImpl();
     private ObservableList<Pelicula> listaPelicula;
-    //texto de busqueda y lista completa para poder filtrar
     @FXML
     private TextField txtBuscar;
     private List<Pelicula> todasLasPeliculas = new ArrayList<>();
-
 
     @FXML
     public void initialize(){
@@ -65,7 +60,7 @@ public class PeliculaController {
                 }
             }
         });
-       ColNumeroPelicula.setCellValueFactory(
+        ColNumeroPelicula.setCellValueFactory(
                cellData -> cellData.getValue()
                        .numeroProperty().asObject());
 
@@ -84,7 +79,6 @@ public class PeliculaController {
         ColClasificacion.setCellValueFactory(
                 cellData -> cellData.getValue()
                         .clasificacionProperty());
-        //llamar al metodo
         cargarDatos();
     }
     private void cargarDatos(){
@@ -99,7 +93,6 @@ public class PeliculaController {
         filtrar();
     }
 
-    //filtra la lista por titulo y genero con un for normal
     private void filtrar(){
         String texto = txtBuscar != null ? txtBuscar.getText().trim().toLowerCase() : "";
         listaPelicula.clear();
@@ -115,9 +108,8 @@ public class PeliculaController {
         return valor != null && valor.toLowerCase().contains(texto);
     }
 
-    //el admin puede todo; el empleado solo trabaja en ventas
-  private boolean sinPermiso(){
-        if (Sesion.esAdmin()){
+    private boolean sinPermiso(){
+        if (UserSession.esAdmin()){
             return false;
         }
         utilAlert.mostrarAlerts("Sin permiso",
@@ -130,9 +122,6 @@ public class PeliculaController {
         if (sinPermiso()) return;
         Pelicula selectId = tablePelicula.getSelectionModel().getSelectedItem();
         if (selectId != null){
-            //se cuenta antes de confirmar para poder avisar que se borrara mas de una cosa
-            //CORREGIDO: estos conteos consultan la base; si fallaban la excepcion
-            //salia sin aviso y el boton eliminar parecia no hacer nada
             int funciones;
             int ventas;
             try {
@@ -145,8 +134,6 @@ public class PeliculaController {
                         "ERROR").showAndWait();
                 return;
             }
-            //CORREGIDO: antes se avisaba que se borrarian las ventas y se perdia
-            //el historial. Ahora, si hay boletos vendidos, no se elimina nada.
             if (ventas > 0){
                 utilAlert.mostrarAlerts("No se puede eliminar",
                         "La pelicula \"" + selectId.getTitulo() + "\" tiene "
@@ -175,13 +162,11 @@ public class PeliculaController {
                     }
                 } catch (RuntimeException e) {
                     System.out.println("Error al eliminar pelicula: " + e.getMessage());
-                    //el DAO ya explica el motivo si algo fallo
                     utilAlert.mostrarAlerts("No se pudo eliminar",
                             e.getMessage(), "ERROR").showAndWait();
                 }
             }
         }else{
-            //la alerta va aqui: cuando NO hay ninguna pelicula seleccionada
             Alert warning = utilAlert.mostrarAlerts("Seleccion requerida",
                     "Seleccione una pelicula para eliminar", "WARNING");
             warning.showAndWait();
@@ -197,9 +182,7 @@ public class PeliculaController {
         if (sinPermiso()) return;
         Pelicula selectClient = tablePelicula.getSelectionModel().getSelectedItem();
         if (selectClient !=null){
-           Pelicula peliculaFull = peliculaDao.searchById(selectClient.getidpelicula());
-            //CORREGIDO: si la pelicula ya no existe se abria el formulario como
-            //si fuera nueva; ahora se avisa y se recarga la tabla
+            Pelicula peliculaFull = peliculaDao.searchById(selectClient.getidpelicula());
             if (peliculaFull == null) {
                 utilAlert.mostrarAlerts("Pelicula no encontrada",
                         "La pelicula ya no existe en la base de datos.",
@@ -220,8 +203,7 @@ public class PeliculaController {
                     .getResource("/pe/edu/upeu/gestioo_de_cine/views/pelicula-form.fxml"));
             Parent root = loader.load();
             PeliculaFormController controller = loader.getController();
-            controller.setPelicula(p); //pasamos el cliente null si es nuevo
-            Stage stage = new Stage();
+            controller.setPelicula(p);             Stage stage = new Stage();
             stage.setTitle(p==null ? "Nueva Pelicula": "Editar Pelicula");
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setScene( new Scene(root));
@@ -244,7 +226,6 @@ public class PeliculaController {
                                 "No se pudieron guardar los datos de la pelicula.","ERROR").showAndWait();
                     }
                 } catch (RuntimeException e) {
-                    //el error de la base se muestra tal cual: por ejemplo un codigo repetido
                     System.out.println("Error al guardar pelicula: " + e.getMessage());
                     utilAlert.mostrarAlerts("No se pudo guardar",
                             "Revise los datos de la pelicula.\nDetalle: " + e.getMessage(),

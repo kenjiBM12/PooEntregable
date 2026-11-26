@@ -25,7 +25,7 @@
                     </padding>
                     <children>
                         <Label styleClass="marca" text="CINE"/>
-                        <Label styleClass="marca-sub" text="UPeU"/>
+                        <Label styleClass="marca-sub" text="CINEMAX"/>
                         <Label styleClass="leyenda" text="Sistema de venta de entradas"/>
                         <Region VBox.vgrow="ALWAYS"/>
                         <Label styleClass="leyenda" text="Cartelera  ·  Butacas  ·  Entradas"/>
@@ -60,10 +60,6 @@
                         <Button maxWidth="Infinity" mnemonicParsing="false"
                                 onAction="#handleLogin" styleClass="button-login"
                                 text="INGRESAR"/>
-                        <!-- MEJORA 15: entra con datos de ejemplo en una base aparte -->
-                        <Button maxWidth="Infinity" mnemonicParsing="false"
-                                onAction="#handleDemo" styleClass="button-secundario"
-                                text="PROBAR CON DATOS DEMO"/>
                     </children>
                 </VBox>
 

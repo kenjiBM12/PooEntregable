@@ -54,7 +54,6 @@ public class UsuarioFormController {
             alert.showAndWait();
             return false;
         }
-        //no se permiten dos usuarios con el mismo nombre de usuario
         if (usuarioDao.existeUsuario(txtUsuario.getText().trim())) {
             boolean esElMismo = usuario != null
                     && usuario.getUsuario() != null
@@ -94,7 +93,6 @@ public class UsuarioFormController {
         cerrar();
     }
 
-    //metodo para enviar los datos al formulario y editar
     public void setUsuario(Usuario u) {
         this.usuario = u;
         if (u != null) {

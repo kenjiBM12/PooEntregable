@@ -17,7 +17,6 @@ public class ButacaDaoImpl implements IButacaDao {
     public List<Butaca> listarPorSala(int idSala) {
         List<Butaca> lista = new ArrayList<>();
         String query = "SELECT * FROM butaca WHERE id_sala=? ORDER BY fila, numero";
-        //la conexion es compartida: se cierra el statement, no la conexion
         Connection cn = ConexionDB.getConnection();
         try (PreparedStatement st = cn.prepareStatement(query)) {
             st.setInt(1, idSala);
@@ -37,8 +36,6 @@ public class ButacaDaoImpl implements IButacaDao {
         return lista;
     }
 
-    //una butaca esta ocupada si existe una venta activa con esa funcion y esa butaca.
-    //las ventas anuladas no cuentan porque su estado ya no es 'activa'
     @Override
     public List<Butaca> listarOcupadas(int idFuncion) {
         List<Butaca> lista = new ArrayList<>();
@@ -91,25 +88,17 @@ public class ButacaDaoImpl implements IButacaDao {
     public boolean insertar(Butaca b) {
         Connection cn = ConexionDB.getConnection();
         try {
-            //devuelve true solo si la butaca se inserto de verdad
             return insertarButaca(cn, b.getIdSala(), b.getFila(), b.getNumero());
         } catch (SQLException e) {
             throw new RuntimeException("Error al insertar butaca:" + e.getMessage(), e);
         }
     }
 
-    /**
-     * Genera todas las butacas de una sala en UNA sola transaccion.
-     * Si una insercion falla se deshace todo, asi la sala no queda a medias.
-     * Si la butaca ya existe no se vuelve a crear, por eso se puede completar
-     * o regenerar la sala sin duplicar butacas.
-     */
     @Override
     public int generarButacas(int idSala, int filas, int columnas, int capacidad) {
         if (filas <= 0 || columnas <= 0) {
             throw new RuntimeException("Las filas y las columnas deben ser mayores que cero.");
         }
-        //se multiplica con long para que no se desborde el calculo
         long total = (long) filas * (long) columnas;
         if (capacidad > 0 && total > capacidad) {
             throw new RuntimeException("La sala solo tiene capacidad para " + capacidad + " butacas.");
@@ -158,12 +147,14 @@ public class ButacaDaoImpl implements IButacaDao {
     }
 
     private boolean insertarButaca(Connection cn, int idSala, int fila, int numero) throws SQLException {
+        boolean flag = false;
         String query = "INSERT INTO butaca(id_sala,fila,numero)VALUES(?,?,?)";
         try (PreparedStatement st = cn.prepareStatement(query)) {
             st.setInt(1, idSala);
             st.setInt(2, fila);
             st.setInt(3, numero);
-            return st.executeUpdate() > 0;
+            flag = st.executeUpdate() > 0;
         }
+        return flag;
     }
 }

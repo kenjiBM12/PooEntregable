@@ -14,11 +14,10 @@ import java.util.List;
 
 public class ClienteDaoImpl implements IClienteDao {
 
-
     @Override
     public boolean insert(Cliente c) {
+        boolean flag = false;
         String query = "INSERT INTO cliente(nombre,apellidos,dni,email,genero,telefono)VALUES(?,?,?,?,?,?);";
-        //la conexion es compartida: solo se cierra el statement
         Connection cn = ConexionDB.getConnection();
         try (PreparedStatement st = cn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             st.setString(1,c.getNombre());
@@ -27,24 +26,24 @@ public class ClienteDaoImpl implements IClienteDao {
             st.setString(4,c.getEmail());
             st.setString(5,c.getGenero());
             st.setString(6,c.getTelefono());
-            //executeUpdate devuelve cuantas filas se guardaron: si es 0 no se hizo nada
             int filas = st.executeUpdate();
             if (filas > 0) {
-                //se guarda el id generado para poder usarlo en la venta
                 try (ResultSet rs = st.getGeneratedKeys()) {
                     if (rs.next()) {
                         c.setIdcliente(rs.getInt(1));
                     }
                 }
             }
-            return filas > 0;
+            flag = filas > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error al insertar Cliente:"+e.getMessage(), e);
         }
+        return flag;
     }
 
     @Override
     public boolean update(Cliente c) {
+        boolean flag = false;
         String query = " UPDATE cliente SET nombre=?, apellidos =?, dni=?, email=?, genero=?, telefono=? " +
                 " WHERE idcliente=?";
         Connection cn = ConexionDB.getConnection();
@@ -56,11 +55,11 @@ public class ClienteDaoImpl implements IClienteDao {
             st.setString(5,c.getGenero());
             st.setString(6,c.getTelefono());
             st.setInt(7,c.getIdcliente());
-            //true solo si realmente se modifico una fila
-            return st.executeUpdate() > 0;
+            flag = st.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error al actualizar cliente:"+e.getMessage(), e);
         }
+        return flag;
     }
 
     @Override
@@ -81,17 +80,11 @@ public class ClienteDaoImpl implements IClienteDao {
         return cl;
     }
 
-    /**
-     * MEJORA 4a: un cliente con compras NO se puede eliminar.
-     * Si se borrara, sus ventas quedarian sin dueño y se perderia el
-     * historial (quien compro, con que DNI). Primero se cuenta cuantas
-     * ventas tiene; si hay al menos una, se lanza el aviso y no se borra nada.
-     */
     @Override
     public boolean delete(Cliente c) {
+        boolean flag = false;
         Connection cn = ConexionDB.getConnection();
 
-        //1. revisar si el cliente tiene boletos vendidos
         String queryVentas = "SELECT COUNT(*) FROM venta WHERE id_cliente=?";
         try (PreparedStatement st = cn.prepareStatement(queryVentas)) {
             st.setInt(1, c.getIdcliente());
@@ -107,15 +100,14 @@ public class ClienteDaoImpl implements IClienteDao {
                     + e.getMessage(), e);
         }
 
-        //2. recien ahora se borra, porque no tiene ventas
         String query = "DELETE FROM cliente WHERE idcliente=?";
         try (PreparedStatement st = cn.prepareStatement(query)) {
             st.setInt(1,c.getIdcliente());
-            //true solo si realmente se borro una fila
-            return st.executeUpdate() > 0;
+            flag = st.executeUpdate() > 0;
         } catch (SQLException e) {
             throw new RuntimeException("Error al eliminar cliente:" + e.getMessage(), e);
         }
+        return flag;
     }
 
     @Override
@@ -124,7 +116,7 @@ public class ClienteDaoImpl implements IClienteDao {
         String query = "SELECT * FROM cliente;";
         Connection cn = ConexionDB.getConnection();
         try (PreparedStatement st = cn.prepareStatement(query);
-             ResultSet rs = st.executeQuery()) {
+        ResultSet rs = st.executeQuery()) {
             while (rs.next()){
                 lista.add(construirCliente(rs));
             }

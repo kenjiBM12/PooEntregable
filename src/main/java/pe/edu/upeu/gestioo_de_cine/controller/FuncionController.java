@@ -22,8 +22,7 @@ import pe.edu.upeu.gestioo_de_cine.implementacion.VentaDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.interfaces.IFuncionDao;
 import pe.edu.upeu.gestioo_de_cine.interfaces.IVentaDao;
 import pe.edu.upeu.gestioo_de_cine.modelo.Funcion;
-import pe.edu.upeu.gestioo_de_cine.utils.Bitacora;
-import pe.edu.upeu.gestioo_de_cine.utils.Sesion;
+import pe.edu.upeu.gestioo_de_cine.modelo.UserSession;
 import pe.edu.upeu.gestioo_de_cine.utils.UtilAlerts;
 
 import java.util.ArrayList;
@@ -49,13 +48,11 @@ public class FuncionController {
     private TableColumn<Funcion, Double> ColPrecio;
     @FXML
     private TableColumn<Funcion, String> ColFecha;
-    //MEJORA 13: hora de fin y MEJORA 7: estado de la funcion
     @FXML
     private TableColumn<Funcion, String> ColFin;
     @FXML
     private TableColumn<Funcion, String> ColEstado;
 
-    //texto de busqueda y lista completa para poder filtrar
     @FXML
     private TextField txtBuscar;
 
@@ -87,16 +84,13 @@ public class FuncionController {
                         ? cellData.getValue().getSala().getEtiqueta() : "Sin sala"));
         ColFecha.setCellValueFactory(cellData -> new SimpleStringProperty(
                 cellData.getValue().getFecha() != null ? cellData.getValue().getFecha() : ""));
-        //el horario se guarda como texto (ejemplo: "18:30") y asi se muestra
         ColHorario.setCellValueFactory(cellData -> new SimpleStringProperty(
                 cellData.getValue().getHorario() != null
                         ? cellData.getValue().getHorario() : ""));
         ColPrecio.setCellValueFactory(
                 cellData -> cellData.getValue().precioProperty().asObject());
-        //MEJORA 13: hora de fin (horario + duracion de la pelicula)
         ColFin.setCellValueFactory(cellData -> new SimpleStringProperty(
                 cellData.getValue().getHoraFin()));
-        //MEJORA 7: estado en mayusculas y en rojo si esta cancelada
         ColEstado.setCellValueFactory(cellData -> new SimpleStringProperty(
                 cellData.getValue().isCancelada() ? "CANCELADA" : "ACTIVA"));
         ColEstado.setCellFactory(columna -> new TableCell<>() {
@@ -126,7 +120,6 @@ public class FuncionController {
         filtrar();
     }
 
-    //filtra por pelicula, sala, fecha y hora con un for normal
     private void filtrar() {
         String texto = txtBuscar != null ? txtBuscar.getText().trim().toLowerCase() : "";
         listaFuncion.clear();
@@ -144,9 +137,8 @@ public class FuncionController {
         return valor != null && valor.toLowerCase().contains(texto);
     }
 
-    //el admin puede todo; el empleado solo trabaja en ventas
     private boolean sinPermiso() {
-        if (Sesion.esAdmin()) {
+        if (UserSession.esAdmin()) {
             return false;
         }
         utilAlert.mostrarAlerts("Sin permiso",
@@ -171,9 +163,7 @@ public class FuncionController {
                                 "No se pudo eliminar: la funcion tiene ventas registradas", "ERROR").showAndWait();
                     }
                 } catch (RuntimeException e) {
-                    //la base no deja borrar una funcion que ya tiene ventas
                     System.out.println("Error al eliminar funcion: " + e.getMessage());
-                    //el DAO ya explica el motivo (por ejemplo: tiene boletos vendidos)
                     utilAlert.mostrarAlerts("No se pudo eliminar",
                             e.getMessage(), "ERROR").showAndWait();
                 }
@@ -184,11 +174,6 @@ public class FuncionController {
         }
     }
 
-    /**
-     * MEJORA 7: cancela la funcion y anula los boletos activos.
-     * Antes de confirmar se muestra cuantos boletos hay vendidos, porque el
-     * aviso a los compradores se hace con esa lista (codigos y clientes).
-     */
     @FXML
     private void handleCancelar() {
         if (sinPermiso()) return;
@@ -220,11 +205,8 @@ public class FuncionController {
             String motivo = "Función cancelada";
             if (funcionDao.cancelar(seleccion.getIdfuncion())) {
                 anulados = ventaDao.anularPorFuncion(seleccion.getIdfuncion(),
-                        Sesion.getUsuario() != null ? Sesion.getUsuario().getIdusuario() : 0,
+                        UserSession.getUsuario() != null ? UserSession.getUsuario().getIdusuario() : 0,
                         motivo);
-                Bitacora.registrar("CANCELACION FUNCION",
-                        "Función " + seleccion.getIdfuncion() + " cancelada; boletos anulados: "
-                                + anulados);
                 cargarDatos();
                 utilAlert.mostrarAlerts("Función cancelada",
                         "La función quedó cancelada y se anularon " + anulados
@@ -257,8 +239,6 @@ public class FuncionController {
         Funcion selectFuncion = tableFuncion.getSelectionModel().getSelectedItem();
         if (selectFuncion != null) {
             Funcion funcionFull = funcionDao.searchById(selectFuncion.getIdfuncion());
-            //CORREGIDO: si la funcion ya no existe se abria el formulario como
-            //si fuera nueva; ahora se avisa y se recarga la tabla
             if (funcionFull == null) {
                 utilAlert.mostrarAlerts("Funcion no encontrada",
                         "La función ya no existe en la base de datos.",
@@ -303,7 +283,6 @@ public class FuncionController {
                                 "No se pudieron guardar los datos de la funcion.", "ERROR").showAndWait();
                     }
                 } catch (RuntimeException e) {
-                    //el detalle tecnico se conserva para saber que paso
                     System.out.println("Error al guardar funcion: " + e.getMessage());
                     utilAlert.mostrarAlerts("No se pudo guardar",
                             "Revise los datos de la funcion.\nDetalle: " + e.getMessage(),

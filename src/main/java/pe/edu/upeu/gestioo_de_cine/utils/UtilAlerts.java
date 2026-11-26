@@ -20,6 +20,4 @@ public class UtilAlerts {
         return alert;
     }
 
-
-
 }

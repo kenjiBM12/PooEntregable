@@ -2,21 +2,22 @@ package pe.edu.upeu.gestioo_de_cine.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
-import pe.edu.upeu.gestioo_de_cine.implementacion.MetricaDaoImpl;
-import pe.edu.upeu.gestioo_de_cine.interfaces.IMetricaDao;
-import pe.edu.upeu.gestioo_de_cine.modelo.Metrica;
-import pe.edu.upeu.gestioo_de_cine.utils.Sesion;
+import pe.edu.upeu.gestioo_de_cine.implementacion.ClienteDaoImpl;
+import pe.edu.upeu.gestioo_de_cine.implementacion.FuncionDaoImpl;
+import pe.edu.upeu.gestioo_de_cine.implementacion.PeliculaDaoImpl;
+import pe.edu.upeu.gestioo_de_cine.implementacion.SalaDaoImpl;
+import pe.edu.upeu.gestioo_de_cine.implementacion.VentaDaoImpl;
+import pe.edu.upeu.gestioo_de_cine.interfaces.IClienteDao;
+import pe.edu.upeu.gestioo_de_cine.interfaces.IFuncionDao;
+import pe.edu.upeu.gestioo_de_cine.interfaces.IPeliculaDao;
+import pe.edu.upeu.gestioo_de_cine.interfaces.ISalaDao;
+import pe.edu.upeu.gestioo_de_cine.interfaces.IVentaDao;
+import pe.edu.upeu.gestioo_de_cine.modelo.Sala;
+import pe.edu.upeu.gestioo_de_cine.modelo.Venta;
+import pe.edu.upeu.gestioo_de_cine.modelo.UserSession;
 
-/**
- * MEJORA 10: pantalla de Inicio con los numeros del dia.
- *
- * Antes el Inicio era solo una imagen. Ahora muestra cuantas peliculas,
- * salas y clientes hay, cuantas funciones quedan para hoy y cuanto se vendio
- * hoy. Todo se calcula con una sola consulta (MetricaDaoImpl).
- *
- * Los numeros de dinero solo se muestran al administrador; el empleado ve
- * los contadores, igual que en la pantalla de ventas.
- */
+import java.time.LocalDate;
+
 public class HomeController {
 
     @FXML
@@ -34,29 +35,58 @@ public class HomeController {
     @FXML
     private Label lblSaludo;
 
-    private final IMetricaDao metricaDao = new MetricaDaoImpl();
+    private final IPeliculaDao peliculaDao = new PeliculaDaoImpl();
+    private final ISalaDao salaDao = new SalaDaoImpl();
+    private final IClienteDao clienteDao = new ClienteDaoImpl();
+    private final IFuncionDao funcionDao = new FuncionDaoImpl();
+    private final IVentaDao ventaDao = new VentaDaoImpl();
 
     @FXML
     public void initialize() {
-        if (Sesion.getUsuario() != null) {
-            lblSaludo.setText("Hola, " + Sesion.getUsuario().getNombre());
+        if (UserSession.getUsuario() != null) {
+            lblSaludo.setText("Hola, " + UserSession.getUsuario().getNombre());
         }
         try {
-            Metrica m = metricaDao.obtener();
-            lblPeliculas.setText(String.valueOf(m.getPeliculas()));
-            lblSalas.setText(m.getSalasActivas() + " activas de " + m.getSalas());
-            lblClientes.setText(String.valueOf(m.getClientes()));
-            lblFuncionesHoy.setText(String.valueOf(m.getFuncionesHoy()));
-            lblBoletosHoy.setText(String.valueOf(m.getBoletosHoy()));
-            //el dinero es informacion sensible: solo el admin lo ve
-            if (Sesion.esAdmin()) {
-                lblIngresosHoy.setText("S/ " + String.format("%.2f", m.getIngresosHoy()));
+            String hoy = LocalDate.now().toString();
+
+            lblPeliculas.setText(String.valueOf(peliculaDao.listAll().size()));
+            lblClientes.setText(String.valueOf(clienteDao.listAll().size()));
+
+            int salas = 0;
+            int activas = 0;
+            for (Sala s : salaDao.listAll()) {
+                salas++;
+                if (s.getEstado() == null || !"INACTIVA".equalsIgnoreCase(s.getEstado().trim())) {
+                    activas++;
+                }
+            }
+            lblSalas.setText(activas + " activas de " + salas);
+
+            int funcionesHoy = 0;
+            for (pe.edu.upeu.gestioo_de_cine.modelo.Funcion f : funcionDao.listAll()) {
+                if (f.getFecha() != null && f.getFecha().startsWith(hoy)) {
+                    funcionesHoy++;
+                }
+            }
+            lblFuncionesHoy.setText(String.valueOf(funcionesHoy));
+
+            int boletos = 0;
+            double ingresos = 0;
+            for (Venta v : ventaDao.listAll()) {
+                if (v.getFechaVenta() != null && v.getFechaVenta().toString().startsWith(hoy)
+                        && !"anulada".equalsIgnoreCase(v.getEstado())) {
+                    boletos++;
+                    ingresos = ingresos + v.getTotalPagar();
+                }
+            }
+            lblBoletosHoy.setText(String.valueOf(boletos));
+            if (UserSession.esAdmin()) {
+                lblIngresosHoy.setText("S/ " + String.format("%.2f", ingresos));
             } else {
                 lblIngresosHoy.setText("-");
             }
         } catch (RuntimeException e) {
-            //si la base falla no se cae el Inicio: se deja el guion
-            System.out.println("No se pudieron cargar las metricas: " + e.getMessage());
+            System.out.println("No se pudieron cargar los contadores: " + e.getMessage());
             lblPeliculas.setText("-");
             lblSalas.setText("-");
             lblClientes.setText("-");
