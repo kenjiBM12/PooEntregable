@@ -1,78 +1,111 @@
 package pe.edu.upeu.gestioo_de_cine.modelo;
 
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+
 /**
  * MEJORA 10: numeros rapidos de la pantalla de Inicio.
  *
  * Se llenan con UNA sola consulta SQL (MetricaDaoImpl) para no abrir varias
- * conexiones al entrar al sistema. Son datos de solo lectura, por eso son
- * campos normales con get y set.
+ * conexiones al entrar al sistema. Aunque son datos de solo lectura, usan
+ * propiedades de JavaFX para seguir el mismo patron que el resto de modelos.
  */
 public class Metrica {
 
-    private int peliculas;
-    private int salas;
-    private int salasActivas;
-    private int clientes;
-    private int funcionesHoy;
-    private int boletosHoy;
-    private double ingresosHoy;
+    private final IntegerProperty peliculas = new SimpleIntegerProperty();
+    private final IntegerProperty salas = new SimpleIntegerProperty();
+    private final IntegerProperty salasActivas = new SimpleIntegerProperty();
+    private final IntegerProperty clientes = new SimpleIntegerProperty();
+    private final IntegerProperty funcionesHoy = new SimpleIntegerProperty();
+    private final IntegerProperty boletosHoy = new SimpleIntegerProperty();
+    private final DoubleProperty ingresosHoy = new SimpleDoubleProperty();
 
     public Metrica() {
     }
 
-    public int getPeliculas() {
+    public final int getPeliculas() {
+        return peliculas.get();
+    }
+
+    public final void setPeliculas(int value) {
+        peliculas.set(value);
+    }
+
+    public final IntegerProperty peliculasProperty() {
         return peliculas;
     }
 
-    public void setPeliculas(int peliculas) {
-        this.peliculas = peliculas;
+    public final int getSalas() {
+        return salas.get();
     }
 
-    public int getSalas() {
+    public final void setSalas(int value) {
+        salas.set(value);
+    }
+
+    public final IntegerProperty salasProperty() {
         return salas;
     }
 
-    public void setSalas(int salas) {
-        this.salas = salas;
+    public final int getSalasActivas() {
+        return salasActivas.get();
     }
 
-    public int getSalasActivas() {
+    public final void setSalasActivas(int value) {
+        salasActivas.set(value);
+    }
+
+    public final IntegerProperty salasActivasProperty() {
         return salasActivas;
     }
 
-    public void setSalasActivas(int salasActivas) {
-        this.salasActivas = salasActivas;
+    public final int getClientes() {
+        return clientes.get();
     }
 
-    public int getClientes() {
+    public final void setClientes(int value) {
+        clientes.set(value);
+    }
+
+    public final IntegerProperty clientesProperty() {
         return clientes;
     }
 
-    public void setClientes(int clientes) {
-        this.clientes = clientes;
+    public final int getFuncionesHoy() {
+        return funcionesHoy.get();
     }
 
-    public int getFuncionesHoy() {
+    public final void setFuncionesHoy(int value) {
+        funcionesHoy.set(value);
+    }
+
+    public final IntegerProperty funcionesHoyProperty() {
         return funcionesHoy;
     }
 
-    public void setFuncionesHoy(int funcionesHoy) {
-        this.funcionesHoy = funcionesHoy;
+    public final int getBoletosHoy() {
+        return boletosHoy.get();
     }
 
-    public int getBoletosHoy() {
+    public final void setBoletosHoy(int value) {
+        boletosHoy.set(value);
+    }
+
+    public final IntegerProperty boletosHoyProperty() {
         return boletosHoy;
     }
 
-    public void setBoletosHoy(int boletosHoy) {
-        this.boletosHoy = boletosHoy;
+    public final double getIngresosHoy() {
+        return ingresosHoy.get();
     }
 
-    public double getIngresosHoy() {
+    public final void setIngresosHoy(double value) {
+        ingresosHoy.set(value);
+    }
+
+    public final DoubleProperty ingresosHoyProperty() {
         return ingresosHoy;
-    }
-
-    public void setIngresosHoy(double ingresosHoy) {
-        this.ingresosHoy = ingresosHoy;
     }
 }

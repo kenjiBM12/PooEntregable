@@ -1,14 +1,21 @@
 package pe.edu.upeu.gestioo_de_cine.modelo;
 
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * MEJORA 3: modelo del reporte de cierre de caja.
  *
- * Esta clase guarda SOLO los totales que calcula el ReporteDaoImpl con SQL.
- * No se usan propiedades de JavaFX porque este objeto no se muestra en una
- * tabla: los controladores leen sus valores y los ponen en Labels.
+ * Esta clase guarda los totales que calcula el ReporteDaoImpl con SQL, y el
+ * desglose por forma de pago. Los totales son propiedades de JavaFX, igual
+ * que en los demas modelos; la lista de pagos se maneja como ArrayList.
  *
  * Los boletos "activos" son los que cuentan como venta; los "anulados" ya
  * no cuentan como ingreso, pero se informan aparte para el cierre de caja.
@@ -16,16 +23,16 @@ import java.util.List;
 public class Reporte {
 
     //rango de fechas consultado (texto yyyy-MM-dd, solo para mostrarlo)
-    private String desde = "";
-    private String hasta = "";
+    private final StringProperty desde = new SimpleStringProperty();
+    private final StringProperty hasta = new SimpleStringProperty();
 
     //cantidad de boletos
-    private int boletosActivos;
-    private int boletosAnulados;
+    private final IntegerProperty boletosActivos = new SimpleIntegerProperty();
+    private final IntegerProperty boletosAnulados = new SimpleIntegerProperty();
 
     //dinero
-    private double ingresos;       //suma de boletos activos
-    private double montoAnulado;   //suma de boletos anulados
+    private final DoubleProperty ingresos = new SimpleDoubleProperty();     //suma de boletos activos
+    private final DoubleProperty montoAnulado = new SimpleDoubleProperty(); //suma de boletos anulados
 
     //MEJORA 2: desglose por forma de pago (EFECTIVO / TARJETA / YAPE...)
     private final List<ResumenPago> porMetodoPago = new ArrayList<>();
@@ -33,57 +40,81 @@ public class Reporte {
     public Reporte() {
     }
 
-    public String getDesde() {
+    public final String getDesde() {
+        return desde.get();
+    }
+
+    public final void setDesde(String value) {
+        desde.set(value);
+    }
+
+    public final StringProperty desdeProperty() {
         return desde;
     }
 
-    public void setDesde(String desde) {
-        this.desde = desde;
+    public final String getHasta() {
+        return hasta.get();
     }
 
-    public String getHasta() {
+    public final void setHasta(String value) {
+        hasta.set(value);
+    }
+
+    public final StringProperty hastaProperty() {
         return hasta;
     }
 
-    public void setHasta(String hasta) {
-        this.hasta = hasta;
+    public final int getBoletosActivos() {
+        return boletosActivos.get();
     }
 
-    public int getBoletosActivos() {
+    public final void setBoletosActivos(int value) {
+        boletosActivos.set(value);
+    }
+
+    public final IntegerProperty boletosActivosProperty() {
         return boletosActivos;
     }
 
-    public void setBoletosActivos(int boletosActivos) {
-        this.boletosActivos = boletosActivos;
+    public final int getBoletosAnulados() {
+        return boletosAnulados.get();
     }
 
-    public int getBoletosAnulados() {
+    public final void setBoletosAnulados(int value) {
+        boletosAnulados.set(value);
+    }
+
+    public final IntegerProperty boletosAnuladosProperty() {
         return boletosAnulados;
     }
 
-    public void setBoletosAnulados(int boletosAnulados) {
-        this.boletosAnulados = boletosAnulados;
+    public final double getIngresos() {
+        return ingresos.get();
     }
 
-    public double getIngresos() {
+    public final void setIngresos(double value) {
+        ingresos.set(value);
+    }
+
+    public final DoubleProperty ingresosProperty() {
         return ingresos;
     }
 
-    public void setIngresos(double ingresos) {
-        this.ingresos = ingresos;
+    public final double getMontoAnulado() {
+        return montoAnulado.get();
     }
 
-    public double getMontoAnulado() {
+    public final void setMontoAnulado(double value) {
+        montoAnulado.set(value);
+    }
+
+    public final DoubleProperty montoAnuladoProperty() {
         return montoAnulado;
     }
 
-    public void setMontoAnulado(double montoAnulado) {
-        this.montoAnulado = montoAnulado;
-    }
-
     //el total neto es simplemente lo que realmente ingreso a caja
-    public double getTotalNeto() {
-        return ingresos;
+    public final double getTotalNeto() {
+        return getIngresos();
     }
 
     //MEJORA 2: lista con un resumen por cada forma de pago del rango

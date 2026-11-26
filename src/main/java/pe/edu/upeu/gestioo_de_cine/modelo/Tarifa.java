@@ -1,5 +1,12 @@
 package pe.edu.upeu.gestioo_de_cine.modelo;
 
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+
 /**
  * MEJORA 4: tarifa de entrada por tipo de sala y dia de la semana.
  *
@@ -7,59 +14,77 @@ package pe.edu.upeu.gestioo_de_cine.modelo;
  * son lunes..domingo y permiten una promocion, por ejemplo martes mas barato.
  * El codigo del sistema usa esta tabla para proponer el precio de la funcion
  * en lugar de escribirlo a mano en cada una.
+ *
+ * Como el resto de modelos, usa propiedades de JavaFX (getX/setX y xProperty).
  */
 public class Tarifa {
 
-    private int idtarifa;
-    private String tipoSala = "";
-    private int diaSemana;
-    private double precio;
+    private final IntegerProperty idtarifa = new SimpleIntegerProperty();
+    private final StringProperty tipoSala = new SimpleStringProperty();
+    private final IntegerProperty diaSemana = new SimpleIntegerProperty();
+    private final DoubleProperty precio = new SimpleDoubleProperty();
 
     public Tarifa() {
     }
 
     public Tarifa(int idtarifa, String tipoSala, int diaSemana, double precio) {
-        this.idtarifa = idtarifa;
-        this.tipoSala = tipoSala;
-        this.diaSemana = diaSemana;
-        this.precio = precio;
+        setIdtarifa(idtarifa);
+        setTipoSala(tipoSala);
+        setDiaSemana(diaSemana);
+        setPrecio(precio);
     }
 
-    public int getIdtarifa() {
+    public final int getIdtarifa() {
+        return idtarifa.get();
+    }
+
+    public final void setIdtarifa(int value) {
+        idtarifa.set(value);
+    }
+
+    public final IntegerProperty idtarifaProperty() {
         return idtarifa;
     }
 
-    public void setIdtarifa(int idtarifa) {
-        this.idtarifa = idtarifa;
+    public final String getTipoSala() {
+        return tipoSala.get();
     }
 
-    public String getTipoSala() {
+    public final void setTipoSala(String value) {
+        tipoSala.set(value);
+    }
+
+    public final StringProperty tipoSalaProperty() {
         return tipoSala;
     }
 
-    public void setTipoSala(String tipoSala) {
-        this.tipoSala = tipoSala;
+    public final int getDiaSemana() {
+        return diaSemana.get();
     }
 
-    public int getDiaSemana() {
+    public final void setDiaSemana(int value) {
+        diaSemana.set(value);
+    }
+
+    public final IntegerProperty diaSemanaProperty() {
         return diaSemana;
     }
 
-    public void setDiaSemana(int diaSemana) {
-        this.diaSemana = diaSemana;
+    public final double getPrecio() {
+        return precio.get();
     }
 
-    public double getPrecio() {
+    public final void setPrecio(double value) {
+        precio.set(value);
+    }
+
+    public final DoubleProperty precioProperty() {
         return precio;
-    }
-
-    public void setPrecio(double precio) {
-        this.precio = precio;
     }
 
     /** Nombre del dia para mostrarlo en una tabla. */
     public String getDiaTexto() {
-        switch (diaSemana) {
+        switch (getDiaSemana()) {
             case 1: return "Lunes";
             case 2: return "Martes";
             case 3: return "Miércoles";
@@ -73,6 +98,7 @@ public class Tarifa {
 
     @Override
     public String toString() {
-        return tipoSala + " - " + getDiaTexto() + " - S/ " + String.format("%.2f", precio);
+        return getTipoSala() + " - " + getDiaTexto() + " - S/ "
+                + String.format("%.2f", getPrecio());
     }
 }

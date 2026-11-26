@@ -1,5 +1,15 @@
 package pe.edu.upeu.gestioo_de_cine.modelo;
 
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.DoubleBinding;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.beans.value.ObservableValue;
+
 /**
  * MEJORA 2: fila del cierre de caja por forma de pago.
  *
@@ -7,61 +17,86 @@ package pe.edu.upeu.gestioo_de_cine.modelo;
  * en el rango de fechas (EFECTIVO, TARJETA, YAPE...). Asi el administrador
  * sabe cuanto dinero entro por cada medio y puede cuadrar la caja.
  *
- * No se usan propiedades de JavaFX porque este objeto no se edita: solo se
- * muestra en una tabla de lectura.
+ * Usa propiedades de JavaFX como los demas modelos. El neto es una propiedad
+ * calculada: se actualiza solo cuando cambian el cobrado o el devuelto.
  */
 public class ResumenPago {
 
-    private String metodo = "";
-    private int boletos;
-    private double monto;
+    private final StringProperty metodo = new SimpleStringProperty();
+    private final IntegerProperty boletos = new SimpleIntegerProperty();
+    private final DoubleProperty monto = new SimpleDoubleProperty();
     //MEJORA 1: dinero devuelto por anulaciones en esa forma de pago.
     //Asi el cierre de caja muestra cobrado, devuelto y neto por medio.
-    private double devuelto;
+    private final DoubleProperty devuelto = new SimpleDoubleProperty();
+
+    //cobrado - devuelto: es lo que realmente queda en caja de ese medio
+    private final DoubleBinding neto = Bindings.createDoubleBinding(
+            () -> getMonto() - getDevuelto(), monto, devuelto);
 
     public ResumenPago() {
     }
 
     public ResumenPago(String metodo, int boletos, double monto) {
-        this.metodo = metodo;
-        this.boletos = boletos;
-        this.monto = monto;
+        setMetodo(metodo);
+        setBoletos(boletos);
+        setMonto(monto);
     }
 
-    public String getMetodo() {
+    public final String getMetodo() {
+        return metodo.get();
+    }
+
+    public final void setMetodo(String value) {
+        metodo.set(value);
+    }
+
+    public final StringProperty metodoProperty() {
         return metodo;
     }
 
-    public void setMetodo(String metodo) {
-        this.metodo = metodo;
+    public final int getBoletos() {
+        return boletos.get();
     }
 
-    public int getBoletos() {
+    public final void setBoletos(int value) {
+        boletos.set(value);
+    }
+
+    public final IntegerProperty boletosProperty() {
         return boletos;
     }
 
-    public void setBoletos(int boletos) {
-        this.boletos = boletos;
+    public final double getMonto() {
+        return monto.get();
     }
 
-    public double getMonto() {
+    public final void setMonto(double value) {
+        monto.set(value);
+    }
+
+    public final DoubleProperty montoProperty() {
         return monto;
     }
 
-    public void setMonto(double monto) {
-        this.monto = monto;
+    public final double getDevuelto() {
+        return devuelto.get();
     }
 
-    public double getDevuelto() {
+    public final void setDevuelto(double value) {
+        devuelto.set(value);
+    }
+
+    public final DoubleProperty devueltoProperty() {
         return devuelto;
     }
 
-    public void setDevuelto(double devuelto) {
-        this.devuelto = devuelto;
+    /** Lo que queda en caja de ese medio: cobrado menos devuelto. */
+    public final double getNeto() {
+        return neto.get();
     }
 
-    /** Lo que queda en caja de ese medio: cobrado menos devuelto. */
-    public double getNeto() {
-        return monto - devuelto;
+    /** Version observable del neto, lista para una columna de TableView. */
+    public final ObservableValue<Double> netoProperty() {
+        return neto.asObject();
     }
 }

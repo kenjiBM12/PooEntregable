@@ -1,8 +1,5 @@
 package pe.edu.upeu.gestioo_de_cine.controller;
 
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.DatePicker;
@@ -87,27 +84,22 @@ public class CierreCajaController {
 
     @FXML
     public void initialize() {
-        ColMetodo.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getMetodo()));
-        ColBoletos.setCellValueFactory(c -> new SimpleIntegerProperty(
-                c.getValue().getBoletos()).asObject());
-        ColCobrado.setCellValueFactory(c -> new SimpleDoubleProperty(
-                c.getValue().getMonto()).asObject());
-        ColDevuelto.setCellValueFactory(c -> new SimpleDoubleProperty(
-                c.getValue().getDevuelto()).asObject());
-        ColNeto.setCellValueFactory(c -> new SimpleDoubleProperty(
-                c.getValue().getNeto()).asObject());
+        //los modelos ya exponen sus propiedades: no hay que crearlas al vuelo
+        ColMetodo.setCellValueFactory(c -> c.getValue().metodoProperty());
+        ColBoletos.setCellValueFactory(c -> c.getValue().boletosProperty().asObject());
+        ColCobrado.setCellValueFactory(c -> c.getValue().montoProperty().asObject());
+        ColDevuelto.setCellValueFactory(c -> c.getValue().devueltoProperty().asObject());
+        ColNeto.setCellValueFactory(c -> c.getValue().netoProperty());
 
-        ColCierreFecha.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getFecha()));
-        ColCierreEsperado.setCellValueFactory(c -> new SimpleDoubleProperty(
-                c.getValue().getTotalEsperado()).asObject());
-        ColCierreContado.setCellValueFactory(c -> new SimpleDoubleProperty(
-                c.getValue().getTotalContado()).asObject());
-        ColCierreDiferencia.setCellValueFactory(c -> new SimpleDoubleProperty(
-                c.getValue().getDiferencia()).asObject());
-        ColCierreUsuario.setCellValueFactory(c -> new SimpleStringProperty(
-                c.getValue().getUsuario()));
-        ColCierreObservacion.setCellValueFactory(c -> new SimpleStringProperty(
-                c.getValue().getObservacion()));
+        ColCierreFecha.setCellValueFactory(c -> c.getValue().fechaProperty());
+        ColCierreEsperado.setCellValueFactory(
+                c -> c.getValue().totalEsperadoProperty().asObject());
+        ColCierreContado.setCellValueFactory(
+                c -> c.getValue().totalContadoProperty().asObject());
+        ColCierreDiferencia.setCellValueFactory(
+                c -> c.getValue().diferenciaProperty().asObject());
+        ColCierreUsuario.setCellValueFactory(c -> c.getValue().usuarioProperty());
+        ColCierreObservacion.setCellValueFactory(c -> c.getValue().observacionProperty());
 
         dpFecha.setValue(LocalDate.now());
         //la diferencia se recalcula mientras se escribe el contado

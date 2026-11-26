@@ -965,3 +965,9 @@ sistema de cine (priorizadas)», en el orden en que estaban planteadas.
   solo Ventas/Butacas y la cancelación de funciones es solo del admin.
 - El bloqueo por intentos y la inactividad se guardan en memoria del proceso;
   al reiniciar el programa se limpian (suficiente para una PC de boletería).
+- **Todos los modelos usan propiedades de JavaFX** (`StringProperty`,
+  `IntegerProperty`, `DoubleProperty`) con `getX/setX` y `xProperty()`, tal como
+  `Cliente`, `Pelicula` o `Venta`. Se completaron `CierreCaja`, `Tarifa`,
+  `Estadistica`, `ResumenPago`, `Metrica` y `Reporte`; el neto de
+  `ResumenPago` es una propiedad calculada (`Bindings`). `Historial` sigue
+  vacío porque es código muerto justificado (no tiene campos).

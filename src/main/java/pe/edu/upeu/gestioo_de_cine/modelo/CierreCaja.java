@@ -1,154 +1,222 @@
 package pe.edu.upeu.gestioo_de_cine.modelo;
 
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+
 /**
  * MEJORA 1: cierre de caja con arqueo.
  *
  * Guarda el cierre de UN dia: con cuanto se abrio la caja, cuanto se esperaba
- * por cada forma de pago, cuanto se contó fisicamente y quien cerró. La
+ * por cada forma de pago, cuanto se conto fisicamente y quien cerro. La
  * diferencia (contado - esperado) es lo que permite detectar faltantes o
  * sobrantes el mismo dia.
  *
- * Es una clase simple (sin propiedades de JavaFX) porque la pantalla la usa
- * solo para leer y las columnas se arman con SimpleXProperty al vuelo.
+ * Sigue el mismo patron que los demas modelos del sistema: los campos son
+ * propiedades de JavaFX y se accede con getX/setX o con xProperty(), asi una
+ * tabla puede enlazar sus columnas sin crear propiedades al vuelo.
  */
 public class CierreCaja {
 
-    private int idcierre;
-    private String fecha = "";
-    private double montoInicial;
-    private double efectivo;
-    private double tarjeta;
-    private double yape;
-    private double otros;
-    private double devuelto;
-    private double totalEsperado;
-    private double totalContado;
-    private double diferencia;
-    private int idUsuario;
-    private String usuario = "";
-    private String observacion = "";
-    private String fechaRegistro = "";
+    private final IntegerProperty idcierre = new SimpleIntegerProperty();
+    private final StringProperty fecha = new SimpleStringProperty();
+    private final DoubleProperty montoInicial = new SimpleDoubleProperty();
+    private final DoubleProperty efectivo = new SimpleDoubleProperty();
+    private final DoubleProperty tarjeta = new SimpleDoubleProperty();
+    private final DoubleProperty yape = new SimpleDoubleProperty();
+    private final DoubleProperty otros = new SimpleDoubleProperty();
+    private final DoubleProperty devuelto = new SimpleDoubleProperty();
+    private final DoubleProperty totalEsperado = new SimpleDoubleProperty();
+    private final DoubleProperty totalContado = new SimpleDoubleProperty();
+    private final DoubleProperty diferencia = new SimpleDoubleProperty();
+    private final IntegerProperty idUsuario = new SimpleIntegerProperty();
+    private final StringProperty usuario = new SimpleStringProperty();
+    private final StringProperty observacion = new SimpleStringProperty();
+    private final StringProperty fechaRegistro = new SimpleStringProperty();
 
     public CierreCaja() {
     }
 
-    public int getIdcierre() {
+    public final int getIdcierre() {
+        return idcierre.get();
+    }
+
+    public final void setIdcierre(int value) {
+        idcierre.set(value);
+    }
+
+    public final IntegerProperty idcierreProperty() {
         return idcierre;
     }
 
-    public void setIdcierre(int idcierre) {
-        this.idcierre = idcierre;
+    public final String getFecha() {
+        return fecha.get();
     }
 
-    public String getFecha() {
+    public final void setFecha(String value) {
+        fecha.set(value);
+    }
+
+    public final StringProperty fechaProperty() {
         return fecha;
     }
 
-    public void setFecha(String fecha) {
-        this.fecha = fecha;
+    public final double getMontoInicial() {
+        return montoInicial.get();
     }
 
-    public double getMontoInicial() {
+    public final void setMontoInicial(double value) {
+        montoInicial.set(value);
+    }
+
+    public final DoubleProperty montoInicialProperty() {
         return montoInicial;
     }
 
-    public void setMontoInicial(double montoInicial) {
-        this.montoInicial = montoInicial;
+    public final double getEfectivo() {
+        return efectivo.get();
     }
 
-    public double getEfectivo() {
+    public final void setEfectivo(double value) {
+        efectivo.set(value);
+    }
+
+    public final DoubleProperty efectivoProperty() {
         return efectivo;
     }
 
-    public void setEfectivo(double efectivo) {
-        this.efectivo = efectivo;
+    public final double getTarjeta() {
+        return tarjeta.get();
     }
 
-    public double getTarjeta() {
+    public final void setTarjeta(double value) {
+        tarjeta.set(value);
+    }
+
+    public final DoubleProperty tarjetaProperty() {
         return tarjeta;
     }
 
-    public void setTarjeta(double tarjeta) {
-        this.tarjeta = tarjeta;
+    public final double getYape() {
+        return yape.get();
     }
 
-    public double getYape() {
+    public final void setYape(double value) {
+        yape.set(value);
+    }
+
+    public final DoubleProperty yapeProperty() {
         return yape;
     }
 
-    public void setYape(double yape) {
-        this.yape = yape;
+    public final double getOtros() {
+        return otros.get();
     }
 
-    public double getOtros() {
+    public final void setOtros(double value) {
+        otros.set(value);
+    }
+
+    public final DoubleProperty otrosProperty() {
         return otros;
     }
 
-    public void setOtros(double otros) {
-        this.otros = otros;
+    public final double getDevuelto() {
+        return devuelto.get();
     }
 
-    public double getDevuelto() {
+    public final void setDevuelto(double value) {
+        devuelto.set(value);
+    }
+
+    public final DoubleProperty devueltoProperty() {
         return devuelto;
     }
 
-    public void setDevuelto(double devuelto) {
-        this.devuelto = devuelto;
+    public final double getTotalEsperado() {
+        return totalEsperado.get();
     }
 
-    public double getTotalEsperado() {
+    public final void setTotalEsperado(double value) {
+        totalEsperado.set(value);
+    }
+
+    public final DoubleProperty totalEsperadoProperty() {
         return totalEsperado;
     }
 
-    public void setTotalEsperado(double totalEsperado) {
-        this.totalEsperado = totalEsperado;
+    public final double getTotalContado() {
+        return totalContado.get();
     }
 
-    public double getTotalContado() {
+    public final void setTotalContado(double value) {
+        totalContado.set(value);
+    }
+
+    public final DoubleProperty totalContadoProperty() {
         return totalContado;
     }
 
-    public void setTotalContado(double totalContado) {
-        this.totalContado = totalContado;
+    public final double getDiferencia() {
+        return diferencia.get();
     }
 
-    public double getDiferencia() {
+    public final void setDiferencia(double value) {
+        diferencia.set(value);
+    }
+
+    public final DoubleProperty diferenciaProperty() {
         return diferencia;
     }
 
-    public void setDiferencia(double diferencia) {
-        this.diferencia = diferencia;
+    public final int getIdUsuario() {
+        return idUsuario.get();
     }
 
-    public int getIdUsuario() {
+    public final void setIdUsuario(int value) {
+        idUsuario.set(value);
+    }
+
+    public final IntegerProperty idUsuarioProperty() {
         return idUsuario;
     }
 
-    public void setIdUsuario(int idUsuario) {
-        this.idUsuario = idUsuario;
+    public final String getUsuario() {
+        return usuario.get();
     }
 
-    public String getUsuario() {
+    public final void setUsuario(String value) {
+        usuario.set(value);
+    }
+
+    public final StringProperty usuarioProperty() {
         return usuario;
     }
 
-    public void setUsuario(String usuario) {
-        this.usuario = usuario;
+    public final String getObservacion() {
+        return observacion.get();
     }
 
-    public String getObservacion() {
+    public final void setObservacion(String value) {
+        observacion.set(value);
+    }
+
+    public final StringProperty observacionProperty() {
         return observacion;
     }
 
-    public void setObservacion(String observacion) {
-        this.observacion = observacion;
+    public final String getFechaRegistro() {
+        return fechaRegistro.get();
     }
 
-    public String getFechaRegistro() {
+    public final void setFechaRegistro(String value) {
+        fechaRegistro.set(value);
+    }
+
+    public final StringProperty fechaRegistroProperty() {
         return fechaRegistro;
-    }
-
-    public void setFechaRegistro(String fechaRegistro) {
-        this.fechaRegistro = fechaRegistro;
     }
 }

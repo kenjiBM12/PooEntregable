@@ -142,15 +142,12 @@ public class ReporteController {
         ColEstado.setCellValueFactory(
                 cellData -> cellData.getValue().estadoProperty());
 
-        //MEJORA 2: columnas del desglose por forma de pago
-        ColPagoMetodo.setCellValueFactory(
-                celda -> new SimpleStringProperty(celda.getValue().getMetodo()));
+        //MEJORA 2: columnas del desglose por forma de pago (propiedades del modelo)
+        ColPagoMetodo.setCellValueFactory(celda -> celda.getValue().metodoProperty());
         ColPagoBoletos.setCellValueFactory(
-                celda -> new javafx.beans.property.SimpleIntegerProperty(
-                        celda.getValue().getBoletos()).asObject());
+                celda -> celda.getValue().boletosProperty().asObject());
         ColPagoMonto.setCellValueFactory(
-                celda -> new javafx.beans.property.SimpleDoubleProperty(
-                        celda.getValue().getMonto()).asObject());
+                celda -> celda.getValue().montoProperty().asObject());
 
         //por defecto: desde el primer dia del mes hasta hoy
         dpDesde.setValue(LocalDate.now().withDayOfMonth(1));
