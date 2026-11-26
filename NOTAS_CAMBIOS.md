@@ -840,3 +840,15 @@ Ahora:
 | `mvnw test` | **Ejecutada y exitosa** (`TEST_EXIT=0`): `DuracionTest` 5 y `SeguridadTest` 3, 0 fallos |
 | Registrar login con sesión iniciada | Revisado por código: `Sesion.iniciar` va antes de `Bitacora.registrar`, así que el `usuario` guardado es el real |
 | Interfaz (abrir Venta y desplegar funciones) | **No ejecutada** con clics reales: requiere abrir la ventana en la PC |
+
+### 15.4 Ajuste del combo de funciones (26/11/2026)
+
+- El combo de Ventas ahora lista solo funciones **de hoy en adelante**
+  (`esDeHoyOEnAdelante`): las de fechas pasadas ya no aparecen. Las de hoy que
+  ya empezaron siguen visibles, marcadas con `(ya empezó)`, para que se entienda
+  por qué no se pueden vender.
+- `lblPrecio` vuelve a `Precio: -` en cada cambio de función
+  (`cargarButacas`), así no queda el precio de la función anterior cuando la
+  elegida no se puede vender.
+- Verificación: `mvnw compile` exit 0 y `mvnw test` exit 0. La interfaz no se
+  abrió con clics reales.
