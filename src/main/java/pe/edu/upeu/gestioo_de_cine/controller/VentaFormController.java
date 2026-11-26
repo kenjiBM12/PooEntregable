@@ -148,12 +148,15 @@ public class VentaFormController {
         }
         for (Funcion f : funcionDao.listAll()) {
             //CORREGIDO: se agregan todas las funciones de la pelicula, sin
-            //filtrar por fecha ni por estado de la sala. El filtro se aplica
-            //al elegir la funcion (puedeVenderse), asi el usuario ve que
-            //existen funciones y entiende por que no puede vender esa.
+            //filtrar por estado de la sala. El filtro se aplica al elegir la
+            //funcion (puedeVenderse), asi el usuario ve que existen funciones
+            //y entiende por que no puede vender esa.
             if (f.getPelicula() != null
                     && String.valueOf(f.getPelicula().getidpelicula())
-                    .equals(String.valueOf(pelicula.getidpelicula()))) {
+                    .equals(String.valueOf(pelicula.getidpelicula()))
+                    //solo de hoy en adelante: las de fechas ya pasadas no
+                    //sirven para vender y solo alargaban la lista
+                    && esDeHoyOEnAdelante(f)) {
                 cboFuncion.getItems().add(f);
             }
         }
@@ -162,6 +165,23 @@ public class VentaFormController {
                     + "Cree una en el menú Funciones.");
         }
         actualizarEstadoSiguiente();
+    }
+
+    /**
+     * MEJORA 5b: revisa si una funcion es de hoy o de una fecha futura.
+     * Las de fechas pasadas no se listan para vender; las de hoy si, aunque
+     * ya hayan empezado (esas se muestran marcadas y se bloquean al elegirlas).
+     */
+    private boolean esDeHoyOEnAdelante(Funcion f) {
+        if (f == null || f.getFecha() == null || f.getFecha().isBlank()) {
+            //sin fecha guardada no hay nada que comparar: se deja ver
+            return true;
+        }
+        String fecha = f.getFecha().trim();
+        if (fecha.length() > 10) {
+            fecha = fecha.substring(0, 10);
+        }
+        return fecha.compareTo(LocalDate.now().toString()) >= 0;
     }
 
     /**
@@ -199,6 +219,9 @@ public class VentaFormController {
         gridButacas.getChildren().clear();
         butacasSeleccionadas.clear();
         lblButaca.setText("Butaca: -");
+        //CORREGIDO: el precio se limpia al cambiar de funcion; antes quedaba
+        //el de la funcion anterior aunque la nueva no se pudiera vender
+        lblPrecio.setText("Precio: -");
         //se limpia el aviso anterior: al cambiar de funcion el mensaje viejo
         //(por ejemplo "esa funcion ya empezo") ya no corresponde
         lblMensaje.setText("");
