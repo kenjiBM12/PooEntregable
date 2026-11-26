@@ -69,6 +69,8 @@
                 <TableColumn fx:id="ColButaca" prefWidth="65.0" text="Butaca"/>
                 <TableColumn fx:id="ColEmpleado" prefWidth="110.0" text="Empleado"/>
                 <TableColumn fx:id="ColTotal" prefWidth="75.0" text="Precio (S/)"/>
+                <!-- MEJORA 2: forma de pago con la que se cobro el boleto -->
+                <TableColumn fx:id="ColMetodoPago" prefWidth="85.0" text="Pago"/>
                 <TableColumn fx:id="ColEstado" prefWidth="85.0" text="Estado"/>
                 <!-- MEJORA 6: quien anulo y por que -->
                 <TableColumn fx:id="ColAnulacion" prefWidth="160.0" text="Anulación"/>

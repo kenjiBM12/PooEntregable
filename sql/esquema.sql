@@ -107,3 +107,18 @@ CREATE TABLE IF NOT EXISTS usuario (
     rol TEXT NOT NULL DEFAULT 'empleado',
     activo INTEGER NOT NULL DEFAULT 1
 );
+
+-- MEJORA 9: bitacora de auditoria (quien hizo que y cuando).
+-- No lleva llave foranea a usuario para no perder la historia si se borra
+-- un usuario: el nombre se guarda copiado como texto.
+CREATE TABLE IF NOT EXISTS auditoria (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fecha TEXT NOT NULL,
+    id_usuario INTEGER,
+    usuario TEXT,
+    accion TEXT NOT NULL,
+    detalle TEXT
+);
+
+-- MEJORA 5: version del esquema. Una base nueva queda en la version 2.
+PRAGMA user_version = 2;

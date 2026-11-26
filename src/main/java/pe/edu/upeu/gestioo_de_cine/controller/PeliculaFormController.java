@@ -7,6 +7,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import pe.edu.upeu.gestioo_de_cine.modelo.Pelicula;
+import pe.edu.upeu.gestioo_de_cine.utils.Duracion;
 import pe.edu.upeu.gestioo_de_cine.utils.UtilAlerts;
 
 public class PeliculaFormController {
@@ -100,7 +101,9 @@ public class PeliculaFormController {
                 pelicula = new Pelicula();
             pelicula.setNumero(Integer.parseInt(txtNumero.getText().trim()));
             pelicula.setTitulo(txtTitulo.getText().trim());
-            pelicula.setDuracion(txtDuracion.getText().trim());
+            //MEJORA 1: la duracion se guarda SIEMPRE en minutos. Si el usuario
+            //escribe "1:50" queda 110; si escribe "95 min" queda 95.
+            pelicula.setDuracion(Duracion.normalizar(txtDuracion.getText()));
             pelicula.setClasificacion(txtClasificacion.getText().trim());
             pelicula.setCategoria(cbCategoria.getValue());
             saved =true;
@@ -114,7 +117,8 @@ public class PeliculaFormController {
             lblTitulo.setText("Editar Pelicula");
             txtNumero.setText(p.getNumero().toString());
             txtTitulo.setText(p.getTitulo());
-            txtDuracion.setText(p.getDuracion());
+            //MEJORA 1: las peliculas viejas se muestran ya en minutos
+            txtDuracion.setText(Duracion.normalizar(p.getDuracion()));
             txtClasificacion.setText(p.getClasificacion());
             cbCategoria.setValue(p.getCategoria());
         }

@@ -23,6 +23,7 @@ import pe.edu.upeu.gestioo_de_cine.HelloApplication;
 import pe.edu.upeu.gestioo_de_cine.implementacion.VentaDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.interfaces.IVentaDao;
 import pe.edu.upeu.gestioo_de_cine.modelo.Venta;
+import pe.edu.upeu.gestioo_de_cine.utils.Bitacora;
 import pe.edu.upeu.gestioo_de_cine.utils.Sesion;
 import pe.edu.upeu.gestioo_de_cine.utils.UtilAlerts;
 
@@ -69,6 +70,9 @@ public class VentaController {
     //MEJORA 6: columna que muestra quien anulo y por que
     @FXML
     private TableColumn<Venta, String> ColAnulacion;
+    //MEJORA 2: forma de pago con la que se cobro el boleto
+    @FXML
+    private TableColumn<Venta, String> ColMetodoPago;
 
     //controles de busqueda
     @FXML
@@ -153,6 +157,9 @@ public class VentaController {
                 cellData -> cellData.getValue().estadoProperty());
         ColAnulacion.setCellValueFactory(
                 cellData -> cellData.getValue().anulacionProperty());
+        //MEJORA 2: se muestra la forma de pago de cada boleto
+        ColMetodoPago.setCellValueFactory(
+                cellData -> cellData.getValue().metodoPagoProperty());
 
         //las ventas se pueden filtrar por estado y por un rango de fechas
         cbEstado.getItems().addAll("Todas", "Activa", "Anulada");
@@ -249,7 +256,7 @@ public class VentaController {
     private boolean coincide(Venta v, String texto) {
         if (contiene(v.getCodigoCompra(), texto) || contiene(v.getCliente(), texto)
                 || contiene(v.getDniCliente(), texto) || contiene(v.getEmpleado(), texto)
-                || contiene(v.getEstado(), texto)) {
+                || contiene(v.getEstado(), texto) || contiene(v.getMetodoPago(), texto)) {
             return true;
         }
         if (v.getFuncion() != null) {
@@ -332,6 +339,9 @@ public class VentaController {
             }
             try {
                 if (ventaDao.anular(selectId, idUsuarioActual(), motivo)) {
+                    //MEJORA 9: se deja constancia en la auditoria
+                    Bitacora.registrar("ANULACION", "Boleto " + selectId.getCodigoCompra()
+                            + " anulado. Motivo: " + motivo);
                     //se recarga la tabla para ver el estado 'anulada'
                     cargarDatos();
                 } else {
@@ -371,6 +381,9 @@ public class VentaController {
             }
             try {
                 if (ventaDao.anularCompra(selectId.getCodigoCompra(), idUsuarioActual(), motivo)) {
+                    //MEJORA 9: se deja constancia en la auditoria
+                    Bitacora.registrar("ANULACION", "Compra " + selectId.getCodigoCompra()
+                            + " anulada completa. Motivo: " + motivo);
                     cargarDatos();
                 } else {
                     utilAlert.mostrarAlerts("Sin cambios",

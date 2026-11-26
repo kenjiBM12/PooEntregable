@@ -1,5 +1,8 @@
 package pe.edu.upeu.gestioo_de_cine.modelo;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * MEJORA 3: modelo del reporte de cierre de caja.
  *
@@ -23,6 +26,9 @@ public class Reporte {
     //dinero
     private double ingresos;       //suma de boletos activos
     private double montoAnulado;   //suma de boletos anulados
+
+    //MEJORA 2: desglose por forma de pago (EFECTIVO / TARJETA / YAPE...)
+    private final List<ResumenPago> porMetodoPago = new ArrayList<>();
 
     public Reporte() {
     }
@@ -78,5 +84,17 @@ public class Reporte {
     //el total neto es simplemente lo que realmente ingreso a caja
     public double getTotalNeto() {
         return ingresos;
+    }
+
+    //MEJORA 2: lista con un resumen por cada forma de pago del rango
+    public List<ResumenPago> getPorMetodoPago() {
+        return porMetodoPago;
+    }
+
+    public void setPorMetodoPago(List<ResumenPago> lista) {
+        porMetodoPago.clear();
+        if (lista != null) {
+            porMetodoPago.addAll(lista);
+        }
     }
 }

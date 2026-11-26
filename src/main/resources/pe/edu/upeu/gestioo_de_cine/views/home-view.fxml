@@ -1,20 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.image.Image?>
-<StackPane fx:id="mainContainer" styleClass="page" stylesheets="@style.css"
-           xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
+
+<!-- MEJORA 10: el Inicio ahora muestra los números del día -->
+<StackPane styleClass="page" stylesheets="@style.css"
+           xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+           fx:controller="pe.edu.upeu.gestioo_de_cine.controller.HomeController">
+    <padding>
+        <Insets bottom="16.0" left="20.0" right="20.0" top="16.0"/>
+    </padding>
     <children>
-        <VBox alignment="CENTER" spacing="18.0">
+        <VBox alignment="CENTER" spacing="16.0">
             <children>
                 <Label styleClass="titulo-vista" text="Bienvenido a CINEMAX"/>
+                <Label fx:id="lblSaludo" styleClass="subtitulo-vista" text="Hola"/>
+
+                <!-- contadores rápidos: se llenan con MetricaDaoImpl -->
+                <HBox alignment="CENTER" spacing="26.0" styleClass="toolbar">
+                    <children>
+                        <VBox alignment="CENTER" spacing="2.0">
+                            <children>
+                                <Label styleClass="leyenda" text="Películas"/>
+                                <Label fx:id="lblPeliculas" styleClass="panel-titulo" text="0"/>
+                            </children>
+                        </VBox>
+                        <VBox alignment="CENTER" spacing="2.0">
+                            <children>
+                                <Label styleClass="leyenda" text="Salas"/>
+                                <Label fx:id="lblSalas" styleClass="panel-titulo" text="0"/>
+                            </children>
+                        </VBox>
+                        <VBox alignment="CENTER" spacing="2.0">
+                            <children>
+                                <Label styleClass="leyenda" text="Clientes"/>
+                                <Label fx:id="lblClientes" styleClass="panel-titulo" text="0"/>
+                            </children>
+                        </VBox>
+                        <VBox alignment="CENTER" spacing="2.0">
+                            <children>
+                                <Label styleClass="leyenda" text="Funciones de hoy"/>
+                                <Label fx:id="lblFuncionesHoy" styleClass="panel-titulo" text="0"/>
+                            </children>
+                        </VBox>
+                        <VBox alignment="CENTER" spacing="2.0">
+                            <children>
+                                <Label styleClass="leyenda" text="Boletos vendidos hoy"/>
+                                <Label fx:id="lblBoletosHoy" styleClass="panel-titulo" text="0"/>
+                            </children>
+                        </VBox>
+                        <VBox alignment="CENTER" spacing="2.0">
+                            <children>
+                                <Label styleClass="leyenda" text="Ingresos de hoy"/>
+                                <Label fx:id="lblIngresosHoy" styleClass="panel-titulo" text="S/ 0.00"/>
+                            </children>
+                        </VBox>
+                    </children>
+                </HBox>
+
                 <Label styleClass="subtitulo-vista"
-                       text="Elija una opción del menú: clientes, películas, salas, funciones, butacas, venta de entradas o usuarios."/>
-                <ImageView fx:id="imgCine" fitHeight="420.0"
-                           fitWidth="760.0" pickOnBounds="true" preserveRatio="true"
+                       text="Elija una opción del menú: clientes, películas, salas, funciones, butacas, venta de entradas, reportes o auditoría."/>
+
+                <ImageView fitHeight="360.0"
+                           fitWidth="720.0" pickOnBounds="true" preserveRatio="true"
                            styleClass="poster">
                     <image>
                         <Image url="@../img/cine_portada.png"/>

@@ -247,6 +247,31 @@ public class VentaDaoImpl implements IVentaDao {
         }
     }
 
+    /**
+     * MEJORA 3: historial de compras de un cliente.
+     * Se reutiliza la consulta base (la misma de listAll) y solo se agrega
+     * el filtro por id_cliente. Primero salen las compras mas nuevas.
+     */
+    @Override
+    public List<Venta> listarPorCliente(int idCliente) {
+        List<Venta> lista = new ArrayList<>();
+        String query = QUERY_BASE + " WHERE v.id_cliente=? "
+                + "ORDER BY v.fecha_venta DESC, v.idventa DESC";
+        Connection cn = ConexionDB.getConnection();
+        try (PreparedStatement st = cn.prepareStatement(query)) {
+            st.setInt(1, idCliente);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(construirVenta(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error al listar las compras del cliente: "
+                    + e.getMessage(), e);
+        }
+        return lista;
+    }
+
     @Override
     public List<Venta> listAll() {
         List<Venta> lista = new ArrayList<>();

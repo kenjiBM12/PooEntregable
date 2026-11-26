@@ -20,6 +20,7 @@ import pe.edu.upeu.gestioo_de_cine.interfaces.ISalaDao;
 import pe.edu.upeu.gestioo_de_cine.modelo.Funcion;
 import pe.edu.upeu.gestioo_de_cine.modelo.Pelicula;
 import pe.edu.upeu.gestioo_de_cine.modelo.Sala;
+import pe.edu.upeu.gestioo_de_cine.utils.Duracion;
 import pe.edu.upeu.gestioo_de_cine.utils.UtilAlerts;
 
 public class FuncionFormController {
@@ -72,7 +73,14 @@ public class FuncionFormController {
         });
 
         cbPelicula.getItems().setAll(peliculaDao.listAll());
-        cbSala.getItems().setAll(salaDao.listAll());
+        //MEJORA 6: solo se ofrecen salas activas. Una sala en mantenimiento
+        //(estado INACTIVA) ya no se puede programar.
+        cbSala.getItems().clear();
+        for (Sala s : salaDao.listAll()) {
+            if (salaActiva(s)) {
+                cbSala.getItems().add(s);
+            }
+        }
         //fecha sugerida al crear una funcion nueva
         dpFecha.setValue(LocalDate.now());
     }
@@ -250,32 +258,25 @@ public class FuncionFormController {
     }
 
     /**
-     * Saca los minutos de la duracion de la pelicula, que se guarda como texto
-     * ("120", "95 min", "110 minutos"...). Se buscan los primeros digitos
-     * con un for normal, sin librerias adicionales.
-     * Si no hay numeros, devuelve 0. Esa pelicula solo choca a la misma hora.
+     * MEJORA 1: los minutos se piden a la clase Duracion, que entiende
+     * "120", "95 min", "1:50" y "2h".
+     *
+     * Antes este metodo tomaba solo los primeros digitos, asi que una
+     * pelicula de "1:50" se leia como 1 minuto y el cruce de horarios no
+     * detectaba el choque. Si no hay numeros devuelve 0: esa pelicula solo
+     * choca cuando empieza a la misma hora que otra.
      */
     private int duracionMinutos(Pelicula p) {
-        if (p == null || p.getDuracion() == null) {
-            return 0;
+        return p == null ? 0 : Duracion.aMinutos(p.getDuracion());
+    }
+
+    //MEJORA 6: una sala esta disponible si su estado no es INACTIVA
+    private boolean salaActiva(Sala s) {
+        if (s == null) {
+            return false;
         }
-        String texto = p.getDuracion().trim();
-        int inicio = 0;
-        while (inicio < texto.length() && !Character.isDigit(texto.charAt(inicio))) {
-            inicio++;
-        }
-        int fin = inicio;
-        while (fin < texto.length() && Character.isDigit(texto.charAt(fin))) {
-            fin++;
-        }
-        if (inicio == fin) {
-            return 0;
-        }
-        try {
-            return Integer.parseInt(texto.substring(inicio, fin));
-        } catch (NumberFormatException e) {
-            return 0;
-        }
+        String estado = s.getEstado() != null ? s.getEstado().trim() : "ACTIVA";
+        return !"INACTIVA".equalsIgnoreCase(estado);
     }
 
     //de una fecha tipo "2026-11-20" toma solo "2026-11-20" (por si viene con hora)
@@ -297,11 +298,19 @@ public class FuncionFormController {
                 }
             }
             if (f.getSala() != null) {
+                boolean encontrada = false;
                 for (Sala s : cbSala.getItems()) {
                     if (s.getIdsala() == f.getSala().getIdsala()) {
                         cbSala.setValue(s);
+                        encontrada = true;
                         break;
                     }
+                }
+                //MEJORA 6: si la sala quedo inactiva ya no esta en la lista;
+                //se agrega solo para mostrar la funcion que se esta editando
+                if (!encontrada) {
+                    cbSala.getItems().add(f.getSala());
+                    cbSala.setValue(f.getSala());
                 }
             }
             //el horario se guarda como texto, se muestra tal cual

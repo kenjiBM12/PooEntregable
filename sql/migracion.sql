@@ -171,3 +171,19 @@ END;
 -- No hace falta migrar nada a mano: UsuarioDaoImpl cambia la clave
 -- en texto plano por su hash la primera vez que ese usuario inicia
 -- sesion. El usuario admin/admin123 se migra solo al entrar.
+
+-- MEJORA 9: tabla de auditoria para las bases que ya existen.
+CREATE TABLE IF NOT EXISTS auditoria (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fecha TEXT NOT NULL,
+    id_usuario INTEGER,
+    usuario TEXT,
+    accion TEXT NOT NULL,
+    detalle TEXT
+);
+
+-- MEJORA 1: las duraciones viejas se normalizan a minutos.
+-- En SQLite se puede hacer con substr/instr, pero el sistema lo hace solo
+-- al abrir la base (ConexionDB.normalizarDuraciones), asi que aqui solo se
+-- deja la version del esquema.
+PRAGMA user_version = 2;

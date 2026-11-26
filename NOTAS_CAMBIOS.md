@@ -704,3 +704,96 @@ Ahora se usa `venta.fecha_venta`:
 | `mvnw compile` | **exit 0** |
 | Prueba sobre base nueva en carpeta temporal (`PruebaCorreccion`) | **8/8 OK**: la venta hecha hoy para una función del 2020-01-01 aparece en el cierre de HOY y **no** en el de la fecha de la función; la primera anulación funciona, la segunda se rechaza y el motivo original no se sobrescribe |
 | Interfaz JavaFX (clic en Reportes / ANULAR BOLETO) | **No ejecutada**: requiere clics del usuario |
+
+---
+
+## 13. Mejoras 1 a 10 (26/11/2026)
+
+Se implementaron las diez mejoras propuestas, manteniendo el estilo del curso:
+clases con `get`/`set`, `ArrayList`, DAO con interfaz, JDBC con
+`PreparedStatement`, transacciones y JavaFX/FXML. No se agregaron librerías
+nuevas (JUnit ya estaba declarado en el `pom`).
+
+### 13.1 Qué hace cada mejora y en qué archivo
+
+| # | Mejora | Archivos principales |
+|---|---|---|
+| 1 | **Duración normalizada a minutos**: `"1:50"` ahora se lee como 110, igual que `"95 min"` o `"120"`. El formulario guarda siempre minutos y las películas viejas se convierten al abrir la base. | `utils/Duracion.java`, `PeliculaFormController`, `FuncionFormController`, `ConexionDB.normalizarDuraciones()` |
+| 2 | **Cierre por forma de pago**: el reporte muestra una tabla con boletos y dinero por EFECTIVO / TARJETA / YAPE, y la tabla de Ventas tiene la columna **Pago**. | `ReporteDaoImpl.desglosePorMetodo()`, `modelo/ResumenPago`, `ReporteController`, `reporte-view.fxml`, `venta-view.fxml`, `VentaController` |
+| 3 | **Historial de compras por cliente**: botón HISTORIAL en Clientes que abre una ventana con todas sus compras y el total gastado. | `ClienteController.handleHistorial()`, `ClienteHistorialController`, `cliente-historial.fxml`, `VentaDaoImpl.listarPorCliente()` |
+| 4 | **Pruebas JUnit** en `src/test/java`: 8 pruebas de `Duracion` y `Seguridad`. | `src/test/java/.../DuracionTest.java`, `SeguridadTest.java`, `pom.xml` |
+| 5 | **`PRAGMA user_version`**: la base guarda su versión de esquema (2) y el sistema la actualiza al migrar. | `ConexionDB.actualizarVersionEsquema()`, `sql/esquema.sql`, `sql/migracion.sql` |
+| 6 | **Estado de la sala en uso**: las salas INACTIVAS no se ofrecen al programar funciones ni al vender. | `FuncionFormController` (`salaActiva`, `cbSala`), `VentaFormController.cargarFunciones()` |
+| 7 | **Exportar CSV**: botón EXPORTAR CSV en Reportes. Deja `cierre_<desde>_<hasta>.csv` en `SistemaCineUPeU\reportes` con BOM para Excel. | `ReporteController.handleExportarCsv()` |
+| 8 | **Restaurar respaldo**: botones RESPALDAR AHORA y RESTAURAR RESPALDO en Reportes. Antes de restaurar cierra la conexión y guarda una copia del estado actual. | `RespaldoDB.listar()/restaurar()`, `ConexionDB.archivoBase()`, `ReporteController` |
+| 9 | **Auditoría**: tabla `auditoria` + pantalla nueva en el menú. Registra login, login fallido, ventas, anulaciones, exportaciones y restauraciones. | `utils/Bitacora`, `AuditoriaDaoImpl`, `modelo/Auditoria`, `AuditoriaController`, `auditoria-view.fxml`, `main-view.fxml` |
+| 10 | **Inicio con métricas**: la pantalla de Inicio muestra películas, salas activas, clientes, funciones de hoy, boletos de hoy e ingresos de hoy (dinero solo para el admin). | `HomeController`, `MetricaDaoImpl`, `modelo/Metrica`, `home-view.fxml` |
+
+Detalles de implementación que conviene poder explicar:
+
+- **Duración**: `Duracion.aMinutos()` separa por `:` y por `h`, quita palabras
+  como "min"/"minutos" y deja solo los dígitos. `normalizar()` devuelve el texto
+  en minutos para guardarlo. El cruce de horarios de `FuncionFormController` ya
+  no tiene su propio parser: usa esta clase.
+- **Desglose de caja**: una consulta con `GROUP BY` y `WHERE v.estado='activa'`.
+  Se usa `UPPER(COALESCE(NULLIF(TRIM(metodo_pago),''),'EFECTIVO'))` para que una
+  venta vieja sin forma de pago cuente como efectivo y no se pierda el dinero.
+- **Historial**: reutiliza la consulta base de ventas (`QUERY_BASE`) y solo agrega
+  `WHERE v.id_cliente=?`, ordenado por fecha de venta descendente.
+- **Pruebas**: el proyecto es modular (`module-info.java`), por eso el `pom` usa
+  `--add-reads` al compilar las pruebas y `useModulePath=false` en Surefire.
+- **Versión de esquema**: `PRAGMA user_version` se guarda dentro del archivo .db,
+  sin tabla extra. Una base nueva queda en 2; una base vieja pasa de 0/1 a 2.
+- **Salas inactivas**: se filtran en el controlador (no en el DAO) para que el
+  administrador siga viendo todas las salas en su pantalla.
+- **CSV**: se encierran los textos entre comillas y se duplican las comillas
+  internas; el separador es `;` porque así lo abre Excel en español.
+- **Restaurar**: `RespaldoDB.restaurar()` llama a `ConexionDB.cerrar()` antes de
+  copiar, porque Windows no permite sobrescribir un `.db` abierto.
+- **Auditoría**: `Bitacora.registrar()` nunca interrumpe la operación principal;
+  si la tabla no existe, solo imprime el error.
+- **Métricas**: una sola consulta con subconsultas `SELECT COUNT(*)`, sin abrir
+  varias conexiones al entrar.
+
+### 13.2 Verificaciones de esta sesión
+
+| Verificación | Resultado |
+|---|---|
+| `mvnw compile` | **Ejecutada y exitosa** (`COMPILE_EXIT=0`) |
+| `mvnw test` | **Ejecutada y exitosa** (`TEST_EXIT=0`): `DuracionTest` 5 pruebas, `SeguridadTest` 3 pruebas, **0 fallos, 0 errores** |
+| `mvnw -DskipTests package` | **Ejecutada y exitosa** (`PACKAGE_EXIT=0`) |
+| XML + `fx:id` + `onAction` de los 20 FXML | **Ejecutada y exitosa**: 20 FXML válidos, 0 acciones faltantes. Único `fx:id` sin campo: `btnCancelar1` (ya existía, sin uso) |
+| Prueba funcional sobre base **nueva** en carpeta temporal (`target/tmp/hogar_mejoras`) | **Ejecutada y exitosa — 19/19**: `user_version=2`, tabla `auditoria`, `"1:50"` guardada como `110`, desglose EFECTIVO 10.00 / TARJETA 12.50 sin la anulada, historial de 3 boletos, métricas (2 salas / 1 activa, 2 boletos hoy, S/ 22.50), auditoría registrando y listando |
+| Base real `gestionCine.db` | **No se tocó**: la prueba usó `-Duser.home` apuntando a `target/tmp/hogar_mejoras` |
+| Interfaz JavaFX (clics reales) | **No ejecutada**: requiere abrir la ventana en la PC y hacer clic; los FXML y sus acciones se revisaron por código |
+
+### 13.3 Limitaciones
+
+- `PRAGMA user_version` informa la versión, pero las migraciones siguen siendo
+  idempotentes (se pueden correr siempre) en vez de saltarse por número.
+- La auditoría crece sin límite: la pantalla muestra los últimos 300 movimientos.
+- Restaurar un respaldo reemplaza **toda** la base; por eso pide confirmación y
+  guarda antes una copia del estado actual.
+- El CSV se genera para el rango que está en pantalla; si se cambian las fechas
+  hay que volver a GENERAR antes de exportar.
+- Las pruebas JUnit cubren `Duracion` y `Seguridad` (lógica pura). Los DAO se
+  probaron con la prueba funcional, no con JUnit.
+
+---
+
+## 14. Ideas nuevas más pequeñas (en el radar, **no implementadas**)
+
+Quedan anotadas para otra etapa; ninguna se agregó en esta entrega:
+
+1. **Tarifas por tipo de sala o día** (por ejemplo 2D S/ 10 y 3D S/ 15):
+   el precio dejaría de escribirse a mano en cada función.
+2. **Reporte de películas más vendidas** y **% de ocupación por función**:
+   dos consultas de agregación sobre `venta`.
+3. **Cancelar una función** y avisar a los compradores (marcar sus boletos).
+4. **Límite de intentos de login** y **caducidad de la sesión** por inactividad.
+5. **Comprobante en PDF** o impresión directa, en vez del `.txt` actual.
+6. **Atajos de teclado** (F5 actualizar, Ctrl+B buscar, Enter vender).
+7. **Butacas preferenciales / para discapacidad** y pasillo en el mapa.
+8. **Filtro por empleado** en la pantalla de ventas y en el cierre de caja.
+9. **Respaldo automático al cerrar** el programa (hoy se hace al abrir).
+10. **Modo demostración** con datos de ejemplo para probar sin la base real.

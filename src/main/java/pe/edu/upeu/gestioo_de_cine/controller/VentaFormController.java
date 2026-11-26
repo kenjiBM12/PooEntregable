@@ -24,6 +24,7 @@ import pe.edu.upeu.gestioo_de_cine.modelo.Butaca;
 import pe.edu.upeu.gestioo_de_cine.modelo.Cliente;
 import pe.edu.upeu.gestioo_de_cine.modelo.Funcion;
 import pe.edu.upeu.gestioo_de_cine.modelo.Pelicula;
+import pe.edu.upeu.gestioo_de_cine.utils.Bitacora;
 import pe.edu.upeu.gestioo_de_cine.utils.Sesion;
 import pe.edu.upeu.gestioo_de_cine.utils.UtilAlerts;
 
@@ -121,6 +122,12 @@ public class VentaFormController {
         for (Funcion f : funcionDao.listAll()) {
             //MEJORA 5b: no se ofrecen funciones que ya empezaron
             if (yaPaso(f)) {
+                continue;
+            }
+            //MEJORA 6: las funciones de una sala inactiva (mantenimiento) no
+            //se ofrecen para vender
+            if (f.getSala() != null && "INACTIVA".equalsIgnoreCase(
+                    f.getSala().getEstado() != null ? f.getSala().getEstado().trim() : "")) {
                 continue;
             }
             if (f.getPelicula() != null
@@ -392,6 +399,12 @@ public class VentaFormController {
             cargarButacas();
             return;
         }
+
+        //MEJORA 9: la venta queda registrada en la bitacora de auditoria
+        Bitacora.registrar("VENTA", "Compra " + codigo + " de "
+                + butacasSeleccionadas.size() + " boleto(s) - S/ "
+                + (f.getPrecio() * butacasSeleccionadas.size())
+                + " - " + cbMetodoPago.getValue());
 
         mostrarComprobante(cliente, f, codigo);
         saved = true;

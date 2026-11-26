@@ -10,8 +10,11 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<!-- MEJORA 3: pantalla de Reportes / cierre de caja (solo administrador) -->
-<VBox spacing="14.0" styleClass="page" stylesheets="@style.css"
+<!-- MEJORA 3: pantalla de Reportes / cierre de caja (solo administrador)
+     MEJORA 2: desglose por forma de pago
+     MEJORA 7: exportar el cierre a CSV
+     MEJORA 8: respaldar y restaurar la base -->
+<VBox spacing="12.0" styleClass="page" stylesheets="@style.css"
       xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="pe.edu.upeu.gestioo_de_cine.controller.ReporteController">
     <padding>
@@ -23,7 +26,7 @@
             <children>
                 <Label styleClass="titulo-vista" text="Reportes y cierre de caja"/>
                 <Label styleClass="subtitulo-vista"
-                       text="Elija un rango de fechas para ver cuánto se vendió y cuánto se anuló."/>
+                       text="Elija un rango de fechas para ver cuánto se vendió, cuánto se anuló y por qué medio se pagó."/>
             </children>
         </VBox>
 
@@ -75,6 +78,36 @@
                         <Label fx:id="lblNeto" styleClass="panel-titulo" text="S/ 0.00"/>
                     </children>
                 </VBox>
+            </children>
+        </HBox>
+
+        <!-- MEJORA 2: desglose por forma de pago -->
+        <Label styleClass="leyenda" text="Desglose por forma de pago (solo boletos activos)"/>
+        <TableView fx:id="tablePago" maxHeight="150.0" minHeight="110.0" prefHeight="120.0">
+            <columns>
+                <TableColumn fx:id="ColPagoMetodo" prefWidth="180.0" text="Forma de pago"/>
+                <TableColumn fx:id="ColPagoBoletos" prefWidth="120.0" text="Boletos"/>
+                <TableColumn fx:id="ColPagoMonto" prefWidth="140.0" text="Monto (S/)"/>
+            </columns>
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+            </columnResizePolicy>
+            <placeholder>
+                <Label styleClass="tabla-vacia" text="No hay cobros en ese rango de fechas."/>
+            </placeholder>
+        </TableView>
+
+        <!-- MEJORA 7 y MEJORA 8: acciones del cierre -->
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <children>
+                <Label styleClass="leyenda" text="Acciones del cierre"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button mnemonicParsing="false" onAction="#handleExportarCsv"
+                        styleClass="button-secundario" text="EXPORTAR CSV"/>
+                <Button mnemonicParsing="false" onAction="#handleRespaldar"
+                        styleClass="button-secundario" text="RESPALDAR AHORA"/>
+                <Button mnemonicParsing="false" onAction="#handleRestaurar"
+                        styleClass="button-action-delete" text="RESTAURAR RESPALDO"/>
             </children>
         </HBox>
 

@@ -40,6 +40,9 @@ public class MainController {
     //MEJORA 3: boton para la pantalla de reportes / cierre de caja
     @FXML
     private Button btnReportes;
+    //MEJORA 9: boton para la pantalla de auditoria
+    @FXML
+    private Button btnAuditoria;
 
     @FXML
     public void initialize(){
@@ -79,6 +82,9 @@ public class MainController {
         //los reportes muestran dinero: solo el admin los ve
         btnReportes.setVisible(admin);
         btnReportes.setManaged(admin);
+        //la auditoria muestra quien hizo cada movimiento: solo el admin
+        btnAuditoria.setVisible(admin);
+        btnAuditoria.setManaged(admin);
         //el empleado solo ve ventas, por eso tampoco tiene Inicio
         btnInicio.setVisible(admin);
         btnInicio.setManaged(admin);
@@ -97,7 +103,7 @@ public class MainController {
     //resalta en el menu la pantalla que se esta viendo
     private void marcarActivo(Button activo){
         Button[] botones = {btnInicio, btnClientes, btnPeliculas, btnSalas,
-                btnFunciones, btnVentas, btnButacas, btnUsuarios, btnReportes};
+                btnFunciones, btnVentas, btnButacas, btnUsuarios, btnReportes, btnAuditoria};
         for (Button b : botones){
             if (b != null){
                 b.getStyleClass().remove("nav-button-activo");
@@ -161,6 +167,14 @@ public class MainController {
         if (sinPermiso()) return;
         loadView("reporte-view.fxml");
         marcarActivo(btnReportes);
+    }
+
+    //MEJORA 9: abre la bitacora de movimientos del sistema
+    @FXML
+    private void showAuditoria(){
+        if (sinPermiso()) return;
+        loadView("auditoria-view.fxml");
+        marcarActivo(btnAuditoria);
     }
 
     //cierra la sesion y vuelve al login

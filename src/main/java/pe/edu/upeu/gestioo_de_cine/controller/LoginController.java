@@ -12,6 +12,7 @@ import pe.edu.upeu.gestioo_de_cine.HelloApplication;
 import pe.edu.upeu.gestioo_de_cine.implementacion.UsuarioDaoImpl;
 import pe.edu.upeu.gestioo_de_cine.interfaces.IUsuarioDao;
 import pe.edu.upeu.gestioo_de_cine.modelo.Usuario;
+import pe.edu.upeu.gestioo_de_cine.utils.Bitacora;
 import pe.edu.upeu.gestioo_de_cine.utils.Sesion;
 
 public class LoginController {
@@ -48,11 +49,15 @@ public class LoginController {
             return;
         }
         if (usuario == null) {
+            //MEJORA 9: los intentos fallidos tambien quedan en la auditoria
+            Bitacora.registrar("LOGIN FALLIDO", "Intento con el usuario " + nombreUsuario);
             lblMensaje.setText("Usuario o contraseña incorrectos.");
             txtClave.clear();
             return;
         }
 
+        //MEJORA 9: se registra el ingreso correcto antes de abrir la ventana
+        Bitacora.registrar("LOGIN", "Ingreso del usuario " + usuario.getUsuario());
         abrirPrincipal(usuario);
     }
 

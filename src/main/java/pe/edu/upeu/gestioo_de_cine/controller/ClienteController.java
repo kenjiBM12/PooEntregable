@@ -183,6 +183,37 @@ public class ClienteController {
             }
         }
 
+        /**
+         * MEJORA 3: abre una ventana con todas las compras del cliente elegido.
+         * Se reutiliza la consulta de ventas (VentaDaoImpl.listarPorCliente).
+         */
+        @FXML
+        private void handleHistorial() {
+            if (sinPermiso()) return;
+            Cliente seleccionado = tableCliente.getSelectionModel().getSelectedItem();
+            if (seleccionado == null) {
+                utilAlert.mostrarAlerts("Seleccion requerida",
+                        "Seleccione un cliente para ver sus compras.", "WARNING").showAndWait();
+                return;
+            }
+            try {
+                FXMLLoader loader = new FXMLLoader(HelloApplication.class
+                        .getResource("/pe/edu/upeu/gestioo_de_cine/views/cliente-historial.fxml"));
+                Parent root = loader.load();
+                ClienteHistorialController controller = loader.getController();
+                controller.setCliente(seleccionado);
+                Stage stage = new Stage();
+                stage.setTitle("Historial de compras - " + seleccionado.getNombre());
+                stage.initModality(Modality.APPLICATION_MODAL);
+                stage.setScene(new Scene(root));
+                stage.showAndWait();
+            } catch (Exception e) {
+                System.out.println("Error al abrir el historial del cliente: " + e.getMessage());
+                utilAlert.mostrarAlerts("Error",
+                        "No se pudo abrir el historial del cliente.", "ERROR").showAndWait();
+            }
+        }
+
         //arma el texto del aviso: si SQLite responde "database is locked" el problema
         //no es el DNI sino otra ventana del programa que tiene la base abierta
         private String mensajeError(RuntimeException e, String mensajeNormal) {

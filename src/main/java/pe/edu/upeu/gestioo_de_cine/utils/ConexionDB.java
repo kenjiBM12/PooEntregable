@@ -3,9 +3,12 @@ package pe.edu.upeu.gestioo_de_cine.utils;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ConexionDB {
 
@@ -15,21 +18,35 @@ public class ConexionDB {
     private static final String CARPETA = "SistemaCineUPeU";
     private static final String ARCHIVO_BD = "gestionCine.db";
 
+    /**
+     * MEJORA 5: version del esquema que espera este codigo.
+     * Se guarda dentro del propio archivo con "PRAGMA user_version", asi la
+     * base sabe en que version esta sin necesidad de una tabla extra.
+     * - version 1: esquema original del sistema de cine
+     * - version 2: duraciones normalizadas a minutos y tabla de auditoria
+     */
+    private static final int VERSION_ESQUEMA = 2;
+
+    /**
+     * Devuelve el archivo .db del usuario actual y crea la carpeta si falta.
+     * Se usa tambien para los respaldos y para restaurarlos.
+     */
+    public static File archivoBase() {
+        String userHome = System.getProperty("user.home");
+        File directory = new File(userHome + File.separator + CARPETA);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+        return new File(directory, ARCHIVO_BD);
+    }
+
     public static Connection getConnection() {
         try {
             if (connection == null || connection.isClosed()) {
 
-                //1. obtener la carpeta de documentos del usuario actual
-                String userHome = System.getProperty("user.home");
-                File directory = new File(userHome + File.separator + CARPETA);
-
-                //2. si la carpeta no existe, la creamos
-                if (!directory.exists()) {
-                    directory.mkdirs();
-                }
-
+                //1. obtener la carpeta de documentos del usuario actual y el archivo .db
                 //la bd se guardara C:\\Users\\Nombre\\SistemaCineUPeU\\gestionCine.db
-                File archivo = new File(directory, ARCHIVO_BD);
+                File archivo = archivoBase();
 
                 //MEJORA 2: antes de abrir la conexion se guarda una copia de la
                 //base. Se hace aqui porque el archivo esta cerrado y la copia
@@ -152,6 +169,17 @@ public class ConexionDB {
                 "rol TEXT NOT NULL DEFAULT 'empleado', " +
                 "activo INTEGER NOT NULL DEFAULT 1);";
 
+        //MEJORA 9: bitacora de auditoria. Guarda quien hizo que y cuando.
+        //No se declara llave foranea hacia usuario para que un usuario borrado
+        //no impida conservar la historia; el nombre se copia como texto.
+        String sqlAuditoria = "CREATE TABLE IF NOT EXISTS auditoria (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "fecha TEXT NOT NULL, " +
+                "id_usuario INTEGER, " +
+                "usuario TEXT, " +
+                "accion TEXT NOT NULL, " +
+                "detalle TEXT);";
+
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(sqlPelicula);
             stmt.execute(sqlSala);
@@ -160,6 +188,7 @@ public class ConexionDB {
             stmt.execute(sqlButaca);
             stmt.execute(sqlVenta);
             stmt.execute(sqlUsuario);
+            stmt.execute(sqlAuditoria);
 
             //MEJORA 1: antes TODOS los indices iban en un solo execute(), y
             //sqlite-jdbc solo ejecutaba el primero. Ahora cada sentencia va
@@ -209,6 +238,13 @@ public class ConexionDB {
             agregarColumna(stmt, "venta", "fecha_anulacion", "TEXT");
             agregarColumna(stmt, "venta", "motivo_anulacion", "TEXT");
 
+            //MEJORA 1: las duraciones viejas ("1:50", "95 min") se pasan a
+            //minutos para que el cruce de horarios funcione con todas.
+            normalizarDuraciones();
+
+            //MEJORA 5: se guarda en la base la version del esquema
+            actualizarVersionEsquema(stmt);
+
             //5. INSERTAR USUARIO ADMIN POR DEFECTO (si la tabla esta vacia)
             //esto es vital para poder entrar al sistema la primera vez
             //MEJORA 7: la contraseña se guarda como hash SHA-256, no en texto plano
@@ -240,6 +276,74 @@ public class ConexionDB {
             stmt.execute(sql);
         } catch (SQLException e) {
             System.out.println("Aviso: no se pudo ejecutar [" + sql + "]: " + e.getMessage());
+        }
+    }
+
+    /**
+     * MEJORA 1: recorre las peliculas y guarda su duracion en minutos.
+     * Se leen primero todos los datos y despues se actualizan, porque no se
+     * puede ejecutar un UPDATE mientras el SELECT todavia esta abierto.
+     * Las duraciones que ya son numeros no se tocan.
+     */
+    private static void normalizarDuraciones() {
+        List<Integer> ids = new ArrayList<>();
+        List<String> valores = new ArrayList<>();
+        try (PreparedStatement ps = connection.prepareStatement(
+                "SELECT idpelicula, duracion FROM pelicula");
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                String actual = rs.getString("duracion");
+                String normal = Duracion.normalizar(actual);
+                //solo se actualiza si cambia y si se pudo leer la duracion
+                if (actual != null && !normal.isEmpty() && !normal.equals(actual.trim())) {
+                    ids.add(rs.getInt("idpelicula"));
+                    valores.add(normal);
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("No se pudieron normalizar las duraciones: " + e.getMessage());
+            return;
+        }
+        for (int i = 0; i < ids.size(); i++) {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "UPDATE pelicula SET duracion=? WHERE idpelicula=?")) {
+                ps.setString(1, valores.get(i));
+                ps.setInt(2, ids.get(i));
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                System.out.println("No se pudo actualizar la duracion de la pelicula "
+                        + ids.get(i) + ": " + e.getMessage());
+            }
+        }
+        if (!ids.isEmpty()) {
+            System.out.println("Duraciones normalizadas a minutos: " + ids.size());
+        }
+    }
+
+    /**
+     * MEJORA 5: lee "PRAGMA user_version" y la actualiza si la base esta en
+     * una version anterior. Es el numero que permite saber, en el futuro, que
+     * migraciones ya se aplicaron a este archivo.
+     */
+    private static void actualizarVersionEsquema(Statement stmt) {
+        int version = 0;
+        try (ResultSet rs = stmt.executeQuery("PRAGMA user_version")) {
+            if (rs.next()) {
+                version = rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.out.println("No se pudo leer la version del esquema: " + e.getMessage());
+            return;
+        }
+        if (version >= VERSION_ESQUEMA) {
+            return;
+        }
+        try {
+            stmt.execute("PRAGMA user_version = " + VERSION_ESQUEMA);
+            System.out.println("Esquema actualizado de la version " + version
+                    + " a la " + VERSION_ESQUEMA);
+        } catch (SQLException e) {
+            System.out.println("No se pudo guardar la version del esquema: " + e.getMessage());
         }
     }
 

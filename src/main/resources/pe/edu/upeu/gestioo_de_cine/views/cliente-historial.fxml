@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.VBox?>
+
+<!-- MEJORA 3: historial de compras de un cliente (ventana modal) -->
+<VBox prefHeight="520.0" prefWidth="920.0" spacing="12.0" styleClass="page"
+      stylesheets="@style.css"
+      xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="pe.edu.upeu.gestioo_de_cine.controller.ClienteHistorialController">
+    <padding>
+        <Insets bottom="16.0" left="20.0" right="20.0" top="18.0"/>
+    </padding>
+    <children>
+
+        <Label fx:id="lblTitulo" styleClass="titulo-vista" text="Compras del cliente"/>
+        <Label styleClass="subtitulo-vista"
+               text="Cada fila es un boleto. Las compras anuladas se conservan como historial."/>
+
+        <TableView fx:id="tableHistorial" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="ColFecha" prefWidth="95.0" text="Fecha venta"/>
+                <TableColumn fx:id="ColCompra" prefWidth="95.0" text="Compra"/>
+                <TableColumn fx:id="ColPelicula" prefWidth="180.0" text="Película"/>
+                <TableColumn fx:id="ColFuncion" prefWidth="160.0" text="Función"/>
+                <TableColumn fx:id="ColButaca" prefWidth="70.0" text="Butaca"/>
+                <TableColumn fx:id="ColPago" prefWidth="90.0" text="Pago"/>
+                <TableColumn fx:id="ColMonto" prefWidth="85.0" text="Monto (S/)"/>
+                <TableColumn fx:id="ColEstado" prefWidth="85.0" text="Estado"/>
+            </columns>
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+            </columnResizePolicy>
+            <placeholder>
+                <Label styleClass="tabla-vacia" text="Este cliente todavía no tiene compras."/>
+            </placeholder>
+        </TableView>
+
+        <Label fx:id="lblResumen" styleClass="resumen" text="Compras: 0"/>
+    </children>
+</VBox>

@@ -85,6 +85,23 @@
                 <configuration>
                     <source>21</source>
                     <target>21</target>
+                    <!-- MEJORA 4: las pruebas JUnit viven en src/test/java. Como el
+                         proyecto es modular (module-info.java), se autoriza a las
+                         pruebas a leer los jars de JUnit que estan fuera del modulo. -->
+                    <testCompilerArgs>
+                        <arg>--add-reads</arg>
+                        <arg>pe.edu.upeu.gestioo_de_cine=ALL-UNNAMED</arg>
+                    </testCompilerArgs>
+                </configuration>
+            </plugin>
+            <!-- MEJORA 4: se ejecutan las pruebas con JUnit 5 sobre el classpath.
+                 useModulePath=false evita los problemas de un proyecto modular. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.2</version>
+                <configuration>
+                    <useModulePath>false</useModulePath>
                 </configuration>
             </plugin>
             <plugin>

@@ -2,6 +2,7 @@ package pe.edu.upeu.gestioo_de_cine.implementacion;
 
 import pe.edu.upeu.gestioo_de_cine.interfaces.IReporteDao;
 import pe.edu.upeu.gestioo_de_cine.modelo.Reporte;
+import pe.edu.upeu.gestioo_de_cine.modelo.ResumenPago;
 import pe.edu.upeu.gestioo_de_cine.utils.ConexionDB;
 
 import java.sql.Connection;
@@ -9,6 +10,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * MEJORA 3: cierre de caja con SQL de agregacion.
@@ -22,6 +25,10 @@ import java.time.LocalDate;
  * "CASE WHEN ... THEN 1 ELSE 0 END" es un if dentro del SQL: suma 1 solo
  * cuando la condicion se cumple. Asi no hace falta traer todas las ventas
  * a Java y contarlas con un for.
+ *
+ * MEJORA 2: ademas se hace un segundo GROUP BY por forma de pago, para que
+ * el administrador vea cuanto dinero entro en efectivo, con tarjeta o por
+ * Yape, y pueda cuadrar la caja fisica.
  */
 public class ReporteDaoImpl implements IReporteDao {
 
@@ -67,6 +74,47 @@ public class ReporteDaoImpl implements IReporteDao {
             //igual que los demas DAO: el error se avisa, no se devuelve un reporte vacio
             throw new RuntimeException("Error al generar el reporte: " + e.getMessage(), e);
         }
+
+        //MEJORA 2: el desglose por forma de pago se calcula aparte para no
+        //complicar la consulta de totales
+        reporte.setPorMetodoPago(desglosePorMetodo(fechaDesde, fechaHasta));
         return reporte;
+    }
+
+    /**
+     * MEJORA 2: agrupa las ventas ACTIVAS del rango por forma de pago.
+     * Las ventas viejas sin metodo_pago se cuentan como EFECTIVO para que el
+     * dinero no se pierda del cierre, y las anuladas no aparecen porque no
+     * representan dinero en caja.
+     */
+    private List<ResumenPago> desglosePorMetodo(String fechaDesde, String fechaHasta) {
+        List<ResumenPago> lista = new ArrayList<>();
+        //CORREGIDO: el WHERE exige estado='activa'. Si no, una venta anulada
+        //creaba una fila con 0 boletos (por ejemplo YAPE 0) y ensuciaba la caja.
+        String query = "SELECT UPPER(COALESCE(NULLIF(TRIM(v.metodo_pago),''),'EFECTIVO')) AS metodo, "
+                + " COUNT(*) AS boletos, "
+                + " COALESCE(SUM(v.total_pagar),0) AS monto "
+                + " FROM venta v "
+                + " LEFT JOIN funcion f ON v.id_funcion = f.idfuncion "
+                + " WHERE v.estado='activa' "
+                + " AND substr(COALESCE(NULLIF(v.fecha_venta,''), f.fecha),1,10) BETWEEN ? AND ? "
+                + " GROUP BY metodo ORDER BY monto DESC, metodo";
+
+        Connection cn = ConexionDB.getConnection();
+        try (PreparedStatement st = cn.prepareStatement(query)) {
+            st.setString(1, fechaDesde);
+            st.setString(2, fechaHasta);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(new ResumenPago(rs.getString("metodo"),
+                            rs.getInt("boletos"), rs.getDouble("monto")));
+                }
+            }
+        } catch (SQLException e) {
+            //el desglose es informativo: si falla, el reporte igual se muestra
+            System.out.println("No se pudo calcular el desglose por forma de pago: "
+                    + e.getMessage());
+        }
+        return lista;
     }
 }

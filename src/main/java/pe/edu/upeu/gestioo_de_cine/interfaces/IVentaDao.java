@@ -26,4 +26,7 @@ public interface IVentaDao {
 
     //anula todos los boletos de una misma compra (mismo codigo)
     boolean anularCompra(String codigoCompra, int idUsuario, String motivo);
+
+    //MEJORA 3: historial de compras de un cliente, de la mas nueva a la mas vieja
+    List<Venta> listarPorCliente(int idCliente);
 }
