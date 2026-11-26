@@ -13,6 +13,10 @@
         <Label styleClass="titulo-form" text="Venta de entradas" />
         <Label styleClass="leyenda" text="Paso 1: elija la película y la función.         Paso 2: marque una o varias butacas libres." />
         <Separator />
+        <!-- CORREGIDO: el aviso estaba dentro del panel del paso 3, que esta oculto
+             hasta avanzar, asi que los mensajes del paso 1 y 2 (por ejemplo "esa
+             funcion ya empezo") nunca se veian. Ahora queda siempre visible. -->
+        <Label fx:id="lblMensaje" maxWidth="Infinity" styleClass="mensaje-error" wrapText="true" />
         <VBox fx:id="panelPaso12" spacing="12.0">
             <children>
         <!-- Paso 1: pelicula y funcion -->
@@ -111,8 +115,6 @@
             <RowConstraints />
          </rowConstraints>
         </GridPane>
-
-        <Label fx:id="lblMensaje" styleClass="mensaje-error" wrapText="true" />
 
         <!-- Paso 4: vender -->
                 <HBox alignment="CENTER_RIGHT" spacing="10.0">

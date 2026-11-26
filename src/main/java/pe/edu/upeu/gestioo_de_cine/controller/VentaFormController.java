@@ -146,23 +146,37 @@ public class VentaFormController {
         if (pelicula == null) {
             return;
         }
+        //se cuentan tambien las funciones de fechas pasadas, solo para poder
+        //explicar la diferencia en el aviso de abajo
+        boolean tieneFunciones = false;
         for (Funcion f : funcionDao.listAll()) {
             //CORREGIDO: se agregan todas las funciones de la pelicula, sin
             //filtrar por estado de la sala. El filtro se aplica al elegir la
             //funcion (puedeVenderse), asi el usuario ve que existen funciones
             //y entiende por que no puede vender esa.
-            if (f.getPelicula() != null
-                    && String.valueOf(f.getPelicula().getidpelicula())
-                    .equals(String.valueOf(pelicula.getidpelicula()))
-                    //solo de hoy en adelante: las de fechas ya pasadas no
-                    //sirven para vender y solo alargaban la lista
-                    && esDeHoyOEnAdelante(f)) {
+            if (f.getPelicula() == null
+                    || !String.valueOf(f.getPelicula().getidpelicula())
+                    .equals(String.valueOf(pelicula.getidpelicula()))) {
+                continue;
+            }
+            //la pelicula si tiene funciones programadas (de cualquier fecha)
+            tieneFunciones = true;
+            //solo se ofrecen de hoy en adelante: las de fechas ya pasadas no
+            //sirven para vender y solo alargaban la lista
+            if (esDeHoyOEnAdelante(f)) {
                 cboFuncion.getItems().add(f);
             }
         }
         if (cboFuncion.getItems().isEmpty()) {
-            lblMensaje.setText("Esa película todavía no tiene funciones. "
-                    + "Cree una en el menú Funciones.");
+            //CORREGIDO: el aviso ya no dice "no tiene funciones" cuando en
+            //realidad la pelicula solo tiene funciones de fechas pasadas
+            if (tieneFunciones) {
+                lblMensaje.setText("Esa película no tiene funciones de hoy en "
+                        + "adelante. Cree una nueva en el menú Funciones.");
+            } else {
+                lblMensaje.setText("Esa película todavía no tiene funciones. "
+                        + "Cree una en el menú Funciones.");
+            }
         }
         actualizarEstadoSiguiente();
     }
