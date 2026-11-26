@@ -827,8 +827,21 @@ Ahora:
 - Al elegir una función no vendible se muestra el motivo en el mensaje del
   formulario, el botón SIGUIENTE queda deshabilitado y `validate()`/`handleVender`
   la rechazan con un aviso claro.
-- Si la película no tiene ninguna función, el mensaje dice
-  "Esa película todavía no tiene funciones. Cree una en el menú Funciones."
+- El aviso del combo es **condicional**, según lo que realmente tenga la
+  película:
+  - si tiene funciones pero **todas son de fechas pasadas**: "Esa película no
+    tiene funciones de hoy en adelante. Cree una nueva en el menú Funciones.";
+  - si no tiene ninguna función: "Esa película todavía no tiene funciones.
+    Cree una en el menú Funciones."
+  La diferencia se decide en `cargarFunciones()` con la bandera `tieneFunciones`,
+  que cuenta todas las funciones de la película en el mismo recorrido, antes de
+  aplicar el filtro de fecha. Antes el mensaje decía siempre "no tiene
+  funciones", aunque en realidad existieran solo funciones viejas.
+- El aviso (`lblMensaje`) se movió fuera de `panelPaso3` —que está oculto hasta
+  avanzar— a la cabecera de `venta-form.fxml`, debajo del separador. Así el
+  mensaje **se ve desde el paso 1**: antes el texto se asignaba pero quedaba
+  dentro del panel invisible, así que al elegir película o función no aparecía
+  nada en pantalla.
 - `SalaFormController`: una sala nueva se crea con estado **Activa** por defecto
   (antes el combo quedaba sin elegir y una sala podía quedar Inactiva sin querer).
 
